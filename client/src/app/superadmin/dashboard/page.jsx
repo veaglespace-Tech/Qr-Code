@@ -433,28 +433,6 @@ export default function SuperadminDashboardPage() {
               })}
             </nav>
           </div>
-
-          {/* Quick Platform Status */}
-          <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-400">Database Engine:</span>
-              <span className="font-bold text-emerald-400 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> MySQL 8.0
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-400">PayU Mode:</span>
-              <span className="font-bold text-purple-300 uppercase">
-                {siteSettings.payuMode || 'Test'} Mode
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-400">GST Billing:</span>
-              <span className="font-bold text-slate-200">
-                {siteSettings.gstEnabled ? `${siteSettings.gstPercent || 18}% Active` : 'Disabled'}
-              </span>
-            </div>
-          </div>
         </div>
 
         {/* Sidebar Footer: Profile & Store link */}

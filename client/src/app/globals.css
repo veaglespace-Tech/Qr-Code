@@ -1,0 +1,159 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fafcff;
+  --foreground: #090e1a;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.025em;
+}
+
+/* Ambient Subtle Dot Matrix Background */
+.bg-ambient-pattern {
+  background-color: #fbfdff;
+  background-image: radial-gradient(#dbeafe 1.1px, transparent 1.1px);
+  background-size: 28px 28px;
+}
+
+/* Radiant Atmospheric Aura Gradients */
+.aura-glow-green {
+  background: radial-gradient(circle, rgba(0, 229, 117, 0.16) 0%, rgba(0, 229, 117, 0.03) 60%, transparent 75%);
+}
+
+.aura-glow-blue {
+  background: radial-gradient(circle, rgba(0, 98, 255, 0.14) 0%, rgba(124, 58, 237, 0.04) 60%, transparent 75%);
+}
+
+/* High-End Frosted Glass Cards (Apple / Stripe style) */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.03);
+}
+
+.glass-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 8px 24px -4px rgba(15, 23, 42, 0.04);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(0, 229, 117, 0.6);
+  box-shadow: 0 20px 40px -10px rgba(0, 98, 255, 0.12), 0 10px 16px -6px rgba(0, 229, 117, 0.1);
+  transform: translateY(-3px);
+}
+
+/* High-Tech ReviewXpress Multi-color Gradients */
+.text-gradient-rx {
+  background: linear-gradient(135deg, #090e1a 0%, #0062FF 50%, #00E575 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-green {
+  background: linear-gradient(135deg, #00c763 0%, #00E575 60%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-blue {
+  background: linear-gradient(135deg, #0062FF 0%, #2563EB 60%, #7C3AED 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glossy Pill Sheen Button */
+.btn-primary-rx {
+  background: linear-gradient(135deg, #00D36B 0%, #00b85b 100%);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 8px 24px -4px rgba(0, 229, 117, 0.45);
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary-rx:hover {
+  background: linear-gradient(135deg, #00E575 0%, #00c763 100%);
+  box-shadow: 0 12px 30px -4px rgba(0, 229, 117, 0.6);
+  transform: translateY(-1.5px);
+}
+
+.btn-secondary-rx {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.05);
+  transition: all 0.2s ease;
+}
+
+.btn-secondary-rx:hover {
+  border-color: #0062FF;
+  color: #0062FF;
+  box-shadow: 0 6px 20px -2px rgba(0, 98, 255, 0.15);
+  transform: translateY(-1.5px);
+}
+
+/* Custom Scrollbar for Light Mode */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Print Invoice Styles */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #invoice-printable, #invoice-printable * {
+    visibility: visible !important;
+  }
+  #invoice-printable {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

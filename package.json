@@ -1,0 +1,27 @@
+{
+  "name": "review-express-platform",
+  "version": "1.0.0",
+  "description": "Review Express E-commerce Platform - Full-Stack Next.js (client), Redux Toolkit, Node.js (server), Express, Prisma ORM & MySQL",
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build:client": "cd client && npm run build",
+    "start:client": "cd client && npm run start",
+    "start:server": "cd server && npm start",
+    "seed:server": "cd server && node prisma/seed.js"
+  },
+  "keywords": [
+    "review-express",
+    "client",
+    "server",
+    "nfc-stand",
+    "google-review",
+    "nextjs",
+    "redux-toolkit",
+    "prisma",
+    "mysql",
+    "helmet"
+  ],
+  "author": "Review Express",
+  "license": "ISC"
+}

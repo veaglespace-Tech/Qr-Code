@@ -1,0 +1,176 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  USER
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  name              String
+  email             String    @unique
+  password          String
+  phone             String?
+  role              Role      @default(USER)
+  orgName           String?
+  referralCode      String?   @unique
+  commissionPercent Float?    @default(15.0)
+  status            String    @default("active")
+  
+  // Bank / Payout details for Admin (Partner)
+  bankHolder        String?
+  bankAccount       String?
+  bankName          String?
+  ifscCode          String?
+  upiId             String?
+
+  // Referral relationship
+  referredById      Int?
+  referredBy        User?     @relation("AffiliateTree", fields: [referredById], references: [id])
+  referredUsers     User[]    @relation("AffiliateTree")
+
+  // Orders
+  orders            Order[]   @relation("CustomerOrders")
+  referredOrders    Order[]   @relation("AdminReferredOrders")
+  payouts           Payout[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([role])
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique
+  title         String
+  subtitle      String?
+  price         Float
+  originalPrice Float
+  badge         String?  @default("Trending")
+  rating        Float    @default(4.9)
+  reviewsCount  Int      @default(120)
+  stock         Int      @default(100)
+  image         String   @db.Text
+  description   String   @db.Text
+  features      String   @db.Text
+  specs         String   @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Order {
+  id                     Int      @id @default(autoincrement())
+  orderNumber            String   @unique
+  userId                 Int?
+  user                   User?    @relation("CustomerOrders", fields: [userId], references: [id])
+  customerName           String
+  customerEmail          String
+  customerPhone          String
+  businessName           String?
+  googleReviewLink       String?  @db.Text
+  addressLine            String   @db.Text
+  city                   String
+  state                  String
+  pincode                String
+  items                  String   @db.Text // JSON array of items
+  subtotal               Float
+  gstPercent             Float    @default(18.0)
+  gstAmount              Float    @default(0.0)
+  shippingFee            Float    @default(0.0)
+  discountAmount         Float    @default(0.0)
+  couponCode             String?
+  finalAmount            Float
+  
+  // Admin / Partner Referral linkage
+  adminReferralId        Int?
+  adminReferral          User?    @relation("AdminReferredOrders", fields: [adminReferralId], references: [id])
+  adminCommissionPercent Float    @default(0.0)
+  adminCommissionAmount  Float    @default(0.0)
+  adminCommissionStatus  String?  @default("pending") // "pending" | "approved" | "paid"
+
+  // Payment info
+  paymentStatus          String   @default("pending") // "pending" | "paid" | "failed"
+  paymentMethod          String   @default("PayU Gateway")
+  payuTxnId              String?
+  payuMihPayId           String?
+
+  // Order & Courier Tracking
+  orderStatus            String   @default("placed") // "placed" | "customizing" | "shipped" | "delivered" | "cancelled"
+  courierName            String?
+  trackingId             String?
+  trackingUrl            String?
+  trackingHistory        String?  @db.Text // JSON array of tracking checkpoints
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([userId])
+  @@index([adminReferralId])
+}
+
+model Setting {
+  id                       Int      @id @default(1)
+  siteName                 String   @default("Review Express")
+  tagline                  String   @default("India's #1 NFC & QR Smart Google Review Stand & Card")
+  supportEmail             String   @default("support@reviewexpress.in")
+  supportPhone             String   @default("+91 98765 43210")
+  whatsappNumber           String   @default("919876543210")
+  address                  String   @db.Text
+  gstEnabled               Boolean  @default(true)
+  gstPercent               Float    @default(18.0)
+  gstNumber                String   @default("27AABCR1234F1Z8")
+  hsnCode                  String   @default("852352")
+  defaultCommissionPercent Float    @default(15.0)
+  minPayoutAmount          Float    @default(500.0)
+  payuMode                 String   @default("test") // "test" | "live"
+  payuMerchantKey          String   @default("PAYU_DEMO_KEY_123")
+  payuMerchantSalt         String   @default("PAYU_DEMO_SALT_456")
+  announcementBanner       String   @db.Text
+  heroHeading              String   @db.Text
+  heroSubheading           String   @db.Text
+  freeShippingAbove        Float    @default(999.0)
+  standardShippingFee      Float    @default(60.0)
+  updatedAt                DateTime @updatedAt
+}
+
+model Payout {
+  id          Int       @id @default(autoincrement())
+  adminId     Int
+  admin       User      @relation(fields: [adminId], references: [id])
+  amount      Float
+  status      String    @default("pending") // "pending" | "approved" | "rejected"
+  paymentRef  String?
+  notes       String?   @db.Text
+  requestedAt DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([adminId])
+}
+
+model Coupon {
+  id                Int       @id @default(autoincrement())
+  code              String    @unique
+  description       String?
+  discountType      String    @default("PERCENTAGE") // "PERCENTAGE" | "FLAT"
+  discountValue     Float
+  minOrderAmount    Float     @default(0.0)
+  maxDiscountAmount Float?
+  startDate         DateTime  @default(now())
+  expiryDate        DateTime?
+  usageLimit        Int?
+  usedCount         Int       @default(0)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([code])
+}

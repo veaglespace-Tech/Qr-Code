@@ -40,6 +40,14 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Auth', 'Order', 'Admin', 'Superadmin'],
     }),
+    updateProfile: builder.mutation({
+      query: (profileData) => ({
+        url: '/auth/profile',
+        method: 'PUT',
+        body: profileData,
+      }),
+      invalidatesTags: ['Auth', 'Admin', 'Superadmin', 'User'],
+    }),
 
     // ---------------- PRODUCT ENDPOINTS ----------------
     getProducts: builder.query({
@@ -229,6 +237,7 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useLogoutMutation,
+  useUpdateProfileMutation,
 
   // Product hooks
   useGetProductsQuery,

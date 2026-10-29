@@ -38,7 +38,7 @@ export default function LoginPage() {
       } else if (user.role === 'ADMIN') {
         router.push('/admin/dashboard');
       } else {
-        router.push('/user/orders');
+        router.push('/user/dashboard');
       }
     } catch (err) {
       setFormError(err?.data?.error || err?.message || 'Login failed. Please check your credentials.');

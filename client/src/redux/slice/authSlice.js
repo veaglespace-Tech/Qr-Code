@@ -57,6 +57,12 @@ const authSlice = createSlice({
       .addMatcher(apiSlice.endpoints.logout.matchFulfilled, (state) => {
         state.user = null;
         state.loading = false;
+      })
+      // Listen to RTK Query updateProfile
+      .addMatcher(apiSlice.endpoints.updateProfile.matchFulfilled, (state, { payload }) => {
+        if (payload?.user) {
+          state.user = payload.user;
+        }
       });
   }
 });

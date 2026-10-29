@@ -143,3 +143,84 @@ exports.logout = asyncHandler(async (req, res) => {
   res.clearCookie('token');
   return res.json({ success: true, message: 'Logged out successfully' });
 });
+
+exports.updateProfile = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const {
+    name,
+    phone,
+    orgName,
+    bankHolder,
+    bankAccount,
+    bankName,
+    ifscCode,
+    upiId,
+    currentPassword,
+    newPassword
+  } = req.body;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+
+  if (!user) {
+    throw new ApiError(404, 'User account not found');
+  }
+
+  const updateData = {};
+
+  if (name !== undefined && name.trim()) {
+    updateData.name = name.trim();
+  }
+  if (phone !== undefined) {
+    updateData.phone = phone ? phone.trim() : null;
+  }
+  if (orgName !== undefined) {
+    updateData.orgName = orgName ? orgName.trim() : null;
+  }
+  if (bankHolder !== undefined) {
+    updateData.bankHolder = bankHolder ? bankHolder.trim() : null;
+  }
+  if (bankAccount !== undefined) {
+    updateData.bankAccount = bankAccount ? bankAccount.trim() : null;
+  }
+  if (bankName !== undefined) {
+    updateData.bankName = bankName ? bankName.trim() : null;
+  }
+  if (ifscCode !== undefined) {
+    updateData.ifscCode = ifscCode ? ifscCode.trim().toUpperCase() : null;
+  }
+  if (upiId !== undefined) {
+    updateData.upiId = upiId ? upiId.trim() : null;
+  }
+
+  // Handle password change
+  if (newPassword && newPassword.trim()) {
+    if (!currentPassword) {
+      throw new ApiError(400, 'Current password is required to change your password');
+    }
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      throw new ApiError(400, 'Current password is incorrect');
+    }
+    if (newPassword.trim().length < 6) {
+      throw new ApiError(400, 'New password must be at least 6 characters long');
+    }
+    updateData.password = await bcrypt.hash(newPassword.trim(), 10);
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: updateData
+  });
+
+  const { password: _, ...safeUser } = updatedUser;
+
+  return res.json({
+    success: true,
+    user: safeUser,
+    message: newPassword
+      ? 'Profile details and password updated successfully!'
+      : 'Profile details updated successfully!'
+  });
+});

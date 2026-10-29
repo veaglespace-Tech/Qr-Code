@@ -89,20 +89,20 @@ export default function Navbar() {
                   {user.role === 'ADMIN' && (
                     <Link
                       href="/admin/dashboard"
-                      className="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-200 text-xs font-bold flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-lg bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200 text-xs font-bold flex items-center gap-1.5"
                     >
-                      <Users className="w-3.5 h-3.5 text-amber-700" />
+                      <Users className="w-3.5 h-3.5 text-purple-700" />
                       Partner ({user.referralCode || 'Org'})
                     </Link>
                   )}
 
                   {user.role === 'USER' && (
                     <Link
-                      href="/user/orders"
-                      className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-900 hover:bg-emerald-200 border border-emerald-200 text-xs font-bold flex items-center gap-1.5"
+                      href="/user/dashboard"
+                      className="px-3 py-1.5 rounded-lg bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200 text-xs font-bold flex items-center gap-1.5"
                     >
-                      <User className="w-3.5 h-3.5 text-emerald-700" />
-                      My Orders
+                      <User className="w-3.5 h-3.5 text-purple-700" />
+                      My Dashboard
                     </Link>
                   )}
 

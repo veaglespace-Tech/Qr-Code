@@ -22,7 +22,8 @@ import {
   useUploadProductImageMutation,
   useUpdateAdminMutation,
   useDeleteAdminMutation,
-  useUpdatePayoutStatusMutation
+  useUpdatePayoutStatusMutation,
+  useUpdateProfileMutation
 } from '@/redux/api/apiSlice';
 import {
   LayoutDashboard,
@@ -59,6 +60,7 @@ import {
   Sliders,
   ChevronRight,
   Eye,
+  EyeOff,
   RefreshCw,
   Lock,
   Unlock,
@@ -70,7 +72,8 @@ import {
   ArrowLeft,
   Banknote,
   TrendingDown,
-  UserX
+  UserX,
+  User
 } from 'lucide-react';
 import Link from 'next/link';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
@@ -103,6 +106,62 @@ export default function SuperadminDashboardPage() {
   const [updateAdmin] = useUpdateAdminMutation();
   const [deleteAdmin] = useDeleteAdminMutation();
   const [updatePayoutStatus] = useUpdatePayoutStatusMutation();
+  const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+
+  // Profile Form state
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    phone: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    showCurrentPassword: false,
+    showNewPassword: false
+  });
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm(prev => ({
+        ...prev,
+        name: user.name || '',
+        phone: user.phone || ''
+      }));
+    }
+  }, [user]);
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (profileForm.newPassword && profileForm.newPassword !== profileForm.confirmPassword) {
+      triggerNotice('New password and confirm password do not match', true);
+      return;
+    }
+    if (profileForm.newPassword && profileForm.newPassword.length < 6) {
+      triggerNotice('New password must be at least 6 characters long', true);
+      return;
+    }
+    try {
+      const payload = {
+        name: profileForm.name,
+        phone: profileForm.phone
+      };
+      if (profileForm.newPassword) {
+        payload.currentPassword = profileForm.currentPassword;
+        payload.newPassword = profileForm.newPassword;
+      }
+      const res = await updateProfile(payload).unwrap();
+      if (res.success) {
+        triggerNotice(res.message || 'Superadmin profile updated successfully!');
+        setProfileForm(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+      }
+    } catch (err) {
+      triggerNotice(err?.data?.error || err?.message || 'Failed to update profile', true);
+    }
+  };
 
   const analytics = anaData?.analytics || null;
   const orders = ordData?.orders || [];
@@ -332,6 +391,7 @@ export default function SuperadminDashboardPage() {
     { id: 'users', label: 'Customers Directory', icon: UserCheck, badge: users.length },
     { id: 'payouts', label: 'Affiliate Payouts', icon: IndianRupee, badge: payouts.filter(p => p.status === 'pending').length || null, badgeColor: 'bg-amber-500' },
     { id: 'settings', label: 'Gateway & GST Settings', icon: Sliders },
+    { id: 'profile', label: 'My Profile & Security', icon: User },
   ];
 
   if (loading) {
@@ -447,15 +507,22 @@ export default function SuperadminDashboardPage() {
           </Link>
 
           <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/40 text-purple-300 flex items-center justify-center font-bold text-xs flex-shrink-0">
+            <button
+              onClick={() => {
+                setActiveTab('profile');
+                setSidebarOpen(false);
+              }}
+              className="flex items-center gap-2.5 overflow-hidden text-left hover:opacity-85 transition-opacity group"
+              title="Click to view & edit Profile"
+            >
+              <div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/40 text-purple-300 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:border-purple-400">
                 {user?.name?.[0]?.toUpperCase() || 'A'}
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-bold text-white truncate">{user?.name || 'Superadmin'}</p>
+                <p className="text-xs font-bold text-white truncate group-hover:text-purple-300 transition-colors">{user?.name || 'Superadmin'}</p>
                 <p className="text-[10px] text-slate-400 truncate">{user?.email || 'admin@reviewexpress.in'}</p>
               </div>
-            </div>
+            </button>
             <button
               onClick={() => dispatch(logoutUser())}
               className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
@@ -487,6 +554,7 @@ export default function SuperadminDashboardPage() {
                 {activeTab === 'users' && 'Registered Customers Directory'}
                 {activeTab === 'payouts' && 'Partner Commission Withdrawal Payouts'}
                 {activeTab === 'settings' && 'Global Payment Gateway & GST Settings'}
+                {activeTab === 'profile' && 'Superadmin Profile & Security Settings'}
               </h2>
             </div>
           </div>
@@ -1394,6 +1462,217 @@ export default function SuperadminDashboardPage() {
                 </button>
               </div>
             </form>
+          )}
+
+          {/* ================= TAB 8: SUPERADMIN PROFILE & SECURITY ================= */}
+          {activeTab === 'profile' && (
+            <div className="space-y-6 max-w-5xl">
+              {/* Profile Header Banner */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-emerald-500 p-0.5 shadow-lg shadow-purple-600/20 flex items-center justify-center">
+                    <div className="w-full h-full bg-[#090d16] rounded-[14px] flex items-center justify-center text-white font-black text-2xl">
+                      {user?.name?.[0]?.toUpperCase() || 'A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-black text-slate-900">{user?.name || 'Superadmin'}</h3>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full border border-purple-200">
+                        Level 1 Master
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">{user?.email || 'admin@reviewexpress.in'}</p>
+                    <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400 font-medium">
+                      <span>Role: <strong className="text-slate-700">SUPERADMIN</strong></span>
+                      <span>•</span>
+                      <span>Account ID: <strong className="text-slate-700">#{user?.id}</strong></span>
+                      <span>•</span>
+                      <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Active &amp; Verified
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+                  <span className="px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-100 text-xs font-bold flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5" /> Full Root Access
+                  </span>
+                </div>
+              </div>
+
+              {/* Profile & Security Edit Form */}
+              <form onSubmit={handleUpdateProfile} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Personal Contact Details */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+                    <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                      <UserCheck className="w-5 h-5 text-purple-600" />
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">Personal Information</h4>
+                        <p className="text-[11px] text-slate-400">Manage your name and administrator contact</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Full Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={profileForm.name}
+                          onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                          placeholder="e.g. Abhijeet Ambhore"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:bg-white focus:border-purple-500 focus:outline-hidden transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={profileForm.phone}
+                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                          placeholder="e.g. +91 98765 43210"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:bg-white focus:border-purple-500 focus:outline-hidden transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Email Address
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="email"
+                            readOnly
+                            disabled
+                            value={user?.email || ''}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold cursor-not-allowed"
+                          />
+                          <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-3" />
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          System Master email address cannot be changed directly for platform security.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Assigned Role
+                        </label>
+                        <input
+                          type="text"
+                          readOnly
+                          disabled
+                          value="SUPERADMIN (Master Administrator)"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-purple-700 text-xs font-bold cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Security & Password Management */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+                    <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                      <Lock className="w-5 h-5 text-indigo-600" />
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">Security &amp; Password</h4>
+                        <p className="text-[11px] text-slate-400">Leave blank if you do not want to change your password</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Current Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={profileForm.showCurrentPassword ? 'text' : 'password'}
+                            value={profileForm.currentPassword}
+                            onChange={(e) => setProfileForm({ ...profileForm, currentPassword: e.target.value })}
+                            placeholder="Enter your current password"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:bg-white focus:border-purple-500 focus:outline-hidden transition-all pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setProfileForm(p => ({ ...p, showCurrentPassword: !p.showCurrentPassword }))}
+                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                          >
+                            {profileForm.showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          New Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={profileForm.showNewPassword ? 'text' : 'password'}
+                            value={profileForm.newPassword}
+                            onChange={(e) => setProfileForm({ ...profileForm, newPassword: e.target.value })}
+                            placeholder="Enter new strong password (min 6 chars)"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:bg-white focus:border-purple-500 focus:outline-hidden transition-all pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setProfileForm(p => ({ ...p, showNewPassword: !p.showNewPassword }))}
+                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                          >
+                            {profileForm.showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Confirm New Password
+                        </label>
+                        <input
+                          type="password"
+                          value={profileForm.confirmPassword}
+                          onChange={(e) => setProfileForm({ ...profileForm, confirmPassword: e.target.value })}
+                          placeholder="Re-type new password to confirm"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:bg-white focus:border-purple-500 focus:outline-hidden transition-all"
+                        />
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                        <p className="text-[11px] font-bold text-slate-700">Password Requirements:</p>
+                        <ul className="text-[10px] text-slate-500 list-disc list-inside space-y-0.5">
+                          <li>Minimum 6 characters in length</li>
+                          <li>Must match the confirmation password exactly</li>
+                          <li>Current password required for cryptographic verification</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={isUpdatingProfile}
+                    className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/30 flex items-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isUpdatingProfile ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    <span>{isUpdatingProfile ? 'Saving Changes...' : 'Save Profile Changes'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
         </main>
       </div>

@@ -254,6 +254,124 @@ exports.getAllUsers = asyncHandler(async (req, res) => {
   return res.json({ success: true, users: formatted });
 });
 
+exports.getUserById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(id) },
+    include: {
+      referredBy: {
+        select: {
+          id: true,
+          name: true,
+          orgName: true,
+          email: true,
+          phone: true,
+          referralCode: true,
+          commissionPercent: true
+        }
+      },
+      orders: {
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          orderNumber: true,
+          customerName: true,
+          customerEmail: true,
+          customerPhone: true,
+          businessName: true,
+          googleReviewLink: true,
+          addressLine: true,
+          city: true,
+          state: true,
+          pincode: true,
+          items: true,
+          subtotal: true,
+          gstPercent: true,
+          gstAmount: true,
+          discountAmount: true,
+          finalAmount: true,
+          paymentStatus: true,
+          paymentMethod: true,
+          orderStatus: true,
+          courierName: true,
+          trackingId: true,
+          trackingUrl: true,
+          createdAt: true
+        }
+      }
+    }
+  });
+
+  if (!user) throw new ApiError(404, 'Customer account not found');
+
+  const { password, orders, referredBy, ...safe } = user;
+  const paidOrders = orders.filter(o => o.paymentStatus === 'paid');
+  const totalSpent = paidOrders.reduce((sum, o) => sum + o.finalAmount, 0.0);
+  const deliveredOrders = orders.filter(o => o.orderStatus === 'delivered').length;
+  const inProgressOrders = orders.filter(o => o.orderStatus === 'customizing' || o.orderStatus === 'shipped').length;
+
+  return res.json({
+    success: true,
+    user: {
+      ...safe,
+      stats: {
+        totalOrders: orders.length,
+        paidOrders: paidOrders.length,
+        deliveredOrders,
+        inProgressOrders,
+        totalSpent: parseFloat(totalSpent.toFixed(2))
+      },
+      referredBy: referredBy
+        ? {
+            id: referredBy.id,
+            name: referredBy.orgName || referredBy.name,
+            referralCode: referredBy.referralCode,
+            email: referredBy.email,
+            phone: referredBy.phone,
+            commissionPercent: referredBy.commissionPercent
+          }
+        : null,
+      orders
+    }
+  });
+});
+
+exports.updateUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { name, email, phone, status } = req.body;
+
+  const data = {};
+  if (name !== undefined) data.name = name.trim();
+  if (email !== undefined) data.email = email.toLowerCase().trim();
+  if (phone !== undefined) data.phone = phone.trim();
+  if (status !== undefined) data.status = status;
+
+  const updated = await prisma.user.update({
+    where: { id: parseInt(id) },
+    data
+  });
+
+  const { password, ...safe } = updated;
+  return res.json({ success: true, user: safe, message: 'Customer updated successfully' });
+});
+
+exports.deleteUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Preserve order history by unlinking user
+  await prisma.order.updateMany({
+    where: { userId: parseInt(id) },
+    data: { userId: null }
+  });
+
+  await prisma.user.delete({
+    where: { id: parseInt(id) }
+  });
+
+  return res.json({ success: true, message: 'Customer account deleted successfully' });
+});
+
 exports.getAllPayouts = asyncHandler(async (req, res) => {
   const payouts = await prisma.payout.findMany({
     orderBy: { requestedAt: 'desc' },

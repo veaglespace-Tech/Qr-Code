@@ -189,6 +189,25 @@ export const apiSlice = createApi({
       query: () => '/superadmin/users',
       providesTags: ['Superadmin', 'User'],
     }),
+    getUserById: builder.query({
+      query: (id) => `/superadmin/users/${id}`,
+      providesTags: (result, error, id) => [{ type: 'User', id }],
+    }),
+    updateUser: builder.mutation({
+      query: ({ id, ...patch }) => ({
+        url: `/superadmin/users/${id}`,
+        method: 'PUT',
+        body: patch,
+      }),
+      invalidatesTags: (result, error, { id }) => ['Superadmin', 'User', { type: 'User', id }],
+    }),
+    deleteUser: builder.mutation({
+      query: (id) => ({
+        url: `/superadmin/users/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Superadmin', 'User'],
+    }),
     getAllPayouts: builder.query({
       query: () => '/superadmin/payouts',
       providesTags: ['Payout', 'Superadmin'],
@@ -241,6 +260,9 @@ export const {
   useUpdateAdminMutation,
   useDeleteAdminMutation,
   useGetAllUsersQuery,
+  useGetUserByIdQuery,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
   useGetAllPayoutsQuery,
   useUpdatePayoutStatusMutation,
 } = apiSlice;

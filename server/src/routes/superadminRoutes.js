@@ -12,6 +12,9 @@ router.get('/admins/:id', superadminController.getAdminById);
 router.put('/admins/:id', superadminController.updateAdmin);
 router.delete('/admins/:id', superadminController.deleteAdmin);
 router.get('/users', superadminController.getAllUsers);
+router.get('/users/:id', superadminController.getUserById);
+router.put('/users/:id', superadminController.updateUser);
+router.delete('/users/:id', superadminController.deleteUser);
 router.get('/payouts', superadminController.getAllPayouts);
 router.put('/payouts/:id', superadminController.updatePayoutStatus);
 

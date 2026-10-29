@@ -94,9 +94,6 @@ export default function SuperadminDashboardPage() {
   const { data: usrData, isLoading: usrLoading, refetch: refetchUsr } = useGetAllUsersQuery();
   const { data: payData, isLoading: payLoading, refetch: refetchPay } = useGetAllPayoutsQuery();
 
-  // Customer detail drawer
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-
   const [updateSettings, { isLoading: isUpdatingSettings }] = useUpdateSettingsMutation();
   const [updateOrder, { isLoading: isUpdatingOrder }] = useUpdateOrderMutation();
   const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation();
@@ -1032,7 +1029,7 @@ export default function SuperadminDashboardPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-slate-900 text-base">Registered Customer Accounts</h3>
-                    <p className="text-xs text-slate-400">Directory of all client accounts with referral source, total spend, and order history.</p>
+                    <p className="text-xs text-slate-400">Click any customer row to view full profile, lifetime orders, and referral details.</p>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="font-bold px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
@@ -1048,115 +1045,6 @@ export default function SuperadminDashboardPage() {
                 </div>
               </div>
 
-              {/* Customer Click-to-Detail Drawer */}
-              {selectedCustomer && (
-                <div className="fixed inset-0 z-50 flex justify-end">
-                  <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedCustomer(null)} />
-                  <div className="relative z-10 w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col overflow-hidden">
-                    {/* Drawer Header */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md">
-                          {selectedCustomer.name?.charAt(0)?.toUpperCase() || 'C'}
-                        </div>
-                        <div>
-                          <h2 className="font-black text-slate-900 text-base">{selectedCustomer.name}</h2>
-                          <p className="text-xs text-slate-500">{selectedCustomer.email}</p>
-                        </div>
-                      </div>
-                      <button onClick={() => setSelectedCustomer(null)} className="p-2 rounded-xl hover:bg-slate-200 text-slate-500 transition-colors">
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                      {/* Customer Info */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-0.5">
-                          <span className="text-slate-400 text-[11px]">Phone</span>
-                          <p className="font-bold text-slate-900">{selectedCustomer.phone || 'Not provided'}</p>
-                        </div>
-                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-0.5">
-                          <span className="text-slate-400 text-[11px]">Member Since</span>
-                          <p className="font-bold text-slate-900">{new Date(selectedCustomer.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
-                        </div>
-                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-0.5">
-                          <span className="text-slate-400 text-[11px]">Total Orders</span>
-                          <p className="font-black text-slate-900 text-lg">{selectedCustomer.totalOrders}</p>
-                        </div>
-                        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs space-y-0.5">
-                          <span className="text-slate-400 text-[11px]">Total Spent</span>
-                          <p className="font-black text-emerald-700 text-lg">₹{selectedCustomer.totalSpent?.toLocaleString('en-IN')}</p>
-                        </div>
-                      </div>
-
-                      {/* Referral Source */}
-                      <div className={`p-4 rounded-xl border text-xs space-y-2 ${
-                        selectedCustomer.referredBy
-                          ? 'bg-amber-50 border-amber-200'
-                          : 'bg-slate-50 border-slate-200'
-                      }`}>
-                        <h4 className="font-black text-slate-900 flex items-center gap-2">
-                          {selectedCustomer.referredBy ? (
-                            <><Sparkles className="w-4 h-4 text-amber-500" /> Referred via Partner Program</>
-                          ) : (
-                            <><UserCheck className="w-4 h-4 text-slate-500" /> Direct Customer (No Referral)</>
-                          )}
-                        </h4>
-                        {selectedCustomer.referredBy ? (
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Partner Organization:</span>
-                              <span className="font-bold text-amber-800">{selectedCustomer.referredBy.name}</span>
-                            </div>
-                            {selectedCustomer.referredBy.referralCode && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-slate-500">Referral Code Used:</span>
-                                <span className="font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                                  {selectedCustomer.referredBy.referralCode}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-500">Partner Email:</span>
-                              <span className="font-bold text-slate-700">{selectedCustomer.referredBy.email}</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-slate-500">This customer registered or purchased without using any partner referral code.</p>
-                        )}
-                      </div>
-
-                      {/* Recent Orders */}
-                      {selectedCustomer.recentOrders?.length > 0 && (
-                        <div className="space-y-3">
-                          <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
-                            <Package className="w-4 h-4 text-purple-600" /> Recent Orders
-                          </h4>
-                          <div className="space-y-2">
-                            {selectedCustomer.recentOrders.map(o => (
-                              <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                                <div>
-                                  <p className="font-mono font-bold text-slate-900">{o.orderNumber}</p>
-                                  {o.businessName && <p className="text-[11px] text-purple-700">Engrave: {o.businessName}</p>}
-                                  <p className="text-[11px] text-slate-400">{new Date(o.createdAt).toLocaleDateString('en-IN')}</p>
-                                </div>
-                                <div className="text-right space-y-1">
-                                  <p className="font-black text-slate-900">₹{o.finalAmount}</p>
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                                    o.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                                  }`}>{o.paymentStatus}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
                 <table className="w-full text-left text-xs divide-y divide-slate-100">
                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
@@ -1167,7 +1055,7 @@ export default function SuperadminDashboardPage() {
                       <th className="py-3 px-4">Total Orders</th>
                       <th className="py-3 px-4">Total Spent</th>
                       <th className="py-3 px-4">Member Since</th>
-                      <th className="py-3 px-4 text-right">Details</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -1179,19 +1067,19 @@ export default function SuperadminDashboardPage() {
                       users.map(usr => (
                         <tr
                           key={usr.id}
-                          onClick={() => setSelectedCustomer(usr)}
-                          className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                          onClick={() => router.push(`/superadmin/customers/${usr.id}`)}
+                          className="hover:bg-purple-50/60 transition-colors cursor-pointer group"
                         >
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 shadow-xs">
                                 {usr.name?.charAt(0)?.toUpperCase() || 'C'}
                               </div>
-                              <p className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{usr.name}</p>
+                              <p className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">{usr.name}</p>
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            <p>{usr.email}</p>
+                            <p className="font-medium text-slate-800">{usr.email}</p>
                             <p className="text-[11px] text-slate-500">{usr.phone || '—'}</p>
                           </td>
                           <td className="py-3.5 px-4">
@@ -1199,7 +1087,7 @@ export default function SuperadminDashboardPage() {
                               <div className="space-y-0.5">
                                 <p className="font-bold text-amber-800">{usr.referredBy.name}</p>
                                 {usr.referredBy.referralCode && (
-                                  <span className="font-mono text-[11px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                                  <span className="font-mono text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
                                     {usr.referredBy.referralCode}
                                   </span>
                                 )}
@@ -1214,13 +1102,14 @@ export default function SuperadminDashboardPage() {
                             {new Date(usr.createdAt).toLocaleDateString('en-IN')}
                           </td>
                           <td className="py-3.5 px-4 text-right">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setSelectedCustomer(usr); }}
-                              className="px-2.5 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold text-[11px] flex items-center gap-1 ml-auto"
+                            <Link
+                              href={`/superadmin/customers/${usr.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-xs transition-colors"
                             >
                               <Eye className="w-3 h-3" />
-                              <span>View</span>
-                            </button>
+                              <span>View Page</span>
+                            </Link>
                           </td>
                         </tr>
                       ))

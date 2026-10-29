@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateLocalSettings } from '@/redux/slice/settingsSlice';
 import { logoutUser } from '@/redux/slice/authSlice';
@@ -75,6 +76,7 @@ import Link from 'next/link';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
 
 export default function SuperadminDashboardPage() {
+  const router = useRouter();
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
 
@@ -91,18 +93,6 @@ export default function SuperadminDashboardPage() {
   const { data: admData, isLoading: admLoading, refetch: refetchAdm } = useGetAllAdminsQuery();
   const { data: usrData, isLoading: usrLoading, refetch: refetchUsr } = useGetAllUsersQuery();
   const { data: payData, isLoading: payLoading, refetch: refetchPay } = useGetAllPayoutsQuery();
-
-  // Partner detail drawer
-  const [selectedPartnerId, setSelectedPartnerId] = useState(null);
-  const [partnerDrawerOpen, setPartnerDrawerOpen] = useState(false);
-  const { data: partnerDetailData, isLoading: partnerDetailLoading, refetch: refetchPartnerDetail } =
-    useGetAdminByIdQuery(selectedPartnerId, { skip: !selectedPartnerId });
-  const partnerDetail = partnerDetailData?.admin || null;
-
-  const [partnerEditForm, setPartnerEditForm] = useState({});
-  const [partnerEditMode, setPartnerEditMode] = useState(false);
-  const [partnerSaving, setPartnerSaving] = useState(false);
-  const [copiedField, setCopiedField] = useState('');
 
   // Customer detail drawer
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -148,37 +138,7 @@ export default function SuperadminDashboardPage() {
     }
   };
 
-  // Partner drawer handlers
-  const openPartnerDrawer = (partnerId) => {
-    setSelectedPartnerId(partnerId);
-    setPartnerDrawerOpen(true);
-    setPartnerEditMode(false);
-    setPartnerEditForm({});
-  };
-
-  const closePartnerDrawer = () => {
-    setPartnerDrawerOpen(false);
-    setSelectedPartnerId(null);
-    setPartnerEditMode(false);
-    setPartnerEditForm({});
-  };
-
-  const handlePartnerSave = async () => {
-    if (!partnerDetail) return;
-    setPartnerSaving(true);
-    try {
-      await updateAdmin({ id: partnerDetail.id, ...partnerEditForm }).unwrap();
-      triggerNotice('Partner details saved successfully!');
-      setPartnerEditMode(false);
-      refetchPartnerDetail();
-      refetchAdm();
-    } catch (err) {
-      triggerNotice(err?.data?.error || 'Failed to save partner details', true);
-    } finally {
-      setPartnerSaving(false);
-    }
-  };
-
+  // Quick Block/Unblock Partner from table
   const handleBlockUnblock = async (partner) => {
     const newStatus = partner.status === 'active' ? 'inactive' : 'active';
     const action = newStatus === 'inactive' ? 'block' : 'unblock';
@@ -187,28 +147,9 @@ export default function SuperadminDashboardPage() {
       await updateAdmin({ id: partner.id, status: newStatus }).unwrap();
       triggerNotice(`Partner ${action === 'block' ? 'blocked' : 'unblocked'} successfully.`);
       refetchAdm();
-      if (partnerDetail?.id === partner.id) refetchPartnerDetail();
     } catch (err) {
       triggerNotice('Failed to update partner status', true);
     }
-  };
-
-  const handleDeletePartner = async (partner) => {
-    if (!confirm(`⚠️ Permanently DELETE partner "${partner.orgName || partner.name}"? This cannot be undone.`)) return;
-    try {
-      await deleteAdmin(partner.id).unwrap();
-      triggerNotice('Partner account permanently deleted.');
-      closePartnerDrawer();
-      refetchAdm();
-    } catch (err) {
-      triggerNotice(err?.data?.error || 'Failed to delete partner', true);
-    }
-  };
-
-  const copyToClipboard = (text, key) => {
-    navigator?.clipboard?.writeText(text);
-    setCopiedField(key);
-    setTimeout(() => setCopiedField(''), 2000);
   };
 
   // Modals state
@@ -1049,7 +990,7 @@ export default function SuperadminDashboardPage() {
                       admins.map(adm => (
                         <tr
                           key={adm.id}
-                          onClick={() => openPartnerDrawer(adm.id)}
+                          onClick={() => router.push(`/superadmin/partners/${adm.id}`)}
                           className="hover:bg-purple-50/60 transition-colors cursor-pointer group"
                         >
                           <td className="py-3.5 px-4">
@@ -1077,13 +1018,14 @@ export default function SuperadminDashboardPage() {
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); openPartnerDrawer(adm.id); }}
-                                className="px-2.5 py-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-[11px] flex items-center gap-1"
+                              <Link
+                                href={`/superadmin/partners/${adm.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-xs transition-colors"
                               >
                                 <Eye className="w-3 h-3" />
-                                <span>Details</span>
-                              </button>
+                                <span>View Page</span>
+                              </Link>
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleBlockUnblock(adm); }}
                                 className={`px-2.5 py-1.5 rounded-lg font-bold text-[11px] flex items-center gap-1 ${
@@ -1893,313 +1835,6 @@ export default function SuperadminDashboardPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* =================== PARTNER DETAIL FULL DRAWER =================== */}
-      {partnerDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closePartnerDrawer} />
-          <div className="relative z-10 w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col overflow-hidden">
-
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-[#090d16]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-purple-600/30">
-                  {(partnerDetail?.orgName || partnerDetail?.name || 'P')?.charAt(0)?.toUpperCase()}
-                </div>
-                <div>
-                  <h2 className="font-black text-white text-base">
-                    {partnerDetail ? (partnerDetail.orgName || partnerDetail.name) : 'Loading...'}
-                  </h2>
-                  <p className="text-xs text-slate-400">Organization Partner — Full Profile</p>
-                </div>
-              </div>
-              <button onClick={closePartnerDrawer} className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Drawer Body */}
-            <div className="flex-1 overflow-y-auto">
-              {partnerDetailLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : partnerDetail ? (
-                <div className="p-6 space-y-6">
-
-                  {/* Status Badge & Quick Actions */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-xs font-bold px-3 py-1.5 rounded-full uppercase border ${
-                        partnerDetail.status === 'active'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-red-50 text-red-700 border-red-200'
-                      }`}>
-                        {partnerDetail.status === 'active' ? '● Active & Earning' : '● Account Blocked'}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        Joined {new Date(partnerDetail.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleBlockUnblock(partnerDetail)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-colors ${
-                          partnerDetail.status === 'active'
-                            ? 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
-                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
-                        }`}
-                      >
-                        {partnerDetail.status === 'active' ? <><UserX className="w-3.5 h-3.5" /> Block Partner</> : <><CheckCircle2 className="w-3.5 h-3.5" /> Unblock</>}
-                      </button>
-                      <button
-                        onClick={() => handleDeletePartner(partnerDetail)}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete Account
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* KPI Stats Strip */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      { label: 'Total Orders', value: partnerDetail.stats.totalOrders, color: 'text-slate-900', icon: Package },
-                      { label: 'Gross Revenue', value: `₹${partnerDetail.stats.totalSales.toLocaleString('en-IN')}`, color: 'text-emerald-700', icon: TrendingUp },
-                      { label: 'Commission Earned', value: `₹${partnerDetail.stats.totalCommission.toLocaleString('en-IN')}`, color: 'text-amber-700', icon: IndianRupee },
-                      { label: 'Wallet Balance', value: `₹${partnerDetail.stats.walletBalance.toLocaleString('en-IN')}`, color: 'text-purple-700', icon: CreditCard },
-                    ].map((kpi) => {
-                      const Icon = kpi.icon;
-                      return (
-                        <div key={kpi.label} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                          <div className="flex items-center justify-between text-slate-400">
-                            <span>{kpi.label}</span>
-                            <Icon className="w-3.5 h-3.5" />
-                          </div>
-                          <p className={`text-lg font-black ${kpi.color}`}>{kpi.value}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Edit Toggle */}
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black text-slate-900">Partner Profile Details</h3>
-                    {!partnerEditMode ? (
-                      <button
-                        onClick={() => {
-                          setPartnerEditMode(true);
-                          setPartnerEditForm({
-                            orgName: partnerDetail.orgName || '',
-                            name: partnerDetail.name || '',
-                            phone: partnerDetail.phone || '',
-                            commissionPercent: partnerDetail.commissionPercent || 15,
-                            upiId: partnerDetail.upiId || '',
-                            bankName: partnerDetail.bankName || '',
-                            bankAccount: partnerDetail.bankAccount || '',
-                            ifscCode: partnerDetail.ifscCode || '',
-                            bankHolder: partnerDetail.bankHolder || ''
-                          });
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5"
-                      >
-                        <Edit className="w-3.5 h-3.5" /> Edit Details
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => { setPartnerEditMode(false); setPartnerEditForm({}); }}
-                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handlePartnerSave}
-                          disabled={partnerSaving}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
-                        >
-                          {partnerSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                          Save Changes
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Profile Fields */}
-                  {!partnerEditMode ? (
-                    <div className="space-y-3">
-                      {/* View Mode */}
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        {[
-                          { label: 'Organization Name', value: partnerDetail.orgName || '—' },
-                          { label: 'Contact Person', value: partnerDetail.name },
-                          { label: 'Email Address', value: partnerDetail.email },
-                          { label: 'Phone', value: partnerDetail.phone || '—' },
-                          { label: 'Referral Code', value: partnerDetail.referralCode || '—', mono: true, copyable: true },
-                          { label: 'Commission Rate', value: `${partnerDetail.commissionPercent}%`, bold: true },
-                        ].map(field => (
-                          <div key={field.label} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                            <span className="text-slate-400 text-[11px] block mb-0.5">{field.label}</span>
-                            <div className="flex items-center justify-between">
-                              <span className={`${field.mono ? 'font-mono text-purple-700' : ''} ${field.bold ? 'font-black' : 'font-bold'} text-slate-900`}>
-                                {field.value}
-                              </span>
-                              {field.copyable && field.value !== '—' && (
-                                <button onClick={() => copyToClipboard(field.value, field.label)} className="p-1 rounded hover:bg-slate-200">
-                                  {copiedField === field.label ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Bank Details */}
-                      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-2">
-                        <h4 className="font-bold text-amber-900 flex items-center gap-1.5"><Banknote className="w-4 h-4" /> Payout Destination</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div><span className="text-slate-500">UPI ID:</span> <span className="font-bold font-mono text-emerald-700">{partnerDetail.upiId || '—'}</span></div>
-                          <div><span className="text-slate-500">Bank Name:</span> <span className="font-bold">{partnerDetail.bankName || '—'}</span></div>
-                          <div><span className="text-slate-500">Account No:</span> <span className="font-mono font-bold">{partnerDetail.bankAccount || '—'}</span></div>
-                          <div><span className="text-slate-500">IFSC Code:</span> <span className="font-mono font-bold">{partnerDetail.ifscCode || '—'}</span></div>
-                          <div className="col-span-2"><span className="text-slate-500">Account Holder:</span> <span className="font-bold">{partnerDetail.bankHolder || '—'}</span></div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Edit Mode */
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { key: 'orgName', label: 'Organization Name', type: 'text' },
-                          { key: 'name', label: 'Contact Person', type: 'text' },
-                          { key: 'phone', label: 'Phone Number', type: 'tel' },
-                          { key: 'commissionPercent', label: 'Commission %', type: 'number', min: 1, max: 50, step: 0.5 },
-                        ].map(field => (
-                          <div key={field.key}>
-                            <label className="block text-[11px] font-bold text-slate-700 mb-1">{field.label}</label>
-                            <input
-                              type={field.type}
-                              min={field.min}
-                              max={field.max}
-                              step={field.step}
-                              value={partnerEditForm[field.key] || ''}
-                              onChange={e => setPartnerEditForm(prev => ({ ...prev, [field.key]: e.target.value }))}
-                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-purple-500 focus:bg-white"
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200 space-y-3">
-                        <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5"><Banknote className="w-4 h-4" /> Bank &amp; UPI Payout Details</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {[
-                            { key: 'upiId', label: 'UPI ID (preferred)', placeholder: 'partner@upi' },
-                            { key: 'bankName', label: 'Bank Name', placeholder: 'State Bank of India' },
-                            { key: 'bankAccount', label: 'Account Number', placeholder: '12345678901' },
-                            { key: 'ifscCode', label: 'IFSC Code', placeholder: 'SBIN0001234' },
-                            { key: 'bankHolder', label: 'Account Holder Name', placeholder: 'Full legal name', span: 'col-span-2' },
-                          ].map(field => (
-                            <div key={field.key} className={field.span || ''}>
-                              <label className="block text-[11px] font-bold text-slate-700 mb-1">{field.label}</label>
-                              <input
-                                type="text"
-                                value={partnerEditForm[field.key] || ''}
-                                onChange={e => setPartnerEditForm(prev => ({ ...prev, [field.key]: e.target.value }))}
-                                placeholder={field.placeholder}
-                                className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-amber-400"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Referred Orders History */}
-                  {partnerDetail.referredOrders?.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                        <Package className="w-4 h-4 text-purple-600" />
-                        Referred Customer Orders ({partnerDetail.referredOrders.length})
-                      </h4>
-                      <div className="overflow-x-auto rounded-xl border border-slate-200">
-                        <table className="w-full text-left text-xs divide-y divide-slate-100">
-                          <thead className="bg-slate-50 text-slate-500 font-bold uppercase">
-                            <tr>
-                              <th className="py-2 px-3">Order #</th>
-                              <th className="py-2 px-3">Customer</th>
-                              <th className="py-2 px-3">Amount</th>
-                              <th className="py-2 px-3">Commission</th>
-                              <th className="py-2 px-3">Status</th>
-                              <th className="py-2 px-3">Date</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {partnerDetail.referredOrders.map(o => (
-                              <tr key={o.id} className="hover:bg-slate-50">
-                                <td className="py-2.5 px-3 font-mono font-bold text-slate-900">{o.orderNumber}</td>
-                                <td className="py-2.5 px-3">
-                                  <p className="font-bold">{o.customerName}</p>
-                                  {o.businessName && <p className="text-[10px] text-purple-600">{o.businessName}</p>}
-                                </td>
-                                <td className="py-2.5 px-3 font-bold">₹{o.finalAmount}</td>
-                                <td className="py-2.5 px-3 font-black text-amber-700">
-                                  ₹{o.adminCommissionAmount} <span className="text-slate-400 font-normal">({o.adminCommissionPercent}%)</span>
-                                </td>
-                                <td className="py-2.5 px-3">
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                                    o.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                                  }`}>{o.paymentStatus}</span>
-                                </td>
-                                <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
-                                  {new Date(o.createdAt).toLocaleDateString('en-IN')}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Payout History */}
-                  {partnerDetail.payouts?.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                        <IndianRupee className="w-4 h-4 text-amber-600" />
-                        Withdrawal Requests ({partnerDetail.payouts.length})
-                      </h4>
-                      <div className="space-y-2">
-                        {partnerDetail.payouts.map(p => (
-                          <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                            <div>
-                              <p className="font-black text-slate-900">₹{p.amount}</p>
-                              <p className="text-[11px] text-slate-400">{new Date(p.requestedAt).toLocaleDateString('en-IN')}</p>
-                              {p.paymentRef && <p className="font-mono text-[11px] text-emerald-700">UTR: {p.paymentRef}</p>}
-                            </div>
-                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${
-                              p.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                              p.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                              'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}>{p.status}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full text-slate-400 text-sm">
-                  Partner not found.
-                </div>
-              )}
-            </div>
           </div>
         </div>
       )}

@@ -76,13 +76,23 @@ exports.getAdminById = asyncHandler(async (req, res) => {
           requestedAt: true,
           processedAt: true
         }
+      },
+      referredUsers: {
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          createdAt: true
+        }
       }
     }
   });
 
   if (!admin) throw new ApiError(404, 'Partner not found');
 
-  const { password, referredOrders, payouts, ...safe } = admin;
+  const { password, referredOrders, payouts, referredUsers, ...safe } = admin;
   const paidOrders = referredOrders.filter(o => o.paymentStatus === 'paid');
   const totalSales = paidOrders.reduce((sum, o) => sum + o.subtotal, 0.0);
   const totalCommission = paidOrders.reduce((sum, o) => sum + o.adminCommissionAmount, 0.0);
@@ -104,9 +114,11 @@ exports.getAdminById = asyncHandler(async (req, res) => {
         totalCommission: parseFloat(totalCommission.toFixed(2)),
         pendingCommission: parseFloat(pendingCommission.toFixed(2)),
         totalPaidOut: parseFloat(totalPaidOut.toFixed(2)),
-        walletBalance: parseFloat((totalCommission - totalPaidOut).toFixed(2))
+        walletBalance: parseFloat((totalCommission - totalPaidOut).toFixed(2)),
+        customersCount: referredUsers.length
       },
       referredOrders,
+      referredUsers,
       payouts
     }
   });
@@ -165,24 +177,29 @@ exports.getAllAdmins = asyncHandler(async (req, res) => {
 exports.updateAdmin = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const {
-    commissionPercent, status, orgName, name, phone,
+    commissionPercent, status, orgName, name, phone, email, referralCode,
     upiId, bankName, bankAccount, ifscCode, bankHolder
   } = req.body;
 
+  const data = {
+    commissionPercent: commissionPercent !== undefined ? parseFloat(commissionPercent) : undefined,
+    status: status !== undefined ? status : undefined,
+    orgName: orgName !== undefined ? orgName : undefined,
+    name: name !== undefined ? name : undefined,
+    phone: phone !== undefined ? phone : undefined,
+    upiId: upiId !== undefined ? upiId : undefined,
+    bankName: bankName !== undefined ? bankName : undefined,
+    bankAccount: bankAccount !== undefined ? bankAccount : undefined,
+    ifscCode: ifscCode !== undefined ? ifscCode : undefined,
+    bankHolder: bankHolder !== undefined ? bankHolder : undefined
+  };
+
+  if (email) data.email = email.toLowerCase().trim();
+  if (referralCode) data.referralCode = referralCode.toUpperCase().trim();
+
   const updated = await prisma.user.update({
     where: { id: parseInt(id) },
-    data: {
-      commissionPercent: commissionPercent !== undefined ? parseFloat(commissionPercent) : undefined,
-      status: status !== undefined ? status : undefined,
-      orgName: orgName !== undefined ? orgName : undefined,
-      name: name !== undefined ? name : undefined,
-      phone: phone !== undefined ? phone : undefined,
-      upiId: upiId !== undefined ? upiId : undefined,
-      bankName: bankName !== undefined ? bankName : undefined,
-      bankAccount: bankAccount !== undefined ? bankAccount : undefined,
-      ifscCode: ifscCode !== undefined ? ifscCode : undefined,
-      bankHolder: bankHolder !== undefined ? bankHolder : undefined
-    }
+    data
   });
 
   const { password, ...safe } = updated;

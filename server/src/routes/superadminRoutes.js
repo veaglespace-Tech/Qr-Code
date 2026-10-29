@@ -8,7 +8,9 @@ router.use(authorize('SUPERADMIN'));
 
 router.get('/analytics', superadminController.getAnalytics);
 router.get('/admins', superadminController.getAllAdmins);
+router.get('/admins/:id', superadminController.getAdminById);
 router.put('/admins/:id', superadminController.updateAdmin);
+router.delete('/admins/:id', superadminController.deleteAdmin);
 router.get('/users', superadminController.getAllUsers);
 router.get('/payouts', superadminController.getAllPayouts);
 router.put('/payouts/:id', superadminController.updatePayoutStatus);

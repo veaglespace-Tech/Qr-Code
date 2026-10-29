@@ -10,6 +10,7 @@ import {
   useGetProductsQuery,
   useGetSettingsQuery,
   useGetAllAdminsQuery,
+  useGetAdminByIdQuery,
   useGetAllUsersQuery,
   useGetAllPayoutsQuery,
   useUpdateSettingsMutation,
@@ -19,6 +20,7 @@ import {
   useDeleteProductMutation,
   useUploadProductImageMutation,
   useUpdateAdminMutation,
+  useDeleteAdminMutation,
   useUpdatePayoutStatusMutation
 } from '@/redux/api/apiSlice';
 import {
@@ -56,7 +58,18 @@ import {
   Sliders,
   ChevronRight,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Lock,
+  Unlock,
+  Phone,
+  Mail,
+  MapPin,
+  Copy,
+  Check,
+  ArrowLeft,
+  Banknote,
+  TrendingDown,
+  UserX
 } from 'lucide-react';
 import Link from 'next/link';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
@@ -79,6 +92,21 @@ export default function SuperadminDashboardPage() {
   const { data: usrData, isLoading: usrLoading, refetch: refetchUsr } = useGetAllUsersQuery();
   const { data: payData, isLoading: payLoading, refetch: refetchPay } = useGetAllPayoutsQuery();
 
+  // Partner detail drawer
+  const [selectedPartnerId, setSelectedPartnerId] = useState(null);
+  const [partnerDrawerOpen, setPartnerDrawerOpen] = useState(false);
+  const { data: partnerDetailData, isLoading: partnerDetailLoading, refetch: refetchPartnerDetail } =
+    useGetAdminByIdQuery(selectedPartnerId, { skip: !selectedPartnerId });
+  const partnerDetail = partnerDetailData?.admin || null;
+
+  const [partnerEditForm, setPartnerEditForm] = useState({});
+  const [partnerEditMode, setPartnerEditMode] = useState(false);
+  const [partnerSaving, setPartnerSaving] = useState(false);
+  const [copiedField, setCopiedField] = useState('');
+
+  // Customer detail drawer
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
   const [updateSettings, { isLoading: isUpdatingSettings }] = useUpdateSettingsMutation();
   const [updateOrder, { isLoading: isUpdatingOrder }] = useUpdateOrderMutation();
   const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation();
@@ -86,6 +114,7 @@ export default function SuperadminDashboardPage() {
   const [deleteProduct] = useDeleteProductMutation();
   const [uploadProductImage] = useUploadProductImageMutation();
   const [updateAdmin] = useUpdateAdminMutation();
+  const [deleteAdmin] = useDeleteAdminMutation();
   const [updatePayoutStatus] = useUpdatePayoutStatusMutation();
 
   const analytics = anaData?.analytics || null;
@@ -117,6 +146,69 @@ export default function SuperadminDashboardPage() {
       setStatusMsg(msg);
       setTimeout(() => setStatusMsg(''), 4000);
     }
+  };
+
+  // Partner drawer handlers
+  const openPartnerDrawer = (partnerId) => {
+    setSelectedPartnerId(partnerId);
+    setPartnerDrawerOpen(true);
+    setPartnerEditMode(false);
+    setPartnerEditForm({});
+  };
+
+  const closePartnerDrawer = () => {
+    setPartnerDrawerOpen(false);
+    setSelectedPartnerId(null);
+    setPartnerEditMode(false);
+    setPartnerEditForm({});
+  };
+
+  const handlePartnerSave = async () => {
+    if (!partnerDetail) return;
+    setPartnerSaving(true);
+    try {
+      await updateAdmin({ id: partnerDetail.id, ...partnerEditForm }).unwrap();
+      triggerNotice('Partner details saved successfully!');
+      setPartnerEditMode(false);
+      refetchPartnerDetail();
+      refetchAdm();
+    } catch (err) {
+      triggerNotice(err?.data?.error || 'Failed to save partner details', true);
+    } finally {
+      setPartnerSaving(false);
+    }
+  };
+
+  const handleBlockUnblock = async (partner) => {
+    const newStatus = partner.status === 'active' ? 'inactive' : 'active';
+    const action = newStatus === 'inactive' ? 'block' : 'unblock';
+    if (!confirm(`Are you sure you want to ${action} partner "${partner.orgName || partner.name}"?`)) return;
+    try {
+      await updateAdmin({ id: partner.id, status: newStatus }).unwrap();
+      triggerNotice(`Partner ${action === 'block' ? 'blocked' : 'unblocked'} successfully.`);
+      refetchAdm();
+      if (partnerDetail?.id === partner.id) refetchPartnerDetail();
+    } catch (err) {
+      triggerNotice('Failed to update partner status', true);
+    }
+  };
+
+  const handleDeletePartner = async (partner) => {
+    if (!confirm(`⚠️ Permanently DELETE partner "${partner.orgName || partner.name}"? This cannot be undone.`)) return;
+    try {
+      await deleteAdmin(partner.id).unwrap();
+      triggerNotice('Partner account permanently deleted.');
+      closePartnerDrawer();
+      refetchAdm();
+    } catch (err) {
+      triggerNotice(err?.data?.error || 'Failed to delete partner', true);
+    }
+  };
+
+  const copyToClipboard = (text, key) => {
+    navigator?.clipboard?.writeText(text);
+    setCopiedField(key);
+    setTimeout(() => setCopiedField(''), 2000);
   };
 
   // Modals state
@@ -916,58 +1008,97 @@ export default function SuperadminDashboardPage() {
 
           {/* ================= TAB 4: PARTNER ADMINS ================= */}
           {activeTab === 'admins' && (
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">Affiliate Organizations &amp; Marketing Partners</h3>
-                <p className="text-xs text-slate-400">Manage partner commission percentages, referrals, and earnings.</p>
+            <div className="space-y-5">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base">Affiliate Organizations &amp; Marketing Partners</h3>
+                    <p className="text-xs text-slate-400">Click any partner row to view full details, edit, block/unblock, or delete.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
+                      {admins.length} Active Partners
+                    </span>
+                    <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+                      {admins.filter(a => a.status === 'inactive').length} Blocked
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
                 <table className="w-full text-left text-xs divide-y divide-slate-100">
-                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
                     <tr>
                       <th className="py-3 px-4">Organization / Contact</th>
                       <th className="py-3 px-4">Referral Code</th>
                       <th className="py-3 px-4">Commission %</th>
-                      <th className="py-3 px-4">Sales Referred</th>
+                      <th className="py-3 px-4">Orders</th>
                       <th className="py-3 px-4">Gross Revenue</th>
                       <th className="py-3 px-4">Commission Earned</th>
-                      <th className="py-3 px-4">Payout Destination</th>
-                      <th className="py-3 px-4 text-right">Action</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {admins.map(adm => (
-                      <tr key={adm.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3.5 px-4">
-                          <p className="font-bold text-slate-900">{adm.orgName || adm.name}</p>
-                          <p className="text-[11px] text-slate-500">{adm.email} • {adm.phone}</p>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-purple-700">{adm.referralCode}</td>
-                        <td className="py-3.5 px-4 font-black text-slate-900">{adm.commissionPercent}%</td>
-                        <td className="py-3.5 px-4">{adm.stats?.paidOrders || 0} Orders</td>
-                        <td className="py-3.5 px-4 font-bold text-slate-900">₹{adm.stats?.totalSales || 0}</td>
-                        <td className="py-3.5 px-4 font-black text-amber-700">₹{adm.stats?.totalCommission || 0}</td>
-                        <td className="py-3.5 px-4 text-[11px]">
-                          {adm.upiId ? (
-                            <span className="font-mono text-emerald-700 font-bold">UPI: {adm.upiId}</span>
-                          ) : (
-                            <span>{adm.bankAccount ? `A/C: ${adm.bankAccount}` : 'Not set'}</span>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={() => {
-                              setEditingAdmin(adm);
-                              setAdminCommissionInput(adm.commissionPercent || 15);
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[11px]"
-                          >
-                            Adjust Rate %
-                          </button>
-                        </td>
+                    {admins.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-12 text-center text-slate-400">No partner organizations registered yet.</td>
                       </tr>
-                    ))}
+                    ) : (
+                      admins.map(adm => (
+                        <tr
+                          key={adm.id}
+                          onClick={() => openPartnerDrawer(adm.id)}
+                          className="hover:bg-purple-50/60 transition-colors cursor-pointer group"
+                        >
+                          <td className="py-3.5 px-4">
+                            <p className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">{adm.orgName || adm.name}</p>
+                            <p className="text-[11px] text-slate-500">{adm.email}</p>
+                            {adm.phone && <p className="text-[11px] text-slate-400">{adm.phone}</p>}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                              {adm.referralCode}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-black text-slate-900">{adm.commissionPercent}%</td>
+                          <td className="py-3.5 px-4 font-bold">{adm.stats?.paidOrders || 0} paid</td>
+                          <td className="py-3.5 px-4 font-bold text-slate-900">₹{adm.stats?.totalSales || 0}</td>
+                          <td className="py-3.5 px-4 font-black text-amber-700">₹{adm.stats?.totalCommission || 0}</td>
+                          <td className="py-3.5 px-4">
+                            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${
+                              adm.status === 'active'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-red-50 text-red-700 border-red-200'
+                            }`}>
+                              {adm.status === 'active' ? '● Active' : '● Blocked'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); openPartnerDrawer(adm.id); }}
+                                className="px-2.5 py-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-[11px] flex items-center gap-1"
+                              >
+                                <Eye className="w-3 h-3" />
+                                <span>Details</span>
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleBlockUnblock(adm); }}
+                                className={`px-2.5 py-1.5 rounded-lg font-bold text-[11px] flex items-center gap-1 ${
+                                  adm.status === 'active'
+                                    ? 'bg-red-50 hover:bg-red-100 text-red-700'
+                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
+                                }`}
+                              >
+                                {adm.status === 'active' ? 'Block' : 'Unblock'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -976,40 +1107,204 @@ export default function SuperadminDashboardPage() {
 
           {/* ================= TAB 5: CUSTOMER DIRECTORY ================= */}
           {activeTab === 'users' && (
-            <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">Registered Customer Accounts</h3>
-                <p className="text-xs text-slate-400">Directory of all client accounts and total lifetime spend.</p>
+            <div className="space-y-5">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base">Registered Customer Accounts</h3>
+                    <p className="text-xs text-slate-400">Directory of all client accounts with referral source, total spend, and order history.</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-bold px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
+                      {users.length} Total Customers
+                    </span>
+                    <span className="font-bold px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+                      {users.filter(u => u.referredBy).length} via Partners
+                    </span>
+                    <span className="font-bold px-3 py-1.5 rounded-xl bg-slate-50 text-slate-700 border border-slate-200">
+                      {users.filter(u => !u.referredBy).length} Direct
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
+              {/* Customer Click-to-Detail Drawer */}
+              {selectedCustomer && (
+                <div className="fixed inset-0 z-50 flex justify-end">
+                  <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedCustomer(null)} />
+                  <div className="relative z-10 w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col overflow-hidden">
+                    {/* Drawer Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md">
+                          {selectedCustomer.name?.charAt(0)?.toUpperCase() || 'C'}
+                        </div>
+                        <div>
+                          <h2 className="font-black text-slate-900 text-base">{selectedCustomer.name}</h2>
+                          <p className="text-xs text-slate-500">{selectedCustomer.email}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setSelectedCustomer(null)} className="p-2 rounded-xl hover:bg-slate-200 text-slate-500 transition-colors">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      {/* Customer Info */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-0.5">
+                          <span className="text-slate-400 text-[11px]">Phone</span>
+                          <p className="font-bold text-slate-900">{selectedCustomer.phone || 'Not provided'}</p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-0.5">
+                          <span className="text-slate-400 text-[11px]">Member Since</span>
+                          <p className="font-bold text-slate-900">{new Date(selectedCustomer.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-0.5">
+                          <span className="text-slate-400 text-[11px]">Total Orders</span>
+                          <p className="font-black text-slate-900 text-lg">{selectedCustomer.totalOrders}</p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs space-y-0.5">
+                          <span className="text-slate-400 text-[11px]">Total Spent</span>
+                          <p className="font-black text-emerald-700 text-lg">₹{selectedCustomer.totalSpent?.toLocaleString('en-IN')}</p>
+                        </div>
+                      </div>
+
+                      {/* Referral Source */}
+                      <div className={`p-4 rounded-xl border text-xs space-y-2 ${
+                        selectedCustomer.referredBy
+                          ? 'bg-amber-50 border-amber-200'
+                          : 'bg-slate-50 border-slate-200'
+                      }`}>
+                        <h4 className="font-black text-slate-900 flex items-center gap-2">
+                          {selectedCustomer.referredBy ? (
+                            <><Sparkles className="w-4 h-4 text-amber-500" /> Referred via Partner Program</>
+                          ) : (
+                            <><UserCheck className="w-4 h-4 text-slate-500" /> Direct Customer (No Referral)</>
+                          )}
+                        </h4>
+                        {selectedCustomer.referredBy ? (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Partner Organization:</span>
+                              <span className="font-bold text-amber-800">{selectedCustomer.referredBy.name}</span>
+                            </div>
+                            {selectedCustomer.referredBy.referralCode && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-500">Referral Code Used:</span>
+                                <span className="font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                                  {selectedCustomer.referredBy.referralCode}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Partner Email:</span>
+                              <span className="font-bold text-slate-700">{selectedCustomer.referredBy.email}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-slate-500">This customer registered or purchased without using any partner referral code.</p>
+                        )}
+                      </div>
+
+                      {/* Recent Orders */}
+                      {selectedCustomer.recentOrders?.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
+                            <Package className="w-4 h-4 text-purple-600" /> Recent Orders
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedCustomer.recentOrders.map(o => (
+                              <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                                <div>
+                                  <p className="font-mono font-bold text-slate-900">{o.orderNumber}</p>
+                                  {o.businessName && <p className="text-[11px] text-purple-700">Engrave: {o.businessName}</p>}
+                                  <p className="text-[11px] text-slate-400">{new Date(o.createdAt).toLocaleDateString('en-IN')}</p>
+                                </div>
+                                <div className="text-right space-y-1">
+                                  <p className="font-black text-slate-900">₹{o.finalAmount}</p>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                                    o.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                  }`}>{o.paymentStatus}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
                 <table className="w-full text-left text-xs divide-y divide-slate-100">
-                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
                     <tr>
-                      <th className="py-3 px-4">Customer Name</th>
-                      <th className="py-3 px-4">Contact Info</th>
-                      <th className="py-3 px-4">Referred By</th>
+                      <th className="py-3 px-4">Customer</th>
+                      <th className="py-3 px-4">Contact</th>
+                      <th className="py-3 px-4">Referred By (Partner / Code)</th>
                       <th className="py-3 px-4">Total Orders</th>
                       <th className="py-3 px-4">Total Spent</th>
                       <th className="py-3 px-4">Member Since</th>
+                      <th className="py-3 px-4 text-right">Details</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {users.map(usr => (
-                      <tr key={usr.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-slate-900">{usr.name}</td>
-                        <td className="py-3.5 px-4">
-                          <p>{usr.email}</p>
-                          <p className="text-[11px] text-slate-500">{usr.phone || 'No phone'}</p>
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-amber-800">{usr.referredBy || 'Direct'}</td>
-                        <td className="py-3.5 px-4 font-bold">{usr.totalOrders}</td>
-                        <td className="py-3.5 px-4 font-black text-emerald-700">₹{usr.totalSpent}</td>
-                        <td className="py-3.5 px-4 text-slate-500">
-                          {new Date(usr.createdAt).toLocaleDateString('en-IN')}
-                        </td>
+                    {users.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-12 text-center text-slate-400">No customer accounts found.</td>
                       </tr>
-                    ))}
+                    ) : (
+                      users.map(usr => (
+                        <tr
+                          key={usr.id}
+                          onClick={() => setSelectedCustomer(usr)}
+                          className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                        >
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                                {usr.name?.charAt(0)?.toUpperCase() || 'C'}
+                              </div>
+                              <p className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{usr.name}</p>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <p>{usr.email}</p>
+                            <p className="text-[11px] text-slate-500">{usr.phone || '—'}</p>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {usr.referredBy ? (
+                              <div className="space-y-0.5">
+                                <p className="font-bold text-amber-800">{usr.referredBy.name}</p>
+                                {usr.referredBy.referralCode && (
+                                  <span className="font-mono text-[11px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                                    {usr.referredBy.referralCode}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-[11px]">Direct / Organic</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold">{usr.totalOrders}</td>
+                          <td className="py-3.5 px-4 font-black text-emerald-700">₹{usr.totalSpent}</td>
+                          <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                            {new Date(usr.createdAt).toLocaleDateString('en-IN')}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedCustomer(usr); }}
+                              className="px-2.5 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold text-[11px] flex items-center gap-1 ml-auto"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>View</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1598,6 +1893,313 @@ export default function SuperadminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================== PARTNER DETAIL FULL DRAWER =================== */}
+      {partnerDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closePartnerDrawer} />
+          <div className="relative z-10 w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col overflow-hidden">
+
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-[#090d16]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md shadow-purple-600/30">
+                  {(partnerDetail?.orgName || partnerDetail?.name || 'P')?.charAt(0)?.toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="font-black text-white text-base">
+                    {partnerDetail ? (partnerDetail.orgName || partnerDetail.name) : 'Loading...'}
+                  </h2>
+                  <p className="text-xs text-slate-400">Organization Partner — Full Profile</p>
+                </div>
+              </div>
+              <button onClick={closePartnerDrawer} className="p-2 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Body */}
+            <div className="flex-1 overflow-y-auto">
+              {partnerDetailLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : partnerDetail ? (
+                <div className="p-6 space-y-6">
+
+                  {/* Status Badge & Quick Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs font-bold px-3 py-1.5 rounded-full uppercase border ${
+                        partnerDetail.status === 'active'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-red-50 text-red-700 border-red-200'
+                      }`}>
+                        {partnerDetail.status === 'active' ? '● Active & Earning' : '● Account Blocked'}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Joined {new Date(partnerDetail.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleBlockUnblock(partnerDetail)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-colors ${
+                          partnerDetail.status === 'active'
+                            ? 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
+                            : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                        }`}
+                      >
+                        {partnerDetail.status === 'active' ? <><UserX className="w-3.5 h-3.5" /> Block Partner</> : <><CheckCircle2 className="w-3.5 h-3.5" /> Unblock</>}
+                      </button>
+                      <button
+                        onClick={() => handleDeletePartner(partnerDetail)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete Account
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* KPI Stats Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { label: 'Total Orders', value: partnerDetail.stats.totalOrders, color: 'text-slate-900', icon: Package },
+                      { label: 'Gross Revenue', value: `₹${partnerDetail.stats.totalSales.toLocaleString('en-IN')}`, color: 'text-emerald-700', icon: TrendingUp },
+                      { label: 'Commission Earned', value: `₹${partnerDetail.stats.totalCommission.toLocaleString('en-IN')}`, color: 'text-amber-700', icon: IndianRupee },
+                      { label: 'Wallet Balance', value: `₹${partnerDetail.stats.walletBalance.toLocaleString('en-IN')}`, color: 'text-purple-700', icon: CreditCard },
+                    ].map((kpi) => {
+                      const Icon = kpi.icon;
+                      return (
+                        <div key={kpi.label} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                          <div className="flex items-center justify-between text-slate-400">
+                            <span>{kpi.label}</span>
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <p className={`text-lg font-black ${kpi.color}`}>{kpi.value}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Edit Toggle */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black text-slate-900">Partner Profile Details</h3>
+                    {!partnerEditMode ? (
+                      <button
+                        onClick={() => {
+                          setPartnerEditMode(true);
+                          setPartnerEditForm({
+                            orgName: partnerDetail.orgName || '',
+                            name: partnerDetail.name || '',
+                            phone: partnerDetail.phone || '',
+                            commissionPercent: partnerDetail.commissionPercent || 15,
+                            upiId: partnerDetail.upiId || '',
+                            bankName: partnerDetail.bankName || '',
+                            bankAccount: partnerDetail.bankAccount || '',
+                            ifscCode: partnerDetail.ifscCode || '',
+                            bankHolder: partnerDetail.bankHolder || ''
+                          });
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5"
+                      >
+                        <Edit className="w-3.5 h-3.5" /> Edit Details
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => { setPartnerEditMode(false); setPartnerEditForm({}); }}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handlePartnerSave}
+                          disabled={partnerSaving}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          {partnerSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                          Save Changes
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Profile Fields */}
+                  {!partnerEditMode ? (
+                    <div className="space-y-3">
+                      {/* View Mode */}
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        {[
+                          { label: 'Organization Name', value: partnerDetail.orgName || '—' },
+                          { label: 'Contact Person', value: partnerDetail.name },
+                          { label: 'Email Address', value: partnerDetail.email },
+                          { label: 'Phone', value: partnerDetail.phone || '—' },
+                          { label: 'Referral Code', value: partnerDetail.referralCode || '—', mono: true, copyable: true },
+                          { label: 'Commission Rate', value: `${partnerDetail.commissionPercent}%`, bold: true },
+                        ].map(field => (
+                          <div key={field.label} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <span className="text-slate-400 text-[11px] block mb-0.5">{field.label}</span>
+                            <div className="flex items-center justify-between">
+                              <span className={`${field.mono ? 'font-mono text-purple-700' : ''} ${field.bold ? 'font-black' : 'font-bold'} text-slate-900`}>
+                                {field.value}
+                              </span>
+                              {field.copyable && field.value !== '—' && (
+                                <button onClick={() => copyToClipboard(field.value, field.label)} className="p-1 rounded hover:bg-slate-200">
+                                  {copiedField === field.label ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Bank Details */}
+                      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-2">
+                        <h4 className="font-bold text-amber-900 flex items-center gap-1.5"><Banknote className="w-4 h-4" /> Payout Destination</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div><span className="text-slate-500">UPI ID:</span> <span className="font-bold font-mono text-emerald-700">{partnerDetail.upiId || '—'}</span></div>
+                          <div><span className="text-slate-500">Bank Name:</span> <span className="font-bold">{partnerDetail.bankName || '—'}</span></div>
+                          <div><span className="text-slate-500">Account No:</span> <span className="font-mono font-bold">{partnerDetail.bankAccount || '—'}</span></div>
+                          <div><span className="text-slate-500">IFSC Code:</span> <span className="font-mono font-bold">{partnerDetail.ifscCode || '—'}</span></div>
+                          <div className="col-span-2"><span className="text-slate-500">Account Holder:</span> <span className="font-bold">{partnerDetail.bankHolder || '—'}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Edit Mode */
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { key: 'orgName', label: 'Organization Name', type: 'text' },
+                          { key: 'name', label: 'Contact Person', type: 'text' },
+                          { key: 'phone', label: 'Phone Number', type: 'tel' },
+                          { key: 'commissionPercent', label: 'Commission %', type: 'number', min: 1, max: 50, step: 0.5 },
+                        ].map(field => (
+                          <div key={field.key}>
+                            <label className="block text-[11px] font-bold text-slate-700 mb-1">{field.label}</label>
+                            <input
+                              type={field.type}
+                              min={field.min}
+                              max={field.max}
+                              step={field.step}
+                              value={partnerEditForm[field.key] || ''}
+                              onChange={e => setPartnerEditForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-purple-500 focus:bg-white"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200 space-y-3">
+                        <h4 className="text-xs font-bold text-amber-900 flex items-center gap-1.5"><Banknote className="w-4 h-4" /> Bank &amp; UPI Payout Details</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { key: 'upiId', label: 'UPI ID (preferred)', placeholder: 'partner@upi' },
+                            { key: 'bankName', label: 'Bank Name', placeholder: 'State Bank of India' },
+                            { key: 'bankAccount', label: 'Account Number', placeholder: '12345678901' },
+                            { key: 'ifscCode', label: 'IFSC Code', placeholder: 'SBIN0001234' },
+                            { key: 'bankHolder', label: 'Account Holder Name', placeholder: 'Full legal name', span: 'col-span-2' },
+                          ].map(field => (
+                            <div key={field.key} className={field.span || ''}>
+                              <label className="block text-[11px] font-bold text-slate-700 mb-1">{field.label}</label>
+                              <input
+                                type="text"
+                                value={partnerEditForm[field.key] || ''}
+                                onChange={e => setPartnerEditForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                placeholder={field.placeholder}
+                                className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-amber-400"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Referred Orders History */}
+                  {partnerDetail.referredOrders?.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <Package className="w-4 h-4 text-purple-600" />
+                        Referred Customer Orders ({partnerDetail.referredOrders.length})
+                      </h4>
+                      <div className="overflow-x-auto rounded-xl border border-slate-200">
+                        <table className="w-full text-left text-xs divide-y divide-slate-100">
+                          <thead className="bg-slate-50 text-slate-500 font-bold uppercase">
+                            <tr>
+                              <th className="py-2 px-3">Order #</th>
+                              <th className="py-2 px-3">Customer</th>
+                              <th className="py-2 px-3">Amount</th>
+                              <th className="py-2 px-3">Commission</th>
+                              <th className="py-2 px-3">Status</th>
+                              <th className="py-2 px-3">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {partnerDetail.referredOrders.map(o => (
+                              <tr key={o.id} className="hover:bg-slate-50">
+                                <td className="py-2.5 px-3 font-mono font-bold text-slate-900">{o.orderNumber}</td>
+                                <td className="py-2.5 px-3">
+                                  <p className="font-bold">{o.customerName}</p>
+                                  {o.businessName && <p className="text-[10px] text-purple-600">{o.businessName}</p>}
+                                </td>
+                                <td className="py-2.5 px-3 font-bold">₹{o.finalAmount}</td>
+                                <td className="py-2.5 px-3 font-black text-amber-700">
+                                  ₹{o.adminCommissionAmount} <span className="text-slate-400 font-normal">({o.adminCommissionPercent}%)</span>
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                                    o.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                  }`}>{o.paymentStatus}</span>
+                                </td>
+                                <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
+                                  {new Date(o.createdAt).toLocaleDateString('en-IN')}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payout History */}
+                  {partnerDetail.payouts?.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <IndianRupee className="w-4 h-4 text-amber-600" />
+                        Withdrawal Requests ({partnerDetail.payouts.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {partnerDetail.payouts.map(p => (
+                          <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                            <div>
+                              <p className="font-black text-slate-900">₹{p.amount}</p>
+                              <p className="text-[11px] text-slate-400">{new Date(p.requestedAt).toLocaleDateString('en-IN')}</p>
+                              {p.paymentRef && <p className="font-mono text-[11px] text-emerald-700">UTR: {p.paymentRef}</p>}
+                            </div>
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${
+                              p.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              p.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}>{p.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                  Partner not found.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

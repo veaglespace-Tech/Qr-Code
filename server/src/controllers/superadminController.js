@@ -38,6 +38,99 @@ exports.getAnalytics = asyncHandler(async (req, res) => {
   });
 });
 
+exports.getAdminById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const admin = await prisma.user.findUnique({
+    where: { id: parseInt(id) },
+    include: {
+      referredOrders: {
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          orderNumber: true,
+          customerName: true,
+          customerEmail: true,
+          customerPhone: true,
+          businessName: true,
+          finalAmount: true,
+          subtotal: true,
+          adminCommissionAmount: true,
+          adminCommissionPercent: true,
+          adminCommissionStatus: true,
+          paymentStatus: true,
+          orderStatus: true,
+          createdAt: true,
+          city: true,
+          state: true
+        }
+      },
+      payouts: {
+        orderBy: { requestedAt: 'desc' },
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          paymentRef: true,
+          notes: true,
+          requestedAt: true,
+          processedAt: true
+        }
+      }
+    }
+  });
+
+  if (!admin) throw new ApiError(404, 'Partner not found');
+
+  const { password, referredOrders, payouts, ...safe } = admin;
+  const paidOrders = referredOrders.filter(o => o.paymentStatus === 'paid');
+  const totalSales = paidOrders.reduce((sum, o) => sum + o.subtotal, 0.0);
+  const totalCommission = paidOrders.reduce((sum, o) => sum + o.adminCommissionAmount, 0.0);
+  const pendingCommission = referredOrders
+    .filter(o => o.paymentStatus === 'paid' && o.adminCommissionStatus === 'pending')
+    .reduce((sum, o) => sum + o.adminCommissionAmount, 0.0);
+  const totalPaidOut = payouts
+    .filter(p => p.status === 'approved')
+    .reduce((sum, p) => sum + p.amount, 0.0);
+
+  return res.json({
+    success: true,
+    admin: {
+      ...safe,
+      stats: {
+        totalOrders: referredOrders.length,
+        paidOrders: paidOrders.length,
+        totalSales: parseFloat(totalSales.toFixed(2)),
+        totalCommission: parseFloat(totalCommission.toFixed(2)),
+        pendingCommission: parseFloat(pendingCommission.toFixed(2)),
+        totalPaidOut: parseFloat(totalPaidOut.toFixed(2)),
+        walletBalance: parseFloat((totalCommission - totalPaidOut).toFixed(2))
+      },
+      referredOrders,
+      payouts
+    }
+  });
+});
+
+exports.deleteAdmin = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // First nullify references in orders so FK constraint doesn't break
+  await prisma.order.updateMany({
+    where: { adminReferralId: parseInt(id) },
+    data: { adminReferralId: null }
+  });
+
+  // Delete payouts first
+  await prisma.payout.deleteMany({
+    where: { adminId: parseInt(id) }
+  });
+
+  await prisma.user.delete({ where: { id: parseInt(id) } });
+
+  return res.json({ success: true, message: 'Partner account permanently deleted' });
+});
+
 exports.getAllAdmins = asyncHandler(async (req, res) => {
   const admins = await prisma.user.findMany({
     where: { role: 'ADMIN' },
@@ -71,14 +164,24 @@ exports.getAllAdmins = asyncHandler(async (req, res) => {
 
 exports.updateAdmin = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { commissionPercent, status, orgName } = req.body;
+  const {
+    commissionPercent, status, orgName, name, phone,
+    upiId, bankName, bankAccount, ifscCode, bankHolder
+  } = req.body;
 
   const updated = await prisma.user.update({
     where: { id: parseInt(id) },
     data: {
       commissionPercent: commissionPercent !== undefined ? parseFloat(commissionPercent) : undefined,
       status: status !== undefined ? status : undefined,
-      orgName: orgName !== undefined ? orgName : undefined
+      orgName: orgName !== undefined ? orgName : undefined,
+      name: name !== undefined ? name : undefined,
+      phone: phone !== undefined ? phone : undefined,
+      upiId: upiId !== undefined ? upiId : undefined,
+      bankName: bankName !== undefined ? bankName : undefined,
+      bankAccount: bankAccount !== undefined ? bankAccount : undefined,
+      ifscCode: ifscCode !== undefined ? ifscCode : undefined,
+      bankHolder: bankHolder !== undefined ? bankHolder : undefined
     }
   });
 
@@ -91,8 +194,20 @@ exports.getAllUsers = asyncHandler(async (req, res) => {
     where: { role: 'USER' },
     orderBy: { createdAt: 'desc' },
     include: {
-      referredBy: { select: { id: true, name: true, orgName: true } },
-      orders: { select: { id: true, finalAmount: true, paymentStatus: true } }
+      referredBy: { select: { id: true, name: true, orgName: true, referralCode: true, phone: true, email: true } },
+      orders: {
+        select: {
+          id: true,
+          orderNumber: true,
+          finalAmount: true,
+          paymentStatus: true,
+          orderStatus: true,
+          businessName: true,
+          adminCommissionAmount: true,
+          adminReferralId: true,
+          createdAt: true
+        }
+      }
     }
   });
 
@@ -106,7 +221,16 @@ exports.getAllUsers = asyncHandler(async (req, res) => {
       ...safe,
       totalOrders: orders.length,
       totalSpent: parseFloat(totalSpent.toFixed(2)),
-      referredBy: referredBy ? referredBy.orgName || referredBy.name : 'Direct'
+      referredBy: referredBy
+        ? {
+            id: referredBy.id,
+            name: referredBy.orgName || referredBy.name,
+            referralCode: referredBy.referralCode,
+            email: referredBy.email,
+            phone: referredBy.phone
+          }
+        : null,
+      recentOrders: orders.slice(0, 5)
     };
   });
 

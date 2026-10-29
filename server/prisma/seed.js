@@ -4,24 +4,20 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 Starting ReviewXpress database seeding...');
 
-  const hashedSuperPassword = await bcrypt.hash('admin123', 10);
-  const hashedPartnerPassword = await bcrypt.hash('partner123', 10);
-  const hashedUserPassword = await bcrypt.hash('user123', 10);
-
-  // 1. Settings
+  // 1. Platform Settings
   const existingSettings = await prisma.setting.findFirst();
   if (!existingSettings) {
     await prisma.setting.create({
       data: {
         id: 1,
-        siteName: "Review Express",
-        tagline: "India's #1 NFC & QR Smart Google Review Stand & Card",
+        siteName: "ReviewXpress",
+        tagline: "India's #1 Smart NFC & QR Google Review Hardware Platform",
         supportEmail: "support@reviewexpress.in",
         supportPhone: "+91 98765 43210",
         whatsappNumber: "919876543210",
-        address: "Review Express HQ, 4th Floor, Tech Hub Towers, Pune, Maharashtra 411045",
+        address: "ReviewXpress HQ, Veagle Space Technology Pvt. Ltd., Pune, Maharashtra 411045",
         gstEnabled: true,
         gstPercent: 18.0,
         gstNumber: "27AABCR1234F1Z8",
@@ -31,27 +27,26 @@ async function main() {
         payuMode: "test",
         payuMerchantKey: "PAYU_DEMO_KEY_123",
         payuMerchantSalt: "PAYU_DEMO_SALT_456",
-        announcementBanner: "🔥 Special Festive Offer: Get Extra 10% Off on Bulk Orders! Free Shipping across India 🇮🇳",
+        announcementBanner: "🔥 Special Launch Offer: Get Extra 10% Off on Bulk Orders! Free Express Courier across India 🇮🇳",
         heroHeading: "Get 10X More 5-Star Google Reviews on Autopilot",
-        heroSubheading: "Turn in-person customers into genuine 5-star Google Reviews with just 1 Tap (NFC) or 1 Scan (QR). Zero app required, 100% lifetime validity.",
+        heroSubheading: "Turn walk-in retail customers into verified 5-star Google reviews with just 1 Tap (NFC) or 1 Scan (QR). Zero app required, 100% lifetime validity.",
         freeShippingAbove: 999.0,
         standardShippingFee: 60.0
       }
     });
-    console.log('✅ Default settings created');
+    console.log('✅ Default platform settings initialized');
   }
 
-  // 2. Superadmin / Admin (Requested by User)
+  // 2. Superadmin Account
   const hashedUserAdminPassword = await bcrypt.hash('Veagle@123', 10);
   const adminUser = await prisma.user.upsert({
     where: { email: 'abhijeetambhore4@gmail.com' },
     update: {
-      name: "admin",
-      password: hashedUserAdminPassword,
+      name: "Veagle Space Admin",
       role: "SUPERADMIN"
     },
     create: {
-      name: "admin",
+      name: "Veagle Space Admin",
       email: "abhijeetambhore4@gmail.com",
       password: hashedUserAdminPassword,
       phone: "+91 98765 43210",
@@ -60,23 +55,10 @@ async function main() {
       referralCode: "ADMIN100"
     }
   });
-  console.log('✅ Superadmin created:', adminUser.email);
+  console.log('✅ Superadmin initialized:', adminUser.email);
 
-  const superadmin = await prisma.user.upsert({
-    where: { email: 'superadmin@reviewexpress.com' },
-    update: {},
-    create: {
-      name: "Review Express Owner",
-      email: "superadmin@reviewexpress.com",
-      password: hashedSuperPassword,
-      phone: "+91 98765 00001",
-      role: "SUPERADMIN",
-      orgName: "Review Express Corporate",
-      referralCode: "OWNER100"
-    }
-  });
-
-  // 3. Admin (Partner / Organization)
+  // 3. Organization Partner (Affiliate)
+  const hashedPartnerPassword = await bcrypt.hash('partner123', 10);
   const partnerAdmin = await prisma.user.upsert({
     where: { email: 'partner@techhub.com' },
     update: {},
@@ -96,9 +78,10 @@ async function main() {
       upiId: "techhub@okaxis"
     }
   });
-  console.log('✅ Admin Partner created:', partnerAdmin.email);
+  console.log('✅ Partner initialized:', partnerAdmin.email);
 
-  // 4. Regular User
+  // 4. Verified Customer Account
+  const hashedUserPassword = await bcrypt.hash('user123', 10);
   const customer = await prisma.user.upsert({
     where: { email: 'amit@cafeoasis.in' },
     update: {},
@@ -112,14 +95,14 @@ async function main() {
       referredById: partnerAdmin.id
     }
   });
-  console.log('✅ Customer created:', customer.email);
+  console.log('✅ Customer initialized:', customer.email);
 
-  // 5. Products
+  // 5. Official ReviewXpress Hardware Catalog Products
   const products = [
     {
       slug: "nfc-google-review-stand-premium-acrylic",
       title: "Smart NFC + QR Google Review Stand (Premium Acrylic)",
-      subtitle: "Best-seller for reception counters, dining tables & billing desks",
+      subtitle: "Best-seller for billing counters, reception desks, cafes & retail checkouts",
       price: 1199,
       originalPrice: 1999,
       badge: "Best Seller",
@@ -130,7 +113,7 @@ async function main() {
       description: "Crafted with high-grade ultra-clear acrylic with built-in high-speed NTAG213/215 NFC chip and permanent laser-printed high-contrast QR code. Customers simply tap their iPhone or Android phone to instantly open your official Google Review page.",
       features: JSON.stringify([
         "Instant 1-Tap Tap-to-Review (NFC)",
-        "Backup Dynamic QR Code (100% phone compatibility)",
+        "Backup Dynamic QR Code (100% smartphone compatibility)",
         "Waterproof & Scratch-resistant Acrylic Stand (A6 size)",
         "No Battery, No App & No Subscription required",
         "Lifetime Validity with custom encoded review link"
@@ -145,7 +128,7 @@ async function main() {
     {
       slug: "smart-nfc-google-review-pocket-card",
       title: "Executive NFC + QR Review Card (Matte Black & Gold)",
-      subtitle: "Carry in your wallet or keep with service staff & executives",
+      subtitle: "Carry in your wallet or keep with service staff, technicians & executives",
       price: 699,
       originalPrice: 1299,
       badge: "Trending",
@@ -171,7 +154,7 @@ async function main() {
     {
       slug: "smart-nfc-counter-badge-plate",
       title: "Metal-Touch Smart NFC Counter Plate (Brushed Silver)",
-      subtitle: "Heavy-duty luxury plate for luxury salons, hotels & clinics",
+      subtitle: "Heavy-duty luxury plate for premium salons, boutique hotels & clinics",
       price: 1599,
       originalPrice: 2499,
       badge: "Luxury Edition",
@@ -219,76 +202,91 @@ async function main() {
         "Shielding": "Ferrite anti-metal shielding layer",
         "Adhesive": "Non-residue strong acrylic adhesive"
       })
+    },
+    {
+      slug: "smart-nfc-review-stand-teak-wood",
+      title: "Handcrafted Teak Wood Smart NFC Review Stand (Artisan Series)",
+      subtitle: "Premium natural wooden base with sleek vertical acrylic plate",
+      price: 1499,
+      originalPrice: 2299,
+      badge: "Artisan Pick",
+      rating: 4.9,
+      reviewsCount: 88,
+      stock: 160,
+      image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80",
+      description: "Organic solid natural teak wood base paired with crystal-clear laser-engraved acrylic plate. Creates a warm, inviting presence on premium hotel lobbies, artisan bakeries, and doctor consulting tables.",
+      features: JSON.stringify([
+        "100% Solid Natural Teak Wood Base",
+        "Scratch-proof Matte Acrylic Display Plate",
+        "High-sensitivity NXP NFC Chip embedded inside base",
+        "Permanent Anti-glare Laser Printed QR code",
+        "Lifetime Guarantee on NFC chip performance"
+      ]),
+      specs: JSON.stringify({
+        "Base Material": "Solid Teak Wood with Natural Oil Finish",
+        "Plate Material": "High-durability Acrylic (A6 Form Factor)",
+        "Dimensions": "110mm x 165mm x 40mm",
+        "NFC Chip": "NXP NTAG215 High Memory"
+      })
+    },
+    {
+      slug: "smart-nfc-multi-counter-cube",
+      title: "Smart Multi-Angle NFC & QR Review Cube (3-Sided Display)",
+      subtitle: "3-sided visibility for bar counters, food courts & salon stations",
+      price: 1899,
+      originalPrice: 2999,
+      badge: "Commercial Grade",
+      rating: 5.0,
+      reviewsCount: 62,
+      stock: 90,
+      image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80",
+      description: "Designed for 360-degree customer engagement. Place in the center of restaurant dining tables, bar tops, or checkout queues so customers from every angle can effortlessly tap or scan to review.",
+      features: JSON.stringify([
+        "Triple-sided QR code for 360° visibility",
+        "Dual top-mounted high-gain NFC sensors",
+        "Weighted non-slip rubberized bottom base",
+        "Commercial tamper-resistant construction",
+        "Custom branded with your business identity"
+      ]),
+      specs: JSON.stringify({
+        "Material": "Reinforced High-impact Polycarbonate",
+        "Dimensions": "90mm x 90mm x 90mm Cube",
+        "Sensors": "Dual NFC NTAG213 Chips (Top & Front)",
+        "Weight": "280 grams (Anti-tip weighted)"
+      })
     }
   ];
+
+  console.log(`📦 Seeding ${products.length} hardware catalog products...`);
 
   for (const prod of products) {
     await prisma.product.upsert({
       where: { slug: prod.slug },
-      update: {},
+      update: {
+        title: prod.title,
+        subtitle: prod.subtitle,
+        price: prod.price,
+        originalPrice: prod.originalPrice,
+        badge: prod.badge,
+        rating: prod.rating,
+        reviewsCount: prod.reviewsCount,
+        stock: prod.stock,
+        image: prod.image,
+        description: prod.description,
+        features: prod.features,
+        specs: prod.specs
+      },
       create: prod
     });
   }
-  console.log('✅ Seeded 4 Review Express Products');
 
-  // 6. Sample Order
-  const existingOrder = await prisma.order.findFirst();
-  if (!existingOrder) {
-    await prisma.order.create({
-      data: {
-        orderNumber: "RE-2026-101",
-        userId: customer.id,
-        customerName: "Amit Sharma",
-        customerEmail: "amit@cafeoasis.in",
-        customerPhone: "+91 98111 22334",
-        businessName: "Cafe Oasis - FC Road",
-        googleReviewLink: "https://g.page/r/example-cafe-oasis/review",
-        addressLine: "Shop No. 12, Ground Floor, Ferguson College Road",
-        city: "Pune",
-        state: "Maharashtra",
-        pincode: "411004",
-        items: JSON.stringify([
-          {
-            title: "Smart NFC + QR Google Review Stand (Premium Acrylic)",
-            price: 1199,
-            quantity: 2,
-            total: 2398
-          }
-        ]),
-        subtotal: 2398.0,
-        gstPercent: 18.0,
-        gstAmount: 431.64,
-        shippingFee: 0.0,
-        discountAmount: 100.0,
-        finalAmount: 2729.64,
-        adminReferralId: partnerAdmin.id,
-        adminCommissionPercent: 15.0,
-        adminCommissionAmount: 359.70,
-        adminCommissionStatus: "approved",
-        paymentStatus: "paid",
-        paymentMethod: "PayU Gateway",
-        payuTxnId: "TXN_PAYU_894372",
-        orderStatus: "shipped",
-        courierName: "Blue Dart Express",
-        trackingId: "BLUEDART-849204821",
-        trackingUrl: "https://www.bluedart.com/tracking?awb=849204821",
-        trackingHistory: JSON.stringify([
-          { status: "Order Placed & Paid", date: "2026-02-10 12:05 PM", completed: true },
-          { status: "Custom NFC Encoded & Laser Printed", date: "2026-02-11 03:30 PM", completed: true },
-          { status: "Handed over to Blue Dart (AWB: BLUEDART-849204821)", date: "2026-02-12 10:15 AM", completed: true },
-          { status: "Out for Delivery", date: "Expected Tomorrow", completed: false }
-        ])
-      }
-    });
-    console.log('✅ Sample Order created');
-  }
-
-  console.log('🎉 Seeding completed successfully!');
+  console.log(`✅ Successfully seeded & updated ${products.length} ReviewXpress hardware products!`);
+  console.log('🎉 Database seeding complete!');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {

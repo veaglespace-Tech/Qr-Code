@@ -124,12 +124,39 @@ export default function UserDashboardPage() {
     window.location.href = '/login';
   };
 
-  const copyToClipboard = (text, key) => {
-    if (navigator?.clipboard) {
-      navigator.clipboard.writeText(text);
-      setCopiedLink(key);
-      setTimeout(() => setCopiedLink(''), 2500);
+  const copyToClipboard = async (text, key) => {
+    if (!text) return;
+    let copied = false;
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      } catch (err) {
+        console.warn('Clipboard writeText failed, using fallback', err);
+      }
     }
+
+    if (!copied && typeof document !== 'undefined') {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-9999px';
+        textarea.style.left = '-9999px';
+        textarea.setAttribute('readonly', '');
+        document.body.appendChild(textarea);
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+        copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch (err) {
+        console.error('Fallback copy failed', err);
+      }
+    }
+
+    setCopiedLink(key);
+    setTimeout(() => setCopiedLink(''), 2500);
   };
 
   const handleSaveProfile = async (e) => {

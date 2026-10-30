@@ -151,6 +151,43 @@ export default function AdminDashboardPage() {
     setTimeout(() => setNotice({ text: '', isError: false }), 4500);
   };
 
+  // Robust universal copy to clipboard with fallback
+  const handleCopyLink = async (url, code) => {
+    if (!url) return;
+    let copied = false;
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        copied = true;
+      } catch (err) {
+        console.warn('Clipboard writeText failed, trying textarea fallback', err);
+      }
+    }
+
+    if (!copied && typeof document !== 'undefined') {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-9999px';
+        textarea.style.left = '-9999px';
+        textarea.setAttribute('readonly', '');
+        document.body.appendChild(textarea);
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+        copied = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch (err) {
+        console.error('Fallback copy failed', err);
+      }
+    }
+
+    setCopiedLinkCode(code);
+    triggerNotice('Product link copied to clipboard!');
+    setTimeout(() => setCopiedLinkCode(''), 2500);
+  };
+
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser());
@@ -768,25 +805,35 @@ export default function AdminDashboardPage() {
                         <div className="p-5 pt-0 space-y-3">
                           {link ? (
                             <div className="space-y-2.5 pt-3 border-t border-slate-100">
-                              {/* Link URL Display */}
-                              <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200">
-                                <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                <span className="text-[11px] text-slate-600 truncate flex-1 font-mono font-medium">
+                              {/* Link URL Display with Click-to-Copy */}
+                              <div
+                                onClick={() => handleCopyLink(linkUrl, link.linkCode)}
+                                className="flex items-center gap-2 bg-purple-50/60 hover:bg-purple-100/60 rounded-xl px-3 py-2 border border-purple-200/80 cursor-pointer transition-colors group"
+                                title="Click to copy link"
+                              >
+                                <Globe className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                <span className="text-[11px] text-purple-950 truncate flex-1 font-mono font-medium select-all">
                                   {linkUrl}
                                 </span>
                                 <button
-                                  onClick={() => {
-                                    navigator?.clipboard?.writeText(linkUrl);
-                                    setCopiedLinkCode(link.linkCode);
-                                    setTimeout(() => setCopiedLinkCode(''), 2000);
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyLink(linkUrl, link.linkCode);
                                   }}
-                                  className="shrink-0 p-1 rounded-md text-purple-600 hover:bg-purple-50 transition-colors"
+                                  className="shrink-0 px-2 py-1 rounded-lg bg-white border border-purple-200 text-purple-700 hover:bg-purple-600 hover:text-white transition-all text-[10px] font-bold flex items-center gap-1 shadow-2xs"
                                   title="Copy URL"
                                 >
                                   {copiedLinkCode === link.linkCode ? (
-                                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                    <>
+                                      <Check className="w-3 h-3 text-emerald-500" />
+                                      <span className="text-emerald-600">Copied!</span>
+                                    </>
                                   ) : (
-                                    <Copy className="w-3.5 h-3.5" />
+                                    <>
+                                      <Copy className="w-3 h-3" />
+                                      <span>Copy</span>
+                                    </>
                                   )}
                                 </button>
                               </div>
@@ -1637,22 +1684,38 @@ export default function AdminDashboardPage() {
                       </div>
                     )}
                     <div className="flex-1 w-full space-y-2">
-                      <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-purple-200">
+                      <div
+                        onClick={() => {
+                          const url = typeof window !== 'undefined' ? `${window.location.origin}/buy/${viewingProduct.link.linkCode}` : '';
+                          handleCopyLink(url, viewingProduct.link.linkCode);
+                        }}
+                        className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-purple-200 cursor-pointer hover:border-purple-300 transition-colors"
+                        title="Click to copy link"
+                      >
                         <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="text-xs text-slate-800 font-mono font-medium truncate flex-1">
+                        <span className="text-xs text-slate-800 font-mono font-medium truncate flex-1 select-all">
                           {typeof window !== 'undefined' ? `${window.location.origin}/buy/${viewingProduct.link.linkCode}` : `/buy/${viewingProduct.link.linkCode}`}
                         </span>
                         <button
-                          onClick={() => {
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             const url = typeof window !== 'undefined' ? `${window.location.origin}/buy/${viewingProduct.link.linkCode}` : '';
-                            navigator?.clipboard?.writeText(url);
-                            setCopiedLinkCode(viewingProduct.link.linkCode);
-                            setTimeout(() => setCopiedLinkCode(''), 2000);
+                            handleCopyLink(url, viewingProduct.link.linkCode);
                           }}
-                          className="shrink-0 text-purple-600 hover:text-purple-800 text-xs font-bold flex items-center gap-1"
+                          className="shrink-0 px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1 shadow-xs transition-colors"
                         >
-                          {copiedLinkCode === viewingProduct.link.linkCode ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                          <span>{copiedLinkCode === viewingProduct.link.linkCode ? 'Copied' : 'Copy'}</span>
+                          {copiedLinkCode === viewingProduct.link.linkCode ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-300" />
+                              <span>Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copy Link</span>
+                            </>
+                          )}
                         </button>
                       </div>
 

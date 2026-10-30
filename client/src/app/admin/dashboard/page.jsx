@@ -91,6 +91,8 @@ export default function AdminDashboardPage() {
     }
   }, [viewingProduct]);
 
+  const referralCode = stats?.partner?.referralCode || user?.referralCode || 'PARTNER';
+
   // Payout request modal states
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');

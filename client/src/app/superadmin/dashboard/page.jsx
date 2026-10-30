@@ -398,7 +398,6 @@ export default function SuperadminDashboardPage() {
     { id: 'users', label: 'Customers Directory', icon: UserCheck, badge: users.length },
     { id: 'payouts', label: 'Affiliate Payouts', icon: IndianRupee, badge: payouts.filter(p => p.status === 'pending').length || null, badgeColor: 'bg-amber-500' },
     { id: 'settings', label: 'Gateway & GST Settings', icon: Sliders },
-    { id: 'profile', label: 'My Profile & Security', icon: User },
   ];
 
   if (loading) {
@@ -519,7 +518,9 @@ export default function SuperadminDashboardPage() {
                 setActiveTab('profile');
                 setSidebarOpen(false);
               }}
-              className="flex items-center gap-2.5 overflow-hidden text-left hover:opacity-85 transition-opacity group"
+              className={`flex items-center gap-2.5 overflow-hidden text-left transition-all p-1.5 -ml-1.5 rounded-xl group flex-1 mr-1 ${
+                activeTab === 'profile' ? 'bg-purple-600/20 border border-purple-500/40 text-purple-200' : 'hover:bg-white/5'
+              }`}
               title="Click to view & edit Profile"
             >
               <div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/40 text-purple-300 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:border-purple-400">

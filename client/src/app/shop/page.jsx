@@ -34,7 +34,7 @@ export default function ShopPage() {
 }
 
 // Simple admin-only shop view
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useGetProductsQuery } from '@/redux/api/apiSlice';
 import { useDebounce } from '@/hooks/useDebounce';
 import ProductCard from '@/components/ProductCard';
@@ -47,23 +47,35 @@ function AdminShopView() {
   const debouncedSearch = useDebounce(search, 300);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const filteredProducts = products.filter(p => {
-    // Only display active products in shop
-    if (p.isActive === false) return false;
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      // Only display active products in public shop
+      if (p.isActive === false) return false;
 
-    const q = debouncedSearch.toLowerCase().trim();
-    const matchesSearch = !q ||
-                          p.title?.toLowerCase().includes(q) ||
-                          p.description?.toLowerCase().includes(q) ||
-                          p.subtitle?.toLowerCase().includes(q);
+      const q = debouncedSearch.toLowerCase().trim();
+      const matchesSearch = !q ||
+                            p.title?.toLowerCase().includes(q) ||
+                            p.description?.toLowerCase().includes(q) ||
+                            p.subtitle?.toLowerCase().includes(q);
 
-    if (selectedCategory === 'all') return matchesSearch;
-    if (selectedCategory === 'stands') return matchesSearch && p.title.toLowerCase().includes('stand');
-    if (selectedCategory === 'cards') return matchesSearch && p.title.toLowerCase().includes('card');
-    if (selectedCategory === 'plates') return matchesSearch && p.title.toLowerCase().includes('plate');
-    if (selectedCategory === 'stickers') return matchesSearch && p.title.toLowerCase().includes('sticker');
-    return matchesSearch;
-  });
+      if (selectedCategory === 'all') return matchesSearch;
+      if (selectedCategory === 'stands') return matchesSearch && p.title.toLowerCase().includes('stand');
+      if (selectedCategory === 'cards') return matchesSearch && p.title.toLowerCase().includes('card');
+      if (selectedCategory === 'plates') return matchesSearch && p.title.toLowerCase().includes('plate');
+      if (selectedCategory === 'stickers') return matchesSearch && p.title.toLowerCase().includes('sticker');
+      return matchesSearch;
+    });
+  }, [products, debouncedSearch, selectedCategory]);
+
+  // Strictly sort by public displayOrder (1st, 2nd, 3rd, 4th...)
+  const sortedProducts = useMemo(() => {
+    return [...filteredProducts].sort((a, b) => {
+      const orderA = a.displayOrder ?? 999;
+      const orderB = b.displayOrder ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.id - b.id;
+    });
+  }, [filteredProducts]);
 
   return (
     <div className="bg-ambient-pattern min-h-screen py-12">
@@ -156,7 +168,7 @@ function AdminShopView() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredProducts.map(product => (
+            {sortedProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

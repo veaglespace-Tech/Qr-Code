@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useGetProductsQuery } from '@/redux/api/apiSlice';
 import {
@@ -33,6 +33,13 @@ import ProductCard from '@/components/ProductCard';
 export default function HomePage() {
   const { data: productsData, isLoading: loading } = useGetProductsQuery();
   const products = productsData?.products || [];
+
+  // Active products sorted strictly by Superadmin's Public View displayOrder (1, 2, 3, 4...)
+  const activeProducts = useMemo(() => {
+    return products
+      .filter(p => p.isActive !== false)
+      .sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999) || a.id - b.id);
+  }, [products]);
 
   // ROI Calculator states
   const [dailyFootfall, setDailyFootfall] = useState(80);
@@ -432,7 +439,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.slice(0, 4).map(product => (
+            {activeProducts.slice(0, 4).map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

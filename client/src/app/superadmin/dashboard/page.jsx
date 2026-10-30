@@ -81,7 +81,8 @@ import {
   Play,
   Pause,
   SlidersHorizontal,
-  Layers
+  Layers,
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
@@ -353,12 +354,13 @@ export default function SuperadminDashboardPage() {
 
   // Product Reordering: Move Up / Down
   const handleMoveProductOrder = async (prodId, direction) => {
-    const idx = products.findIndex(p => p.id === prodId);
+    const sorted = [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0) || a.id - b.id);
+    const idx = sorted.findIndex(p => p.id === prodId);
     if (idx === -1) return;
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (targetIdx < 0 || targetIdx >= products.length) return;
+    if (targetIdx < 0 || targetIdx >= sorted.length) return;
 
-    const newProducts = [...products];
+    const newProducts = [...sorted];
     const temp = newProducts[idx];
     newProducts[idx] = newProducts[targetIdx];
     newProducts[targetIdx] = temp;
@@ -367,9 +369,32 @@ export default function SuperadminDashboardPage() {
     try {
       await reorderProducts({ orders: payload }).unwrap();
       refetchProd();
-      triggerNotice('Product display order updated successfully!');
+      triggerNotice(`Product moved to Public View Position #${targetIdx + 1}!`);
     } catch {
       triggerNotice('Failed to update product order', true);
+    }
+  };
+
+  // Set explicit Public View position number (e.g. 1st, 2nd, 3rd, 4th...)
+  const handleSetProductPosition = async (prodId, newPosition) => {
+    const targetPos = parseInt(newPosition);
+    if (isNaN(targetPos) || targetPos < 1) return;
+
+    const sorted = [...products].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0) || a.id - b.id);
+    const currentIdx = sorted.findIndex(p => p.id === prodId);
+    if (currentIdx === -1) return;
+
+    const [movedItem] = sorted.splice(currentIdx, 1);
+    const insertIdx = Math.max(0, Math.min(targetPos - 1, sorted.length));
+    sorted.splice(insertIdx, 0, movedItem);
+
+    const payload = sorted.map((p, i) => ({ id: p.id, displayOrder: i + 1 }));
+    try {
+      await reorderProducts({ orders: payload }).unwrap();
+      refetchProd();
+      triggerNotice(`Product set to Public View Position #${insertIdx + 1}!`);
+    } catch {
+      triggerNotice('Failed to update public view position', true);
     }
   };
 
@@ -1156,10 +1181,10 @@ export default function SuperadminDashboardPage() {
 
               {/* Notice banner for ordering */}
               {productSortBy === 'displayOrder' && !debouncedProductSearch.trim() && productStatusFilter === 'all' && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-50/70 border border-purple-100 text-[11px] text-purple-800">
-                  <Layers className="w-4 h-4 text-purple-600 shrink-0" />
+                <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 shadow-2xs">
+                  <Globe className="w-4 h-4 text-purple-700 shrink-0" />
                   <span>
-                    <strong>Storefront Sequence:</strong> Use the <strong>Move Up (↑)</strong> and <strong>Move Down (↓)</strong> buttons on each card to arrange exactly how products appear to customers on the Hardware Shop page.
+                    <strong>Public Store Display Order (पब्लिक व्ह्यू क्रमवारी):</strong> ग्राहकांना हार्डवेअर शॉप पेजवर कोणता प्रॉडक्ट कितव्या नंबरला दाखवायचा (No. 1, No. 2, No. 3...) ते खालील <strong>Public View Position</strong> ड्रॉपडाउन किंवा <strong>⬆️ ⬇️</strong> बटणाने लगेच बदलू शकता.
                   </span>
                 </div>
               )}
@@ -1208,8 +1233,9 @@ export default function SuperadminDashboardPage() {
                             )}
 
                             {/* Display Order Sequence Badge */}
-                            <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-lg bg-slate-900/90 text-white text-[11px] font-mono font-black shadow-xs flex items-center gap-1 backdrop-blur-xs">
-                              #{prod.displayOrder ?? (idx + 1)}
+                            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-slate-900/95 text-white text-[11px] font-bold shadow-md flex items-center gap-1.5 backdrop-blur-xs border border-white/10">
+                              <Globe className="w-3 h-3 text-purple-400" />
+                              <span>Public View: <strong className="text-amber-300 font-black">No. {prod.displayOrder || (idx + 1)}</strong></span>
                             </span>
 
                             {/* Active / Paused Badge */}
@@ -1254,46 +1280,77 @@ export default function SuperadminDashboardPage() {
                         </div>
 
                         {/* Order Reordering & Controls */}
-                        <div className="space-y-2 pt-3 border-t border-slate-100">
-                          {/* Reorder Buttons & Pause Toggle */}
-                          <div className="flex items-center justify-between gap-1.5">
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase mr-1">Position:</span>
-                              <button
-                                onClick={() => handleMoveProductOrder(prod.id, 'up')}
-                                disabled={idx === 0 || isReorderingProducts}
-                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                                title="Move Up in Storefront"
-                              >
-                                <ArrowUp className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleMoveProductOrder(prod.id, 'down')}
-                                disabled={idx === filteredProducts.length - 1 || isReorderingProducts}
-                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                                title="Move Down in Storefront"
-                              >
-                                <ArrowDown className="w-3.5 h-3.5" />
-                              </button>
+                        <div className="space-y-2.5 pt-3 border-t border-slate-100">
+                          {/* Dedicated Public View Position Selector */}
+                          <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-200/80 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <Globe className="w-3.5 h-3.5 text-purple-700" />
+                                <span className="text-xs font-black text-slate-800">Public View Position:</span>
+                              </div>
+                              <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                                No. {prod.displayOrder || (idx + 1)} on Store
+                              </span>
                             </div>
 
-                            {/* Pause / Resume Button */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-600 font-semibold whitespace-nowrap">दिसणार:</span>
+                              <select
+                                value={prod.displayOrder || (idx + 1)}
+                                onChange={(e) => handleSetProductPosition(prod.id, e.target.value)}
+                                disabled={isReorderingProducts}
+                                className="flex-1 px-2.5 py-1.5 rounded-lg bg-white border border-purple-300 text-xs font-bold text-slate-900 shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                              >
+                                {products.map((_, i) => (
+                                  <option key={i + 1} value={i + 1}>
+                                    No. {i + 1} {i === 0 ? '🏆 (1st - Top on Shop & Home)' : i === 1 ? '(2nd on Shop)' : i === 2 ? '(3rd on Shop)' : `(${i + 1}th on Shop)`}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {/* Quick Up/Down nudgers */}
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleMoveProductOrder(prod.id, 'up')}
+                                  disabled={idx === 0 || isReorderingProducts}
+                                  className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-purple-100 text-slate-700 hover:text-purple-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                                  title="Move up 1 position in public view"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleMoveProductOrder(prod.id, 'down')}
+                                  disabled={idx === filteredProducts.length - 1 || isReorderingProducts}
+                                  className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-purple-100 text-slate-700 hover:text-purple-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                                  title="Move down 1 position in public view"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Pause / Resume Button & Status */}
+                          <div className="flex items-center justify-between gap-2 pt-0.5">
+                            <span className="text-[11px] font-bold text-slate-500">
+                              Status: <span className={isPaused ? 'text-amber-600 font-black' : 'text-emerald-600 font-black'}>{isPaused ? 'Paused (Hidden)' : 'Active (Live)'}</span>
+                            </span>
                             <button
                               onClick={() => handleToggleProductStatus(prod)}
-                              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ${
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
                                 isPaused
                                   ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200'
                                   : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200'
                               }`}
                               title={isPaused ? 'Resume selling in storefront' : 'Pause selling and hide from storefront'}
                             >
-                              {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                              {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
                               <span>{isPaused ? 'Resume' : 'Pause'}</span>
                             </button>
                           </div>
 
                           {/* Edit & Delete Action Buttons */}
-                          <div className="flex items-center gap-2 pt-1">
+                          <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
                             <button
                               onClick={() => {
                                 setEditingProduct(prod);
@@ -2284,13 +2341,19 @@ export default function SuperadminDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Display Order (Storefront Sequence)</label>
+                  <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center justify-between">
+                    <span>Public View Position (कित्यव्या नंबरवर दिसेल?) *</span>
+                    <span className="text-[10px] text-purple-700 font-bold">1 = सर्वात वर</span>
+                  </label>
                   <input
                     type="number"
+                    min="1"
+                    max={products.length + 5}
                     value={productForm.displayOrder ?? 1}
                     onChange={(e) => setProductForm({ ...productForm, displayOrder: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-black focus:bg-white focus:border-purple-500"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">पब्लिक शॉप पेज आणि होमपेजवर कितव्या नंबरला दिसेल ते नंबर टाका (उदा. 1, 2, 3...)</p>
                 </div>
 
                 <div>

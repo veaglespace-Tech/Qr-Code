@@ -48,7 +48,7 @@ router.post('/response', asyncHandler(async (req, res) => {
       const jwt = require('jsonwebtoken');
       const jwtSecret = process.env.JWT_KEY || process.env.JWT_SECRET || 'secret';
       const token = jwt.sign(
-        { id: updatedOrder.user.id, role: updatedOrder.user.role },
+        { id: updatedOrder.user.id, email: updatedOrder.user.email, role: updatedOrder.user.role, name: updatedOrder.user.name },
         jwtSecret,
         { expiresIn: '30d' }
       );

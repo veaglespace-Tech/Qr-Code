@@ -133,7 +133,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
     const jwt = require('jsonwebtoken');
     const jwtSecret = process.env.JWT_KEY || process.env.JWT_SECRET || 'secret';
     const token = jwt.sign(
-      { id: customerUser.id, role: customerUser.role },
+      { id: customerUser.id, email: customerUser.email, role: customerUser.role, name: customerUser.name },
       jwtSecret,
       { expiresIn: '30d' }
     );

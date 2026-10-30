@@ -847,16 +847,23 @@ export default function PartnerDetailPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Commission Rate (%) *</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    step="0.5"
-                    required
-                    value={editForm.commissionPercent}
-                    onChange={(e) => setEditForm({ ...editForm, commissionPercent: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white focus:border-purple-600 focus:outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      required
+                      value={editForm.commissionPercent}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                          setEditForm({ ...editForm, commissionPercent: val });
+                        }
+                      }}
+                      placeholder="e.g. 15, 20"
+                      className="w-full pl-3.5 pr-8 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white focus:border-purple-600 focus:outline-none"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">%</span>
+                  </div>
                 </div>
               </div>
 
@@ -961,21 +968,49 @@ export default function PartnerDetailPage() {
 
             <form onSubmit={handleSaveCommission} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Commission Percentage (%) for {partner.orgName || partner.name}
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  step="0.5"
-                  required
-                  value={commissionInput}
-                  onChange={(e) => setCommissionInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-base font-black focus:bg-white focus:border-purple-600 focus:outline-none"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  This partner will earn {commissionInput}% commission on all referred sales.
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={commissionInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setCommissionInput(val);
+                      }
+                    }}
+                    placeholder="Enter commission rate (e.g. 15, 20, 25)"
+                    autoFocus
+                    className="w-full pl-4 pr-10 py-3 rounded-2xl bg-slate-50 border-2 border-purple-200 text-slate-900 text-xl font-black focus:bg-white focus:border-purple-600 focus:outline-none transition-all shadow-inner"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-600 font-black text-lg">%</span>
+                </div>
+
+                {/* Quick Select Preset Chips */}
+                <div className="flex items-center gap-1.5 mt-2.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Quick:</span>
+                  {[5, 10, 15, 20, 25, 30].map(pct => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setCommissionInput(pct.toString())}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                        Number(commissionInput) === pct
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {pct}%
+                    </button>
+                  ))}
+                </div>
+
+                <p className="text-[11px] text-slate-500 mt-2">
+                  This partner will earn <strong>{commissionInput || 0}%</strong> commission on all referred sales.
                 </p>
               </div>
 

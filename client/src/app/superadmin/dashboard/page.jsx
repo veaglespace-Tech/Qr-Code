@@ -2426,17 +2426,50 @@ export default function SuperadminDashboardPage() {
 
             <form onSubmit={handleSaveAdminCommission} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Commission Percentage (%)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  step="0.5"
-                  value={adminCommissionInput}
-                  onChange={(e) => setAdminCommissionInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-bold focus:bg-white"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">This partner will earn {adminCommissionInput}% on every sale.</p>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Commission Percentage (%) for {editingAdmin.orgName || editingAdmin.name}
+                </label>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={adminCommissionInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setAdminCommissionInput(val);
+                      }
+                    }}
+                    placeholder="Enter commission rate (e.g. 15, 20)"
+                    autoFocus
+                    className="w-full pl-4 pr-10 py-3 rounded-2xl bg-slate-50 border-2 border-purple-200 text-slate-900 text-xl font-black focus:bg-white focus:border-purple-600 focus:outline-none transition-all shadow-inner"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-600 font-black text-lg">%</span>
+                </div>
+
+                {/* Quick Select Buttons */}
+                <div className="flex items-center gap-1.5 mt-2.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Quick:</span>
+                  {[5, 10, 15, 20, 25, 30].map(pct => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setAdminCommissionInput(pct.toString())}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                        Number(adminCommissionInput) === pct
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {pct}%
+                    </button>
+                  ))}
+                </div>
+
+                <p className="text-[11px] text-slate-500 mt-2">
+                  This partner will earn <strong>{adminCommissionInput || 0}%</strong> on every referred customer order.
+                </p>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">

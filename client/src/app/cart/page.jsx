@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
@@ -11,6 +11,12 @@ import { Trash2, ArrowRight, ShoppingBag, Sparkles, ShieldCheck, Tag } from 'luc
 export default function CartPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { items, referralCode, partnerInfo } = useSelector(state => state.cart);
   const { data: settings } = useSelector(state => state.settings);
 
@@ -40,6 +46,14 @@ export default function CartPage() {
     dispatch(setReferralCode(inputRefCode.trim().toUpperCase()));
     setAppliedMsg('Partner Referral applied! Extra 5% customer discount applied.');
   };
+
+  if (!mounted) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+        <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto" />
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

@@ -7,11 +7,16 @@ import { logoutUser } from '@/redux/slice/authSlice';
 
 import { ShoppingBag, Shield, Users, User, LogOut, Sparkles, QrCode, Phone, Menu, X } from 'lucide-react';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
   const pathname = usePathname();
   const dispatch = useDispatch();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Do not render consumer storefront navigation inside dashboard consoles
   if (pathname?.startsWith('/superadmin') || pathname?.startsWith('/admin') || pathname?.startsWith('/user')) {
@@ -33,7 +38,7 @@ export default function Navbar() {
   return (
     <>
       {/* Sticky Partner Referral Banner (Persistent site-wide) */}
-      {partnerInfo && !isBuyPage && (
+      {mounted && partnerInfo && !isBuyPage && (
         <div className="bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 text-white text-xs px-4 py-2 border-b border-purple-800/60 shadow-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -70,7 +75,12 @@ export default function Navbar() {
             {isBuyPage ? (
               <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-200 text-xs font-bold text-purple-900">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Exclusive Partner Store: <strong className="text-purple-700 font-black">{partnerInfo?.orgName || 'Official Partner'}</strong></span>
+                <span>
+                  Exclusive Partner Store:{' '}
+                  <strong className="text-purple-700 font-black">
+                    {mounted && partnerInfo?.orgName ? partnerInfo.orgName : 'Official Partner'}
+                  </strong>
+                </span>
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-1">
@@ -92,7 +102,7 @@ export default function Navbar() {
 
             {/* Actions: Role buttons + Cart + Auth */}
             <div className="flex items-center gap-3">
-              {isBuyPage && partnerInfo?.phone && (
+              {isBuyPage && mounted && partnerInfo?.phone && (
                 <a
                   href={`tel:${partnerInfo.phone}`}
                   className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl transition-colors"
@@ -109,7 +119,7 @@ export default function Navbar() {
                 title="View Cart"
               >
                 <ShoppingBag className="w-5 h-5 text-slate-700" />
-                {totalCartCount > 0 && (
+                {mounted && totalCartCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 bg-rxgreen-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md">
                     {totalCartCount}
                   </span>

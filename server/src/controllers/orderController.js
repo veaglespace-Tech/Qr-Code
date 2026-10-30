@@ -142,11 +142,13 @@ exports.createOrder = asyncHandler(async (req, res) => {
     txnid,
     amount: finalAmount.toFixed(2),
     productinfo: `Order ${orderNumber}`,
-    firstname: customerDetails.name.split(' ')[0] || 'Customer',
+    firstname: customerDetails.name.trim().split(/\s+/)[0] || 'Customer',
     email: customerDetails.email || 'customer@example.com',
     udf1: newOrder.id.toString(),
-    udf2: req.user ? req.user.id.toString() : 'guest',
-    udf3: adminReferralId ? adminReferralId.toString() : '',
+    udf2: '',
+    udf3: '',
+    udf4: '',
+    udf5: '',
     salt: payuSalt
   });
 
@@ -166,12 +168,12 @@ exports.createOrder = asyncHandler(async (req, res) => {
       txnid,
       amount: finalAmount.toFixed(2),
       productinfo: `Order ${orderNumber}`,
-      firstname: customerDetails.name.split(' ')[0] || 'Customer',
+      firstname: customerDetails.name.trim().split(/\s+/)[0] || 'Customer',
       email: customerDetails.email || 'customer@example.com',
       phone: customerDetails.phone,
       hash: payuHash,
-      surl: `${process.env.CLIENT_URL || 'http://localhost:3000'}/checkout/success?orderId=${newOrder.id}`,
-      furl: `${process.env.CLIENT_URL || 'http://localhost:3000'}/checkout?error=failed&orderId=${newOrder.id}`,
+      surl: `${process.env.SERVER_BASE_URL || 'http://localhost:5000'}/api/payu/response`,
+      furl: `${process.env.SERVER_BASE_URL || 'http://localhost:5000'}/api/payu/response`,
       udf1: newOrder.id.toString()
     }
   });

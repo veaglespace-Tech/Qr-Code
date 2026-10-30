@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { clearCart } from '@/redux/slice/cartSlice';
@@ -19,6 +19,12 @@ import {
 export default function CheckoutPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
 
   const { items, referralCode, partnerInfo } = useSelector(state => state.cart);
@@ -176,6 +182,14 @@ export default function CheckoutPage() {
       setLoading(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-24 text-center">
+        <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto" />
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

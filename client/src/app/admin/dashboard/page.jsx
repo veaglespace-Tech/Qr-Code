@@ -49,7 +49,9 @@ import {
   Globe,
   ToggleLeft,
   ToggleRight,
-  Zap
+  Zap,
+  Star,
+  Info
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import Link from 'next/link';
@@ -71,9 +73,23 @@ export default function AdminDashboardPage() {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [referralQrUrl, setReferralQrUrl] = useState('');
   const [orderSearch, setOrderSearch] = useState('');
+
+  // Product detail view modal (Read-only)
+  const [viewingProduct, setViewingProduct] = useState(null);
+  const [productQrModalUrl, setProductQrModalUrl] = useState('');
+
+  useEffect(() => {
+    if (viewingProduct?.link?.linkCode) {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewexpress.in';
+      const linkUrl = `${baseUrl}/buy/${viewingProduct.link.linkCode}`;
+      QRCode.toDataURL(linkUrl, { width: 300, margin: 1.5, color: { dark: '#090d16', light: '#ffffff' } })
+        .then(setProductQrModalUrl)
+        .catch(() => setProductQrModalUrl(''));
+    } else {
+      setProductQrModalUrl('');
+    }
+  }, [viewingProduct]);
 
   // Payout request modal states
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
@@ -128,45 +144,6 @@ export default function AdminDashboardPage() {
       }));
     }
   }, [stats, user]);
-
-  useEffect(() => {
-    if (stats?.partner?.referralCode || user?.referralCode) {
-      const code = stats?.partner?.referralCode || user?.referralCode;
-      const link = typeof window !== 'undefined'
-        ? `${window.location.origin}/?ref=${code}`
-        : `http://localhost:3000/?ref=${code}`;
-
-      QRCode.toDataURL(link, { width: 300, margin: 1.5, color: { dark: '#090d16', light: '#ffffff' } })
-        .then(url => setReferralQrUrl(url))
-        .catch(err => console.error(err));
-    }
-  }, [stats, user]);
-
-  const referralCode = stats?.partner?.referralCode || user?.referralCode || 'PARTNER';
-  const referralLink = typeof window !== 'undefined'
-    ? `${window.location.origin}/?ref=${referralCode}`
-    : `http://localhost:3000/?ref=${referralCode}`;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(
-      `Transform your Google Reviews with ReviewXpress Smart NFC & Laser QR acrylic stands! Tap or scan to leave an instant 5-star review. Use my partner link for a special 5% customer discount: ${referralLink}`
-    );
-    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-  };
-
-  const handleDownloadQr = () => {
-    if (!referralQrUrl) return;
-    const a = document.createElement('a');
-    a.href = referralQrUrl;
-    a.download = `ReviewXpress-Partner-${referralCode}-QR.png`;
-    a.click();
-  };
 
   const handleRequestPayout = async (e) => {
     e.preventDefault();
@@ -362,26 +339,6 @@ export default function AdminDashboardPage() {
               })}
             </nav>
           </div>
-
-          {/* Partner Referral Code Card */}
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Active Promo Code
-            </span>
-            <div className="flex items-center justify-between bg-black/40 px-3 py-2 rounded-xl border border-slate-800">
-              <span className="font-mono font-black text-purple-400 text-sm tracking-wide">{referralCode}</span>
-              <button
-                onClick={handleCopyLink}
-                className="text-xs text-slate-300 hover:text-white flex items-center gap-1 font-semibold"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Commission: <strong className="text-white">{stats?.partner?.commissionPercent || 15}%</strong> per sale
-            </p>
-          </div>
         </div>
 
         {/* Sidebar Footer */}
@@ -444,8 +401,7 @@ export default function AdminDashboardPage() {
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight capitalize">
                 {activeTab === 'overview' && 'Partner Overview & Performance'}
-                {activeTab === 'products' && 'My Product Referral Links'}
-                {activeTab === 'referrals' && 'Marketing Link & Counter QR Code'}
+                {activeTab === 'products' && 'Product Catalog & Referral Links'}
                 {activeTab === 'orders' && 'Referred Customer Orders'}
                 {activeTab === 'payouts' && 'Commission Balances & Withdrawals'}
                 {activeTab === 'profile' && 'Organization Profile & Bank Information'}
@@ -546,54 +502,27 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Quick Referral Link Sharing Box */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-purple-50 via-white to-indigo-50 border border-purple-100 shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                <div className="lg:col-span-8 space-y-3">
+              {/* Product Catalog Direct Links Banner */}
+              <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-purple-50 via-white to-indigo-50 border border-purple-100 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+                <div className="space-y-2 max-w-xl">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-900 text-xs font-bold border border-purple-200">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-600" /> Partner Commission Code: {referralCode}
+                    <Zap className="w-3.5 h-3.5 text-purple-600" /> Per-Product Referral System
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    Earn {stats?.partner?.commissionPercent || 15}% commission on every smart stand sold
+                  <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                    Generate Exclusive Purchase Links for Specific Products
                   </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed max-w-xl">
-                    Share your unique link with local shops, clinics, salons, and restaurants. Customers get an instant <strong>5% discount</strong> and you get credited automatically upon order delivery.
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Browse our full hardware catalog, view complete technical specifications and images, and generate unique tracking links to share with clients. You earn <strong>{stats?.partner?.commissionPercent || 15}%</strong> on every purchase.
                   </p>
-
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
-                    <div className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 font-mono text-xs truncate shadow-2xs">
-                      {referralLink}
-                    </div>
-                    <button
-                      onClick={handleCopyLink}
-                      className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
-                    >
-                      {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                      <span>{copied ? 'Copied!' : 'Copy Link'}</span>
-                    </button>
-                    <button
-                      onClick={handleShareWhatsApp}
-                      className="px-5 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      <span>WhatsApp</span>
-                    </button>
-                  </div>
                 </div>
-
-                <div className="lg:col-span-4 flex flex-col items-center justify-center text-center p-4 rounded-2xl bg-white border border-purple-100 shadow-xs space-y-2">
-                  {referralQrUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={referralQrUrl} alt="Referral QR" className="w-32 h-32 rounded-xl bg-white p-1 border border-slate-200" />
-                  ) : (
-                    <div className="w-32 h-32 bg-slate-100 rounded-xl animate-pulse" />
-                  )}
-                  <button
-                    onClick={handleDownloadQr}
-                    className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Download Scanner QR
-                  </button>
-                </div>
+                <button
+                  onClick={() => setActiveTab('products')}
+                  className="px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-purple-600/25 shrink-0 transition-all hover:scale-[1.02]"
+                >
+                  <Package className="w-4 h-4" />
+                  <span>View Product Catalog ({linksData?.items?.length || 0})</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Recent Orders Preview */}
@@ -661,16 +590,25 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ================= TAB: MY PRODUCT LINKS ================= */}
+          {/* ================= TAB: MY PRODUCT LINKS (READ-ONLY CATALOG) ================= */}
           {activeTab === 'products' && (
             <div className="space-y-6">
-              <div className="p-5 rounded-2xl bg-purple-50 border border-purple-100 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-purple-900">Unique Per-Product Referral Links</p>
-                  <p className="text-xs text-purple-700 mt-1">
-                    Each product gets a unique shareable link assigned to you. When a customer lands on your link, they see <strong>only that product</strong> and can purchase it. Your commission is automatically tracked.
-                  </p>
+              {/* Header Info Banner */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 border border-purple-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Official Hardware Catalog & Per-Product Links</h3>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      View complete specifications and generate unique tracking links. Customers who land on your link see <strong>only that specific product</strong>.
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Your Commission</span>
+                  <span className="text-sm font-black text-purple-700">{stats?.partner?.commissionPercent || 15}% per sale</span>
                 </div>
               </div>
 
@@ -679,69 +617,140 @@ export default function AdminDashboardPage() {
                   <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {(linksData?.items || []).map(({ product, link }) => {
-                    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yoursite.com';
+                    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewexpress.in';
                     const linkUrl = link ? `${baseUrl}/buy/${link.linkCode}` : null;
+                    const commissionAmount = (((product.price || 0) * (stats?.partner?.commissionPercent || 15)) / 100).toFixed(0);
 
                     return (
-                      <div key={product.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                        {/* Product header */}
-                        <div className="flex items-center gap-3 p-4 border-b border-slate-100">
-                          {product.image ? (
-                            <img src={product.image} alt={product.title} className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-100" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-                              <Package className="w-5 h-5 text-purple-500" />
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 text-sm truncate">{product.title}</p>
-                            <p className="text-xs text-slate-500">₹{product.price.toLocaleString('en-IN')}</p>
+                      <div
+                        key={product.id}
+                        className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md hover:border-purple-200 transition-all overflow-hidden flex flex-col justify-between"
+                      >
+                        <div>
+                          {/* Image & Badge */}
+                          <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden group">
+                            {product.image ? (
+                              <img
+                                src={product.image}
+                                alt={product.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-purple-50 text-purple-400">
+                                <Package className="w-12 h-12" />
+                              </div>
+                            )}
+
+                            {product.badge && (
+                              <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider shadow-sm">
+                                {product.badge}
+                              </span>
+                            )}
+
+                            {link && (
+                              <span
+                                className={`absolute top-3 right-3 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm ${
+                                  link.isActive ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
+                                }`}
+                              >
+                                {link.isActive ? 'Link Active' : 'Paused'}
+                              </span>
+                            )}
                           </div>
-                          {link && (
-                            <span className={`ml-auto shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${link.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                              {link.isActive ? 'Active' : 'Paused'}
-                            </span>
-                          )}
+
+                          {/* Body Content */}
+                          <div className="p-5 space-y-3.5">
+                            {/* Title & Subtitle */}
+                            <div>
+                              <h4 className="font-bold text-slate-900 text-base leading-snug line-clamp-1">{product.title}</h4>
+                              {product.subtitle && (
+                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{product.subtitle}</p>
+                              )}
+                            </div>
+
+                            {/* Price & Partner Earnings */}
+                            <div className="flex items-baseline justify-between pt-1 border-t border-slate-100">
+                              <div>
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-xl font-black text-slate-900">₹{product.price?.toLocaleString('en-IN')}</span>
+                                  {product.originalPrice > product.price && (
+                                    <span className="text-xs text-slate-400 line-through">₹{product.originalPrice?.toLocaleString('en-IN')}</span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-slate-400">MRP Tax Inclusive</span>
+                              </div>
+
+                              <div className="text-right">
+                                <span className="text-[10px] uppercase font-bold text-purple-600 block">Your Commission</span>
+                                <span className="text-sm font-black text-purple-700">₹{commissionAmount}</span>
+                              </div>
+                            </div>
+
+                            {/* Short Description */}
+                            {product.description && (
+                              <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                                {product.description}
+                              </p>
+                            )}
+
+                            {/* View Full Product Details Button */}
+                            <button
+                              onClick={() => setViewingProduct({ product, link })}
+                              className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 hover:border-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>View Specs & Full Description</span>
+                            </button>
+                          </div>
                         </div>
 
-                        {/* Link section */}
-                        <div className="p-4 space-y-3">
+                        {/* Link & Action Footer */}
+                        <div className="p-5 pt-0 space-y-3">
                           {link ? (
-                            <>
-                              {/* Link URL display */}
+                            <div className="space-y-2.5 pt-3 border-t border-slate-100">
+                              {/* Link URL Display */}
                               <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200">
                                 <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                <span className="text-xs text-slate-600 truncate flex-1 font-mono">{linkUrl}</span>
+                                <span className="text-[11px] text-slate-600 truncate flex-1 font-mono font-medium">
+                                  {linkUrl}
+                                </span>
                                 <button
                                   onClick={() => {
                                     navigator?.clipboard?.writeText(linkUrl);
                                     setCopiedLinkCode(link.linkCode);
                                     setTimeout(() => setCopiedLinkCode(''), 2000);
                                   }}
-                                  className="shrink-0 text-purple-600 hover:text-purple-800"
+                                  className="shrink-0 p-1 rounded-md text-purple-600 hover:bg-purple-50 transition-colors"
+                                  title="Copy URL"
                                 >
-                                  {copiedLinkCode === link.linkCode ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                  {copiedLinkCode === link.linkCode ? (
+                                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                  ) : (
+                                    <Copy className="w-3.5 h-3.5" />
+                                  )}
                                 </button>
                               </div>
 
-                              {/* Stats row */}
-                              <div className="flex items-center justify-between text-xs text-slate-500">
-                                <span className="flex items-center gap-1">
-                                  <TrendingUp className="w-3 h-3" />
-                                  {link.clickCount || 0} clicks
+                              {/* Stats and Code */}
+                              <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                <span className="flex items-center gap-1 font-semibold text-slate-700">
+                                  <TrendingUp className="w-3 h-3 text-purple-500" />
+                                  {link.clickCount || 0} visits
                                 </span>
-                                <span className="font-mono text-slate-400">{link.linkCode}</span>
+                                <span className="font-mono text-slate-400 text-[10px]">{link.linkCode}</span>
                               </div>
 
-                              {/* Action buttons */}
+                              {/* WhatsApp & Toggle Action Buttons */}
                               <div className="flex gap-2">
                                 <a
-                                  href={`https://wa.me/?text=${encodeURIComponent(`Check out this product: ${linkUrl}`)}`}
+                                  href={`https://wa.me/?text=${encodeURIComponent(
+                                    `Check out this smart hardware: ${product.title} - ${linkUrl}`
+                                  )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white transition-colors shadow-2xs"
                                 >
                                   <Share2 className="w-3.5 h-3.5" />
                                   WhatsApp
@@ -753,13 +762,18 @@ export default function AdminDashboardPage() {
                                       refetchLinks();
                                     } catch {}
                                   }}
-                                  className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-xl transition-colors border ${link.isActive ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-700 hover:bg-green-50'}`}
+                                  className={`px-3 flex items-center justify-center gap-1 text-xs font-semibold py-2 rounded-xl border transition-colors ${
+                                    link.isActive
+                                      ? 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                                      : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                                  }`}
+                                  title={link.isActive ? 'Pause Link' : 'Activate Link'}
                                 >
-                                  {link.isActive ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
-                                  {link.isActive ? 'Pause' : 'Activate'}
+                                  {link.isActive ? <ToggleRight className="w-4 h-4 text-emerald-600" /> : <ToggleLeft className="w-4 h-4 text-slate-400" />}
+                                  <span>{link.isActive ? 'Active' : 'Paused'}</span>
                                 </button>
                               </div>
-                            </>
+                            </div>
                           ) : (
                             <button
                               disabled={generatingLinkId === product.id}
@@ -768,20 +782,21 @@ export default function AdminDashboardPage() {
                                 try {
                                   await generateProductLink({ productId: product.id }).unwrap();
                                   refetchLinks();
+                                  triggerNotice('Product referral link generated successfully!');
                                 } catch (err) {
                                   triggerNotice(err?.data?.error || 'Failed to generate link', true);
                                 } finally {
                                   setGeneratingLinkId(null);
                                 }
                               }}
-                              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors disabled:opacity-60"
+                              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-600/20 transition-all disabled:opacity-60"
                             >
                               {generatingLinkId === product.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
-                                <Link2 className="w-3.5 h-3.5" />
+                                <Link2 className="w-4 h-4" />
                               )}
-                              {generatingLinkId === product.id ? 'Generating...' : 'Generate My Referral Link'}
+                              <span>{generatingLinkId === product.id ? 'Generating...' : 'Generate My Referral Link'}</span>
                             </button>
                           )}
                         </div>
@@ -789,94 +804,12 @@ export default function AdminDashboardPage() {
                     );
                   })}
                   {(linksData?.items || []).length === 0 && (
-                    <div className="col-span-2 text-center py-20 text-slate-400 text-sm">
-                      No products available yet. Superadmin needs to add products first.
+                    <div className="col-span-3 text-center py-20 text-slate-400 text-sm">
+                      No products available in catalog. Superadmin has not added any hardware SKUs yet.
                     </div>
                   )}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* ================= TAB 2: REFERRAL TOOLS & QR ================= */}
-          {activeTab === 'referrals' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <div className="lg:col-span-7 p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-base">Your Dedicated Affiliate Link</h3>
-                    <p className="text-xs text-slate-400">Share with merchants to automatically earn commissions on their orders.</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-700">Direct Web Storefront URL:</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={referralLink}
-                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs"
-                      />
-                      <button
-                        onClick={handleCopyLink}
-                        className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all"
-                      >
-                        {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                        <span>{copied ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-purple-50/70 border border-purple-200 text-xs text-purple-900 space-y-2">
-                    <h4 className="font-bold flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-purple-600" /> How It Works for Your Clients:
-                    </h4>
-                    <ul className="space-y-1 list-disc pl-4 text-slate-700 text-[11px]">
-                      <li>When shop owners click your link, our system cookies their session for 30 days.</li>
-                      <li>They receive an automated <strong>5% partner discount</strong> at checkout.</li>
-                      <li>You earn a guaranteed <strong>{stats?.partner?.commissionPercent || 15}%</strong> commission on every stand ordered.</li>
-                    </ul>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      onClick={handleShareWhatsApp}
-                      className="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      <span>Broadcast to WhatsApp Business Contacts</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-5 p-6 rounded-2xl bg-white border border-slate-200 shadow-xs text-center space-y-4">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-base">In-Person Counter QR Code</h3>
-                    <p className="text-xs text-slate-400">Print or present on mobile for instant ordering</p>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 inline-block">
-                    {referralQrUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={referralQrUrl} alt="Referral QR Code" className="w-52 h-52 mx-auto rounded-xl bg-white p-2 shadow-sm" />
-                    ) : (
-                      <div className="w-52 h-52 bg-slate-200 rounded-xl mx-auto" />
-                    )}
-                  </div>
-
-                  <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                    Code: <strong className="font-mono text-slate-900">{referralCode}</strong>
-                  </p>
-
-                  <button
-                    onClick={handleDownloadQr}
-                    className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download High-Res QR Image</span>
-                  </button>
-                </div>
-              </div>
             </div>
           )}
 
@@ -1393,6 +1326,260 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= READ-ONLY PRODUCT DETAILS MODAL ================= */}
+      {viewingProduct && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="relative w-full max-w-3xl bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                  <Package className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Product Hardware Specification</h3>
+                  <p className="text-[11px] text-slate-500">Read-only partner reference</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-200 text-slate-700">
+                  Read Only
+                </span>
+                <button
+                  onClick={() => setViewingProduct(null)}
+                  className="p-1.5 rounded-xl hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 max-h-[75vh] overflow-y-auto space-y-6">
+              {/* Product Top Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                {/* Left: Image */}
+                <div className="md:col-span-5 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 aspect-square flex items-center justify-center">
+                  {viewingProduct.product.image ? (
+                    <img
+                      src={viewingProduct.product.image}
+                      alt={viewingProduct.product.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Package className="w-16 h-16 text-slate-300" />
+                  )}
+                </div>
+
+                {/* Right: Info, Price & Commission */}
+                <div className="md:col-span-7 space-y-4">
+                  <div>
+                    {viewingProduct.product.badge && (
+                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-black uppercase tracking-wider mb-2">
+                        {viewingProduct.product.badge}
+                      </span>
+                    )}
+                    <h2 className="text-xl font-black text-slate-900 leading-tight">
+                      {viewingProduct.product.title}
+                    </h2>
+                    {viewingProduct.product.subtitle && (
+                      <p className="text-xs text-slate-500 mt-1">{viewingProduct.product.subtitle}</p>
+                    )}
+                  </div>
+
+                  {/* Rating & Stock */}
+                  <div className="flex items-center gap-3 text-xs">
+                    <div className="flex items-center gap-1 text-amber-500 font-bold bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <span>{viewingProduct.product.rating || 4.9}</span>
+                    </div>
+                    <span className="text-slate-400">({viewingProduct.product.reviewsCount || 120} client reviews)</span>
+                    <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg font-bold border border-emerald-200">
+                      In Stock ({viewingProduct.product.stock || 100})
+                    </span>
+                  </div>
+
+                  {/* Price Cards */}
+                  <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Customer Price</span>
+                      <div className="flex items-baseline gap-1.5 mt-0.5">
+                        <span className="text-lg font-black text-slate-900">
+                          ₹{viewingProduct.product.price?.toLocaleString('en-IN')}
+                        </span>
+                        {viewingProduct.product.originalPrice > viewingProduct.product.price && (
+                          <span className="text-xs text-slate-400 line-through">
+                            ₹{viewingProduct.product.originalPrice?.toLocaleString('en-IN')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border-l border-slate-200 pl-3">
+                      <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider block">
+                        Your Commission ({stats?.partner?.commissionPercent || 15}%)
+                      </span>
+                      <span className="text-lg font-black text-purple-700 mt-0.5 block">
+                        ₹{(((viewingProduct.product.price || 0) * (stats?.partner?.commissionPercent || 15)) / 100).toFixed(0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {viewingProduct.product.description && (
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Description</span>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        {viewingProduct.product.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Key Features */}
+              {(() => {
+                let features = [];
+                try { features = JSON.parse(viewingProduct.product.features || '[]'); } catch {}
+                if (!features || features.length === 0) return null;
+                return (
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <span className="text-xs font-bold text-slate-900 block">Product Features</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {features.map((f, i) => (
+                        <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{typeof f === 'string' ? f : JSON.stringify(f)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Technical Specifications */}
+              {(() => {
+                let specs = [];
+                try { specs = JSON.parse(viewingProduct.product.specs || '[]'); } catch {}
+                if (!specs || specs.length === 0) return null;
+                return (
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <span className="text-xs font-bold text-slate-900 block">Technical Specifications</span>
+                    <div className="rounded-xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
+                      {specs.map((s, i) => (
+                        <div key={i} className="flex items-center justify-between p-2.5 text-xs bg-white hover:bg-slate-50">
+                          <span className="text-slate-500 font-medium">{s.key || s.label || s.name || `Spec #${i+1}`}</span>
+                          <span className="text-slate-900 font-bold">{s.value || JSON.stringify(s)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Referral Link & QR inside Modal */}
+              <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-3">
+                <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                  <Link2 className="w-4 h-4 text-purple-600" />
+                  Your Exclusive Referral Link for this SKU
+                </span>
+
+                {viewingProduct.link ? (
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    {productQrModalUrl && (
+                      <div className="p-2 bg-white rounded-xl border border-purple-200 shrink-0">
+                        <img src={productQrModalUrl} alt="Product Link QR" className="w-24 h-24 rounded-lg" />
+                      </div>
+                    )}
+                    <div className="flex-1 w-full space-y-2">
+                      <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-purple-200">
+                        <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="text-xs text-slate-800 font-mono font-medium truncate flex-1">
+                          {typeof window !== 'undefined' ? `${window.location.origin}/buy/${viewingProduct.link.linkCode}` : `/buy/${viewingProduct.link.linkCode}`}
+                        </span>
+                        <button
+                          onClick={() => {
+                            const url = typeof window !== 'undefined' ? `${window.location.origin}/buy/${viewingProduct.link.linkCode}` : '';
+                            navigator?.clipboard?.writeText(url);
+                            setCopiedLinkCode(viewingProduct.link.linkCode);
+                            setTimeout(() => setCopiedLinkCode(''), 2000);
+                          }}
+                          className="shrink-0 text-purple-600 hover:text-purple-800 text-xs font-bold flex items-center gap-1"
+                        >
+                          {copiedLinkCode === viewingProduct.link.linkCode ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedLinkCode === viewingProduct.link.linkCode ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(
+                            `Check out this smart hardware: ${viewingProduct.product.title} - ${typeof window !== 'undefined' ? `${window.location.origin}/buy/${viewingProduct.link.linkCode}` : ''}`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 py-2 px-3 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                          <span>Share on WhatsApp</span>
+                        </a>
+
+                        {productQrModalUrl && (
+                          <a
+                            href={productQrModalUrl}
+                            download={`QR-${viewingProduct.link.linkCode}.png`}
+                            className="py-2 px-3 rounded-xl bg-white border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center gap-1.5"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download QR</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-purple-200">
+                    <p className="text-xs text-slate-600">You haven't generated a link for this product yet.</p>
+                    <button
+                      disabled={generatingLinkId === viewingProduct.product.id}
+                      onClick={async () => {
+                        setGeneratingLinkId(viewingProduct.product.id);
+                        try {
+                          const res = await generateProductLink({ productId: viewingProduct.product.id }).unwrap();
+                          refetchLinks();
+                          setViewingProduct(prev => ({ ...prev, link: res.link }));
+                          triggerNotice('Referral link generated successfully!');
+                        } catch (err) {
+                          triggerNotice(err?.data?.error || 'Failed to generate link', true);
+                        } finally {
+                          setGeneratingLinkId(null);
+                        }
+                      }}
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center gap-1.5"
+                    >
+                      {generatingLinkId === viewingProduct.product.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+                      <span>Generate Link</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between p-4 px-6 border-t border-slate-100 bg-slate-50">
+              <span className="text-xs text-slate-400">ReviewXpress Verified Hardware SKU</span>
+              <button
+                onClick={() => setViewingProduct(null)}
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors"
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

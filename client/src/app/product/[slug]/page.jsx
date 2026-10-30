@@ -44,6 +44,7 @@ export default function ProductDetailPage() {
   const [googleReviewLink, setGoogleReviewLink] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [added, setAdded] = useState(false);
+  const [customError, setCustomError] = useState('');
 
   // Update dynamic QR Code preview
   useEffect(() => {
@@ -79,8 +80,6 @@ export default function ProductDetailPage() {
       </div>
     );
   }
-
-  const [customError, setCustomError] = useState('');
 
   const validateCustomization = () => {
     if (googleReviewLink.trim()) {

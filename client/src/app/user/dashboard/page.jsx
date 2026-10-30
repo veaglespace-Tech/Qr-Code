@@ -115,9 +115,11 @@ export default function UserDashboardPage() {
     });
   }, [orders, qrCodeUrls]);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser());
+    } catch {}
+    window.location.href = '/login';
   };
 
   const copyToClipboard = (text, key) => {
@@ -404,6 +406,15 @@ export default function UserDashboardPage() {
               title="Refresh Data"
             >
               <RefreshCw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-600 font-bold text-xs transition-colors"
+              title="Logout of session"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Logout</span>
             </button>
 
             <Link

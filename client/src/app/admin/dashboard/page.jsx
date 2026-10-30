@@ -89,6 +89,13 @@ export default function AdminDashboardPage() {
     setTimeout(() => setNotice({ text: '', isError: false }), 4500);
   };
 
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUser());
+    } catch {}
+    window.location.href = '/login';
+  };
+
   // Profile & Bank settings state
   const [profileForm, setProfileForm] = useState({
     name: '',
@@ -412,7 +419,7 @@ export default function AdminDashboardPage() {
               </div>
             </button>
             <button
-              onClick={() => dispatch(logoutUser())}
+              onClick={handleLogout}
               className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
               title="Sign Out"
             >
@@ -452,6 +459,15 @@ export default function AdminDashboardPage() {
               title="Refresh Data"
             >
               <RefreshCw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-600 font-bold text-xs transition-colors"
+              title="Logout of session"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Logout</span>
             </button>
 
             <button

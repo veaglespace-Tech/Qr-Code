@@ -10,7 +10,7 @@ export const apiSlice = createApi({
     baseUrl: API_BASE,
     credentials: 'include',
   }),
-  tagTypes: ['Auth', 'Product', 'Order', 'Setting', 'Admin', 'Superadmin', 'Payout', 'User'],
+  tagTypes: ['Auth', 'Product', 'Order', 'Setting', 'Admin', 'Superadmin', 'Payout', 'User', 'PartnerLink'],
   endpoints: (builder) => ({
     // ---------------- AUTH ENDPOINTS ----------------
     getMe: builder.query({
@@ -228,6 +228,32 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Payout', 'Superadmin', 'Admin'],
     }),
+
+    // ---------------- PARTNER PRODUCT LINKS ----------------
+    getMyProductLinks: builder.query({
+      query: () => '/admin/product-links',
+      providesTags: ['PartnerLink'],
+    }),
+    generateProductLink: builder.mutation({
+      query: (body) => ({
+        url: '/admin/product-links',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['PartnerLink'],
+    }),
+    toggleProductLink: builder.mutation({
+      query: (id) => ({
+        url: `/admin/product-links/${id}/toggle`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['PartnerLink'],
+    }),
+
+    // ---------------- PUBLIC LINK RESOLUTION ----------------
+    resolveProductLink: builder.query({
+      query: (linkCode) => `/buy/${linkCode}`,
+    }),
   }),
 });
 
@@ -274,4 +300,10 @@ export const {
   useDeleteUserMutation,
   useGetAllPayoutsQuery,
   useUpdatePayoutStatusMutation,
+
+  // Partner product link hooks
+  useGetMyProductLinksQuery,
+  useGenerateProductLinkMutation,
+  useToggleProductLinkMutation,
+  useResolveProductLinkQuery,
 } = apiSlice;

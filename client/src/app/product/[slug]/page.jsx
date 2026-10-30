@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '@/redux/slice/cartSlice';
 
 import { useGetProductBySlugQuery } from '@/redux/api/apiSlice';
@@ -25,6 +25,16 @@ export default function ProductDetailPage() {
   const { slug } = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
+  const { user } = useSelector(state => state.auth);
+
+  // Gate: only SUPERADMIN / ADMIN can view /product/[slug] directly
+  // Regular users must come via /buy/[linkCode]
+  useEffect(() => {
+    if (user === undefined) return; // still loading auth
+    if (!user || (user.role !== 'SUPERADMIN' && user.role !== 'ADMIN')) {
+      router.replace('/');
+    }
+  }, [user, router]);
 
   const { data: productData, isLoading: loading } = useGetProductBySlugQuery(slug, { skip: !slug });
   const product = productData?.product || null;

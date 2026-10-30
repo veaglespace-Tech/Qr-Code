@@ -1,6 +1,15 @@
 const prisma = require('../lib/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const crypto = require('crypto');
+
+// Helper: generate unique link code
+function generateLinkCode(orgName, productSlug) {
+  const orgPart = (orgName || 'LINK').replace(/\s+/g, '').toUpperCase().slice(0, 4);
+  const prodPart = (productSlug || 'PROD').toUpperCase().replace(/-/g, '').slice(0, 6);
+  const rand = crypto.randomBytes(3).toString('hex').toUpperCase();
+  return `${orgPart}-${prodPart}-${rand}`;
+}
 
 exports.getAdminStats = asyncHandler(async (req, res) => {
   const adminId = req.user.id;
@@ -122,4 +131,88 @@ exports.updateBankDetails = asyncHandler(async (req, res) => {
 
   const { password, ...safe } = updated;
   return res.json({ success: true, user: safe, message: 'Bank & UPI details updated successfully' });
+});
+
+// ─────────────────────────────────────────────────────────────
+// PARTNER PRODUCT LINKS
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/admin/product-links — list all my product links
+exports.getMyProductLinks = asyncHandler(async (req, res) => {
+  const adminId = req.user.id;
+
+  // Get all products + existing links for this partner in one shot
+  const [products, links] = await Promise.all([
+    prisma.product.findMany({ orderBy: { createdAt: 'asc' } }),
+    prisma.partnerProductLink.findMany({
+      where: { adminId },
+      include: { product: true }
+    })
+  ]);
+
+  const linksMap = {};
+  links.forEach(l => { linksMap[l.productId] = l; });
+
+  const result = products.map(p => ({
+    product: p,
+    link: linksMap[p.id] || null
+  }));
+
+  return res.json({ success: true, items: result });
+});
+
+// POST /api/admin/product-links — generate (or fetch existing) link for a product
+exports.generateProductLink = asyncHandler(async (req, res) => {
+  const adminId = req.user.id;
+  const { productId } = req.body;
+
+  if (!productId) throw new ApiError(400, 'productId is required');
+
+  const product = await prisma.product.findUnique({ where: { id: Number(productId) } });
+  if (!product) throw new ApiError(404, 'Product not found');
+
+  // Check if link already exists
+  const existing = await prisma.partnerProductLink.findFirst({
+    where: { adminId, productId: Number(productId) }
+  });
+  if (existing) {
+    return res.json({ success: true, link: existing, alreadyExisted: true });
+  }
+
+  // Generate new unique code
+  let linkCode;
+  let attempts = 0;
+  do {
+    linkCode = generateLinkCode(req.user.orgName || req.user.name, product.slug);
+    const clash = await prisma.partnerProductLink.findUnique({ where: { linkCode } });
+    if (!clash) break;
+    attempts++;
+  } while (attempts < 5);
+
+  const link = await prisma.partnerProductLink.create({
+    data: {
+      adminId,
+      productId: Number(productId),
+      linkCode,
+      isActive: true
+    }
+  });
+
+  return res.status(201).json({ success: true, link, alreadyExisted: false });
+});
+
+// PUT /api/admin/product-links/:id/toggle — activate/deactivate a link
+exports.toggleProductLink = asyncHandler(async (req, res) => {
+  const adminId = req.user.id;
+  const linkId = Number(req.params.id);
+
+  const link = await prisma.partnerProductLink.findUnique({ where: { id: linkId } });
+  if (!link || link.adminId !== adminId) throw new ApiError(404, 'Link not found');
+
+  const updated = await prisma.partnerProductLink.update({
+    where: { id: linkId },
+    data: { isActive: !link.isActive }
+  });
+
+  return res.json({ success: true, link: updated });
 });

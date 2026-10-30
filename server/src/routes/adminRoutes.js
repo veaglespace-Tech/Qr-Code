@@ -10,4 +10,9 @@ router.get('/stats', adminController.getAdminStats);
 router.post('/payouts', adminController.requestPayout);
 router.put('/bank-details', adminController.updateBankDetails);
 
+// Partner product links
+router.get('/product-links', adminController.getMyProductLinks);
+router.post('/product-links', adminController.generateProductLink);
+router.put('/product-links/:id/toggle', adminController.toggleProductLink);
+
 module.exports = router;

@@ -1,11 +1,45 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { Loader2 } from 'lucide-react';
+
+// ⚠️ Direct shop access is disabled.
+// Customers must use a partner referral link (/buy/[linkCode]) to view & purchase products.
+// Only SUPERADMIN and ADMIN can access /shop for inventory management.
+
+export default function ShopPage() {
+  const router = useRouter();
+  const { user } = useSelector(state => state.auth);
+
+  useEffect(() => {
+    // Allow admins and superadmins to view shop
+    if (user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') return;
+    // Everyone else → redirect to homepage
+    router.replace('/');
+  }, [user, router]);
+
+  if (user?.role === 'SUPERADMIN' || user?.role === 'ADMIN') {
+    // Render minimal admin product view
+    return <AdminShopView />;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#090d16] flex flex-col items-center justify-center gap-4">
+      <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+      <p className="text-slate-400 text-sm">Redirecting...</p>
+    </div>
+  );
+}
+
+// Simple admin-only shop view
 import { useState } from 'react';
 import { useGetProductsQuery } from '@/redux/api/apiSlice';
 import ProductCard from '@/components/ProductCard';
 import { Search, Sparkles, ShieldCheck, Zap, Truck } from 'lucide-react';
 
-export default function ShopPage() {
+function AdminShopView() {
   const { data: productsData, isLoading: loading } = useGetProductsQuery();
   const products = productsData?.products || [];
   const [search, setSearch] = useState('');

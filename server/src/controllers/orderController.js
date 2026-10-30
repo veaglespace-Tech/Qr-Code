@@ -4,7 +4,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 
 exports.createOrder = asyncHandler(async (req, res) => {
-  const { items, customerDetails, referralCode, isSimulation = false } = req.body;
+  const { items, customerDetails, referralCode, partnerLinkCode, isSimulation = false } = req.body;
 
   if (!items || !items.length || !customerDetails || !customerDetails.name || !customerDetails.phone) {
     throw new ApiError(400, 'Cart items and customer details are required');
@@ -36,25 +36,44 @@ exports.createOrder = asyncHandler(async (req, res) => {
   const gstAmount = parseFloat(((subtotal * gstPercent) / 100).toFixed(2));
   const shippingFee = subtotal >= freeShippingAbove ? 0.0 : standardShippingFee;
 
-  // Check referral
+  // Check referral — PRIORITY: partnerLinkCode > referralCode
   let adminReferralId = null;
   let adminCommissionPercent = 0.0;
   let adminCommissionAmount = 0.0;
   let discountAmount = 0.0;
+  let partnerLinkId = null;
 
-  const trimmedCode = (referralCode || '').trim().toUpperCase();
-  if (trimmedCode) {
-    const partner = await prisma.user.findFirst({
-      where: {
-        role: 'ADMIN',
-        referralCode: trimmedCode
-      }
+  // 1. Try partner product link (new flow)
+  const trimmedLinkCode = (partnerLinkCode || '').trim();
+  if (trimmedLinkCode) {
+    const pLink = await prisma.partnerProductLink.findUnique({
+      where: { linkCode: trimmedLinkCode },
+      include: { admin: true }
     });
-    if (partner) {
-      adminReferralId = partner.id;
-      adminCommissionPercent = partner.commissionPercent || (settings ? settings.defaultCommissionPercent : 15.0);
+    if (pLink && pLink.isActive) {
+      adminReferralId = pLink.adminId;
+      partnerLinkId = pLink.id;
+      adminCommissionPercent = pLink.admin.commissionPercent || (settings ? settings.defaultCommissionPercent : 15.0);
       adminCommissionAmount = parseFloat(((subtotal * adminCommissionPercent) / 100).toFixed(2));
-      discountAmount = parseFloat((subtotal * 0.05).toFixed(2)); // 5% discount for customer
+    }
+  }
+
+  // 2. Fallback: legacy referral code (old flow)
+  if (!adminReferralId) {
+    const trimmedCode = (referralCode || '').trim().toUpperCase();
+    if (trimmedCode) {
+      const partner = await prisma.user.findFirst({
+        where: {
+          role: 'ADMIN',
+          referralCode: trimmedCode
+        }
+      });
+      if (partner) {
+        adminReferralId = partner.id;
+        adminCommissionPercent = partner.commissionPercent || (settings ? settings.defaultCommissionPercent : 15.0);
+        adminCommissionAmount = parseFloat(((subtotal * adminCommissionPercent) / 100).toFixed(2));
+        discountAmount = parseFloat((subtotal * 0.05).toFixed(2)); // 5% discount for customer via old flow
+      }
     }
   }
 
@@ -88,6 +107,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
       adminCommissionPercent,
       adminCommissionAmount,
       adminCommissionStatus: adminReferralId ? 'pending' : null,
+      partnerLinkId: partnerLinkId || null,
       paymentStatus: 'pending',
       paymentMethod: selectedPaymentMethod,
       payuTxnId: txnid,

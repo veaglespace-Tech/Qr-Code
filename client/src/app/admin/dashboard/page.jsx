@@ -5,7 +5,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   useGetAdminStatsQuery,
   useRequestPayoutMutation,
-  useUpdateProfileMutation
+  useUpdateProfileMutation,
+  useGetMyProductLinksQuery,
+  useGenerateProductLinkMutation,
+  useToggleProductLinkMutation
 } from '@/redux/api/apiSlice';
 import { logoutUser } from '@/redux/slice/authSlice';
 import {
@@ -41,7 +44,12 @@ import {
   Eye,
   EyeOff,
   Phone,
-  Mail
+  Mail,
+  Link2,
+  Globe,
+  ToggleLeft,
+  ToggleRight,
+  Zap
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import Link from 'next/link';
@@ -52,6 +60,14 @@ export default function AdminDashboardPage() {
   const { data: stats, isLoading: loading, refetch } = useGetAdminStatsQuery();
   const [requestPayout, { isLoading: submittingPayout }] = useRequestPayoutMutation();
   const [updateProfile, { isLoading: savingProfile }] = useUpdateProfileMutation();
+
+  // Product links
+  const { data: linksData, isLoading: linksLoading, refetch: refetchLinks } = useGetMyProductLinksQuery();
+  const [generateProductLink, { isLoading: generatingLink }] = useGenerateProductLinkMutation();
+  const [toggleProductLink] = useToggleProductLinkMutation();
+  const [generatingLinkId, setGeneratingLinkId] = useState(null);
+  const [productLinkQrs, setProductLinkQrs] = useState({});
+  const [copiedLinkCode, setCopiedLinkCode] = useState('');
 
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -239,6 +255,7 @@ export default function AdminDashboardPage() {
 
   const navItems = [
     { id: 'overview', label: 'Overview & Earnings', icon: LayoutDashboard },
+    { id: 'products', label: 'My Product Links', icon: Link2 },
     { id: 'referrals', label: 'Marketing Link & QR', icon: Share2 },
     { id: 'orders', label: 'Referred Orders', icon: Package, badge: recentOrders.length },
     { id: 'payouts', label: 'Withdrawals & Balances', icon: IndianRupee },
@@ -419,6 +436,7 @@ export default function AdminDashboardPage() {
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight capitalize">
                 {activeTab === 'overview' && 'Partner Overview & Performance'}
+                {activeTab === 'products' && 'My Product Referral Links'}
                 {activeTab === 'referrals' && 'Marketing Link & Counter QR Code'}
                 {activeTab === 'orders' && 'Referred Customer Orders'}
                 {activeTab === 'payouts' && 'Commission Balances & Withdrawals'}
@@ -623,6 +641,143 @@ export default function AdminDashboardPage() {
                   </table>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ================= TAB: MY PRODUCT LINKS ================= */}
+          {activeTab === 'products' && (
+            <div className="space-y-6">
+              <div className="p-5 rounded-2xl bg-purple-50 border border-purple-100 flex items-start gap-3">
+                <Zap className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-purple-900">Unique Per-Product Referral Links</p>
+                  <p className="text-xs text-purple-700 mt-1">
+                    Each product gets a unique shareable link assigned to you. When a customer lands on your link, they see <strong>only that product</strong> and can purchase it. Your commission is automatically tracked.
+                  </p>
+                </div>
+              </div>
+
+              {linksLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {(linksData?.items || []).map(({ product, link }) => {
+                    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yoursite.com';
+                    const linkUrl = link ? `${baseUrl}/buy/${link.linkCode}` : null;
+
+                    return (
+                      <div key={product.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                        {/* Product header */}
+                        <div className="flex items-center gap-3 p-4 border-b border-slate-100">
+                          {product.image ? (
+                            <img src={product.image} alt={product.title} className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-100" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                              <Package className="w-5 h-5 text-purple-500" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900 text-sm truncate">{product.title}</p>
+                            <p className="text-xs text-slate-500">₹{product.price.toLocaleString('en-IN')}</p>
+                          </div>
+                          {link && (
+                            <span className={`ml-auto shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${link.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                              {link.isActive ? 'Active' : 'Paused'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Link section */}
+                        <div className="p-4 space-y-3">
+                          {link ? (
+                            <>
+                              {/* Link URL display */}
+                              <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200">
+                                <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="text-xs text-slate-600 truncate flex-1 font-mono">{linkUrl}</span>
+                                <button
+                                  onClick={() => {
+                                    navigator?.clipboard?.writeText(linkUrl);
+                                    setCopiedLinkCode(link.linkCode);
+                                    setTimeout(() => setCopiedLinkCode(''), 2000);
+                                  }}
+                                  className="shrink-0 text-purple-600 hover:text-purple-800"
+                                >
+                                  {copiedLinkCode === link.linkCode ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+
+                              {/* Stats row */}
+                              <div className="flex items-center justify-between text-xs text-slate-500">
+                                <span className="flex items-center gap-1">
+                                  <TrendingUp className="w-3 h-3" />
+                                  {link.clickCount || 0} clicks
+                                </span>
+                                <span className="font-mono text-slate-400">{link.linkCode}</span>
+                              </div>
+
+                              {/* Action buttons */}
+                              <div className="flex gap-2">
+                                <a
+                                  href={`https://wa.me/?text=${encodeURIComponent(`Check out this product: ${linkUrl}`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                >
+                                  <Share2 className="w-3.5 h-3.5" />
+                                  WhatsApp
+                                </a>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await toggleProductLink(link.id).unwrap();
+                                      refetchLinks();
+                                    } catch {}
+                                  }}
+                                  className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 rounded-xl transition-colors border ${link.isActive ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-700 hover:bg-green-50'}`}
+                                >
+                                  {link.isActive ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+                                  {link.isActive ? 'Pause' : 'Activate'}
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <button
+                              disabled={generatingLinkId === product.id}
+                              onClick={async () => {
+                                setGeneratingLinkId(product.id);
+                                try {
+                                  await generateProductLink({ productId: product.id }).unwrap();
+                                  refetchLinks();
+                                } catch (err) {
+                                  triggerNotice(err?.data?.error || 'Failed to generate link', true);
+                                } finally {
+                                  setGeneratingLinkId(null);
+                                }
+                              }}
+                              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors disabled:opacity-60"
+                            >
+                              {generatingLinkId === product.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Link2 className="w-3.5 h-3.5" />
+                              )}
+                              {generatingLinkId === product.id ? 'Generating...' : 'Generate My Referral Link'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {(linksData?.items || []).length === 0 && (
+                    <div className="col-span-2 text-center py-20 text-slate-400 text-sm">
+                      No products available yet. Superadmin needs to add products first.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

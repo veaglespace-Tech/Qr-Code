@@ -11,6 +11,7 @@ const settingRoutes = require('./routes/settingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const superadminRoutes = require('./routes/superadminRoutes');
 const payuRoutes = require('./routes/payuRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -66,6 +67,7 @@ app.use('/api/settings', settingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/superadmin', superadminRoutes);
 app.use('/api/payu', payuRoutes);
+app.use('/api/buy', publicRoutes);
 
 // Centralized Error Handler (Receives all errors forwarded by asyncHandler)
 app.use((err, req, res, next) => {

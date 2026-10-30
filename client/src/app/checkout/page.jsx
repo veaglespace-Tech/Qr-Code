@@ -130,6 +130,7 @@ export default function CheckoutPage() {
           phone: cleanPhone
         },
         referralCode: referralCode || '',
+        partnerLinkCode: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('partnerLinkCode') : '') || '',
         paymentMethod: isCOD ? 'cod' : 'payu'
       };
 

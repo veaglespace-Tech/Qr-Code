@@ -45,9 +45,16 @@ exports.createOrder = asyncHandler(async (req, res) => {
 
   // 1. Try partner product link (new flow)
   const trimmedLinkCode = (partnerLinkCode || '').trim();
+  const normalizedLinkCode = trimmedLinkCode.replace(/\s+/g, '-');
   if (trimmedLinkCode) {
-    const pLink = await prisma.partnerProductLink.findUnique({
-      where: { linkCode: trimmedLinkCode },
+    const pLink = await prisma.partnerProductLink.findFirst({
+      where: {
+        OR: [
+          { linkCode: trimmedLinkCode },
+          { linkCode: normalizedLinkCode },
+          { linkCode: normalizedLinkCode.toUpperCase() }
+        ]
+      },
       include: { admin: true }
     });
     if (pLink && pLink.isActive) {
@@ -55,6 +62,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
       partnerLinkId = pLink.id;
       adminCommissionPercent = pLink.admin.commissionPercent || (settings ? settings.defaultCommissionPercent : 15.0);
       adminCommissionAmount = parseFloat(((subtotal * adminCommissionPercent) / 100).toFixed(2));
+      discountAmount = parseFloat((subtotal * 0.05).toFixed(2)); // 5% discount for customer via partner link
     }
   }
 

@@ -11,11 +11,18 @@ import { Trash2, ArrowRight, ShoppingBag, Sparkles, ShieldCheck, Tag } from 'luc
 export default function CartPage() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { items, referralCode } = useSelector(state => state.cart);
+  const { items, referralCode, partnerInfo } = useSelector(state => state.cart);
   const { data: settings } = useSelector(state => state.settings);
 
-  const [inputRefCode, setInputRefCode] = useState(referralCode || '');
-  const [appliedMsg, setAppliedMsg] = useState(referralCode ? 'Partner code active!' : '');
+  const activeRefCode = referralCode || partnerInfo?.referralCode || '';
+  const [inputRefCode, setInputRefCode] = useState(activeRefCode);
+  const [appliedMsg, setAppliedMsg] = useState(
+    partnerInfo?.orgName
+      ? `Partner offer active (${partnerInfo.orgName})!`
+      : activeRefCode
+      ? 'Partner code active!'
+      : ''
+  );
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const gstPercent = (settings && settings.gstEnabled) ? (settings.gstPercent || 18) : 0;
@@ -23,7 +30,7 @@ export default function CartPage() {
   const freeShippingAbove = settings?.freeShippingAbove || 999;
   const shippingFee = subtotal >= freeShippingAbove || items.length === 0 ? 0 : (settings?.standardShippingFee || 60);
 
-  const hasReferral = Boolean(referralCode && referralCode.trim());
+  const hasReferral = Boolean((activeRefCode && activeRefCode.trim()) || partnerInfo?.linkCode);
   const discountAmount = hasReferral ? Number((subtotal * 0.05).toFixed(2)) : 0;
   const totalAmount = Number((subtotal + gstAmount + shippingFee - discountAmount).toFixed(2));
 
@@ -37,20 +44,39 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-24 text-center space-y-6">
-        <div className="w-16 h-16 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto border border-purple-100">
           <ShoppingBag className="w-8 h-8" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900">Your Cart is Empty</h2>
-        <p className="text-sm text-slate-600 max-w-md mx-auto">
-          You haven&apos;t added any Review Express smart stands or NFC cards yet. Explore our hardware products to boost your business Google reviews.
-        </p>
-        <Link
-          href="/shop"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-all shadow-md shadow-brand-500/20"
-        >
-          <span>Browse Smart Stands</span>
-          <ArrowRight className="w-4 h-4" />
-        </Link>
+        {partnerInfo ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600 max-w-md mx-auto">
+              You are shopping with partner <strong>{partnerInfo.orgName || partnerInfo.name}</strong>. Add the recommended custom NFC stand to activate your exclusive 5% discount!
+            </p>
+            {partnerInfo.linkCode && (
+              <Link
+                href={`/buy/${partnerInfo.linkCode}`}
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm transition-all shadow-md shadow-purple-600/25"
+              >
+                <span>View Recommended Stand</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-slate-600 max-w-md mx-auto mb-4">
+              You haven&apos;t added any Review Express smart stands or NFC cards yet. Explore our hardware products to boost your business Google reviews.
+            </p>
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-all shadow-md shadow-brand-500/20"
+            >
+              <span>Browse Smart Stands</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
       </div>
     );
   }
@@ -122,29 +148,52 @@ export default function CartPage() {
 
           {/* Partner Referral Box */}
           <div className="glass-panel bg-white rounded-2xl p-5 border border-slate-200 space-y-3 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold text-amber-800 uppercase tracking-wider">
-              <Sparkles className="w-4 h-4 text-amber-600" /> Partner / Affiliate Referral Code
-            </div>
-            <p className="text-xs text-slate-600">
-              Have a referral code from a partner or organization? Enter it below to unlock an extra 5% instant discount!
-            </p>
-            <form onSubmit={handleApplyReferral} className="flex gap-2">
-              <input
-                type="text"
-                value={inputRefCode}
-                onChange={(e) => setInputRefCode(e.target.value)}
-                placeholder="e.g. TECHHUB15"
-                className="flex-1 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs uppercase font-mono focus:outline-none focus:border-amber-500 focus:bg-white"
-              />
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors"
-              >
-                Apply
-              </button>
-            </form>
-            {appliedMsg && (
-              <p className="text-xs text-emerald-700 font-bold">{appliedMsg}</p>
+            {partnerInfo ? (
+              <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-purple-600 text-white font-black flex items-center justify-center text-xs shrink-0">
+                    {(partnerInfo.orgName || partnerInfo.name).charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-purple-950">
+                      Partner Offer Active: {partnerInfo.orgName || partnerInfo.name}
+                    </p>
+                    <p className="text-[11px] text-purple-700 font-semibold">
+                      5% Partner discount automatically applied to your cart!
+                    </p>
+                  </div>
+                </div>
+                <span className="font-mono text-xs font-bold text-purple-700 bg-white px-2 py-0.5 rounded border border-purple-200 self-start sm:self-auto">
+                  {partnerInfo.referralCode || partnerInfo.linkCode}
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-800 uppercase tracking-wider">
+                  <Sparkles className="w-4 h-4 text-amber-600" /> Partner / Affiliate Referral Code
+                </div>
+                <p className="text-xs text-slate-600">
+                  Have a referral code from a partner or organization? Enter it below to unlock an extra 5% instant discount!
+                </p>
+                <form onSubmit={handleApplyReferral} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inputRefCode}
+                    onChange={(e) => setInputRefCode(e.target.value)}
+                    placeholder="e.g. TECHHUB15"
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs uppercase font-mono focus:outline-none focus:border-amber-500 focus:bg-white"
+                  />
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors"
+                  >
+                    Apply
+                  </button>
+                </form>
+                {appliedMsg && (
+                  <p className="text-xs text-emerald-700 font-bold">{appliedMsg}</p>
+                )}
+              </>
             )}
           </div>
         </div>

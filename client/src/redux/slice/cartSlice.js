@@ -23,11 +23,24 @@ const getInitialReferral = () => {
   return '';
 };
 
+const getInitialPartnerInfo = () => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('re_partner_info');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState: {
     items: getInitialCart(),
     referralCode: getInitialReferral(),
+    partnerInfo: getInitialPartnerInfo(),
     businessName: '',
     googleReviewLink: '',
   },
@@ -80,6 +93,34 @@ const cartSlice = createSlice({
         localStorage.setItem('re_referral_code', action.payload);
       }
     },
+    setPartnerInfo: (state, action) => {
+      state.partnerInfo = action.payload;
+      if (action.payload?.referralCode) {
+        state.referralCode = action.payload.referralCode;
+      }
+      if (typeof window !== 'undefined') {
+        try {
+          if (action.payload) {
+            localStorage.setItem('re_partner_info', JSON.stringify(action.payload));
+            if (action.payload.linkCode) localStorage.setItem('re_partner_link_code', action.payload.linkCode);
+            if (action.payload.referralCode) localStorage.setItem('re_referral_code', action.payload.referralCode);
+            // 30 day cookie
+            document.cookie = `rx_partner_link=${encodeURIComponent(action.payload.linkCode || '')}; max-age=2592000; path=/`;
+            document.cookie = `rx_partner_ref=${encodeURIComponent(action.payload.referralCode || '')}; max-age=2592000; path=/`;
+          } else {
+            localStorage.removeItem('re_partner_info');
+            localStorage.removeItem('re_partner_link_code');
+          }
+        } catch {}
+      }
+    },
+    clearPartnerInfo: (state) => {
+      state.partnerInfo = null;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('re_partner_info');
+        localStorage.removeItem('re_partner_link_code');
+      }
+    },
     setBusinessCustomization: (state, action) => {
       const { businessName, googleReviewLink } = action.payload;
       if (businessName !== undefined) state.businessName = businessName;
@@ -99,6 +140,8 @@ export const {
   removeFromCart,
   updateQuantity,
   setReferralCode,
+  setPartnerInfo,
+  clearPartnerInfo,
   setBusinessCustomization,
   clearCart
 } = cartSlice.actions;

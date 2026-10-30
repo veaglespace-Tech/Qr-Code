@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useDispatch } from 'react-redux';
+import { addToCart, setReferralCode, setPartnerInfo } from '@/redux/slice/cartSlice';
 import { useResolveProductLinkQuery } from '@/redux/api/apiSlice';
 import {
   ShoppingCart,
@@ -64,19 +66,38 @@ export default function BuyPage(props) {
   const routeParams = useParams();
   const linkCode = routeParams?.linkCode || props?.params?.linkCode;
   const router = useRouter();
+  const dispatch = useDispatch();
 
   const { data, isLoading, isError, error } = useResolveProductLinkQuery(linkCode, { skip: !linkCode });
   const [imgError, setImgError] = useState(false);
+  const [buying, setBuying] = useState(false);
 
-  // Store linkCode + linkId in sessionStorage so checkout can read it
+  // Store partner information in Redux, sessionStorage, localStorage and cookie
   useEffect(() => {
-    if (data?.success) {
+    if (data?.success && data?.partner) {
+      const partnerPayload = {
+        linkCode,
+        partnerId: data.partner.id,
+        orgName: data.partner.orgName || data.partner.name,
+        name: data.partner.name,
+        referralCode: data.partner.referralCode || '',
+        phone: data.partner.phone || '',
+        productSlug: data.product.slug,
+        productTitle: data.product.title
+      };
+
+      dispatch(setPartnerInfo(partnerPayload));
+      if (data.partner.referralCode) {
+        dispatch(setReferralCode(data.partner.referralCode));
+      }
+
       sessionStorage.setItem('partnerLinkCode', linkCode);
       sessionStorage.setItem('partnerLinkId', data.linkId);
       sessionStorage.setItem('partnerAdminId', data.partner.id);
       sessionStorage.setItem('partnerReferralCode', data.partner.referralCode || '');
+      sessionStorage.setItem('partnerOrgName', data.partner.orgName || data.partner.name);
     }
-  }, [data, linkCode]);
+  }, [data, linkCode, dispatch]);
 
   if (isLoading) {
     return (
@@ -110,8 +131,35 @@ export default function BuyPage(props) {
   const specs = parseSpecs(product.specs);
 
   const handleBuyNow = () => {
-    // Redirect to checkout with product slug
-    router.push(`/checkout?product=${product.slug}&ref=${linkCode}`);
+    setBuying(true);
+
+    // 1. Dispatch addToCart to add this exact product into the user's cart
+    dispatch(addToCart({
+      product,
+      quantity: 1,
+      customization: {
+        partnerLinkCode: linkCode,
+        referralCode: partner.referralCode || ''
+      }
+    }));
+
+    // 2. Dispatch referral attribution
+    if (partner.referralCode) {
+      dispatch(setReferralCode(partner.referralCode));
+    }
+    dispatch(setPartnerInfo({
+      linkCode,
+      partnerId: partner.id,
+      orgName: partner.orgName || partner.name,
+      name: partner.name,
+      referralCode: partner.referralCode || '',
+      phone: partner.phone || '',
+      productSlug: product.slug,
+      productTitle: product.title
+    }));
+
+    // 3. Immediately redirect to checkout with cart loaded
+    router.push(`/checkout?ref=${encodeURIComponent(linkCode)}`);
   };
 
   return (
@@ -247,15 +295,37 @@ export default function BuyPage(props) {
             <div className="space-y-3 pt-2">
               <button
                 onClick={handleBuyNow}
-                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-[0.98] text-white font-bold text-base transition-all shadow-lg shadow-purple-200"
+                disabled={buying}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-[0.98] text-white font-bold text-base transition-all shadow-lg shadow-purple-600/30 disabled:opacity-70 cursor-pointer"
               >
-                <ShoppingCart className="w-5 h-5" />
-                Buy Now — ₹{product.price.toLocaleString('en-IN')}
-                <ArrowRight className="w-4 h-4" />
+                {buying ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Proceeding to Checkout...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-5 h-5" />
+                    <span>Order Now — ₹{product.price.toLocaleString('en-IN')}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
-              <p className="text-center text-xs text-slate-400">
-                GST & shipping calculated at checkout
-              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-500 pt-1">
+                <span className="flex items-center gap-1">
+                  <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                  100% Secure Checkout
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <Truck className="w-3.5 h-3.5 text-blue-600" />
+                  Free Express Delivery
+                </span>
+                <span>•</span>
+                <span className="text-purple-600 font-bold">
+                  5% Partner Discount Auto-Applied
+                </span>
+              </div>
             </div>
 
             {/* Specs */}

@@ -21,7 +21,7 @@ export default function CheckoutPage() {
   const dispatch = useDispatch();
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
 
-  const { items, referralCode } = useSelector(state => state.cart);
+  const { items, referralCode, partnerInfo } = useSelector(state => state.cart);
   const { user } = useSelector(state => state.auth);
   const { data: settings } = useSelector(state => state.settings);
 
@@ -49,7 +49,12 @@ export default function CheckoutPage() {
   const freeShippingAbove = settings?.freeShippingAbove || 999;
   const shippingFee = subtotal >= freeShippingAbove || items.length === 0 ? 0 : (settings?.standardShippingFee || 60);
 
-  const hasReferral = Boolean(referralCode && referralCode.trim());
+  const activeRefCode = referralCode || partnerInfo?.referralCode || (typeof localStorage !== 'undefined' ? localStorage.getItem('re_referral_code') : '') || '';
+  const activePartnerLink = partnerInfo?.linkCode ||
+    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('partnerLinkCode') : '') ||
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('re_partner_link_code') : '') || '';
+
+  const hasReferral = Boolean(activeRefCode && activeRefCode.trim()) || Boolean(activePartnerLink && activePartnerLink.trim());
   const discountAmount = hasReferral ? Number((subtotal * 0.05).toFixed(2)) : 0;
   const finalAmount = Number((subtotal + gstAmount + shippingFee - discountAmount).toFixed(2));
 
@@ -129,8 +134,8 @@ export default function CheckoutPage() {
           ...formData,
           phone: cleanPhone
         },
-        referralCode: referralCode || '',
-        partnerLinkCode: (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('partnerLinkCode') : '') || '',
+        referralCode: activeRefCode,
+        partnerLinkCode: activePartnerLink,
         paymentMethod: isCOD ? 'cod' : 'payu'
       };
 
@@ -175,14 +180,33 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center space-y-4">
-        <h2 className="text-2xl font-bold text-slate-900">Your cart is empty</h2>
-        <p className="text-xs text-slate-500">Add Review Express stands or cards before checking out.</p>
-        <button
-          onClick={() => router.push('/shop')}
-          className="px-6 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm shadow-md shadow-brand-500/25"
-        >
-          Return to Shop
-        </button>
+        <h2 className="text-2xl font-bold text-slate-900">Your cart is currently empty</h2>
+        {partnerInfo ? (
+          <div className="space-y-4">
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              You are connected with partner <strong>{partnerInfo.orgName || partnerInfo.name}</strong>. Add your custom NFC stand to continue with your 5% discount!
+            </p>
+            {partnerInfo.linkCode && (
+              <button
+                onClick={() => router.push(`/buy/${partnerInfo.linkCode}`)}
+                className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md shadow-purple-600/25 transition-all inline-flex items-center gap-2 cursor-pointer"
+              >
+                <span>View Recommended Stand</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div>
+            <p className="text-xs text-slate-500 mb-3">Add Review Express stands or cards before checking out.</p>
+            <button
+              onClick={() => router.push('/shop')}
+              className="px-6 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm shadow-md shadow-brand-500/25 cursor-pointer"
+            >
+              Return to Shop
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -473,6 +497,28 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* Partner Referral Attribution Banner */}
+          {partnerInfo && (
+            <div className="p-4 rounded-2xl bg-purple-50/90 border border-purple-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-600 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-xs">
+                  {(partnerInfo.orgName || partnerInfo.name).charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-xs font-black text-purple-950">
+                    Partner Affiliate: {partnerInfo.orgName || partnerInfo.name}
+                  </p>
+                  <p className="text-[11px] text-purple-700 font-semibold">
+                    Special 5% Partner discount applied to your order!
+                  </p>
+                </div>
+              </div>
+              <span className="font-mono text-xs font-bold text-purple-700 bg-white px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs self-start sm:self-auto">
+                {partnerInfo.referralCode || partnerInfo.linkCode}
+              </span>
+            </div>
+          )}
+
           {/* Pricing Breakdown Card */}
           <div className="glass-panel bg-white rounded-2xl p-6 border border-slate-200 space-y-4 shadow-sm">
             <h3 className="text-sm font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center justify-between">
@@ -488,7 +534,7 @@ export default function CheckoutPage() {
 
               {hasReferral && (
                 <div className="flex justify-between text-emerald-700 bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200">
-                  <span className="font-medium">Partner Referral Code ({referralCode}):</span>
+                  <span className="font-medium">Partner Discount ({partnerInfo?.orgName ? partnerInfo.orgName : activeRefCode}):</span>
                   <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
                 </div>
               )}

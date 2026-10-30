@@ -18,8 +18,9 @@ export default function Navbar() {
     return null;
   }
 
+  const isBuyPage = pathname?.startsWith('/buy/');
   const { user } = useSelector(state => state.auth);
-  const { items } = useSelector(state => state.cart);
+  const { items, partnerInfo } = useSelector(state => state.cart);
   const { data: settings } = useSelector(state => state.settings);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -31,8 +32,33 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Sticky Partner Referral Banner (Persistent site-wide) */}
+      {partnerInfo && !isBuyPage && (
+        <div className="bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 text-white text-xs px-4 py-2 border-b border-purple-800/60 shadow-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
+              <span>
+                Shopping with Authorized Partner: <strong className="text-amber-300 font-extrabold">{partnerInfo.orgName || partnerInfo.name}</strong>
+              </span>
+              <span className="hidden md:inline text-purple-200 text-[11px] font-semibold bg-purple-800/80 px-2 py-0.5 rounded-full">
+                🎁 5% Referral Discount Auto-Applied
+              </span>
+            </div>
+            {partnerInfo.linkCode && (
+              <Link
+                href={`/buy/${partnerInfo.linkCode}`}
+                className="text-[11px] font-bold text-purple-950 bg-amber-300 hover:bg-amber-200 px-3 py-1 rounded-lg transition-all flex items-center gap-1 shadow-xs"
+              >
+                <span>↩ Recommended Product</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Official ReviewXpress Logo */}
@@ -41,24 +67,41 @@ export default function Navbar() {
             </Link>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden md:flex items-center gap-1">
-              <Link href="/shop" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
-                Shop Hardware
-              </Link>
-              <Link href="/how-it-works" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
-                How It Works
-              </Link>
-              <Link href="/partner" className="px-3.5 py-2 rounded-xl text-sm font-bold text-amber-800 hover:text-amber-900 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/90 flex items-center gap-1.5 transition-all shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                Refer &amp; Earn (20%)
-              </Link>
-              <Link href="/contact" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
-                Support
-              </Link>
-            </div>
+            {isBuyPage ? (
+              <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-200 text-xs font-bold text-purple-900">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Exclusive Partner Store: <strong className="text-purple-700 font-black">{partnerInfo?.orgName || 'Official Partner'}</strong></span>
+              </div>
+            ) : (
+              <div className="hidden md:flex items-center gap-1">
+                <Link href="/shop" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
+                  Shop Hardware
+                </Link>
+                <Link href="/how-it-works" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
+                  How It Works
+                </Link>
+                <Link href="/partner" className="px-3.5 py-2 rounded-xl text-sm font-bold text-amber-800 hover:text-amber-900 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/90 flex items-center gap-1.5 transition-all shadow-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  Refer &amp; Earn (20%)
+                </Link>
+                <Link href="/contact" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
+                  Support
+                </Link>
+              </div>
+            )}
 
             {/* Actions: Role buttons + Cart + Auth */}
             <div className="flex items-center gap-3">
+              {isBuyPage && partnerInfo?.phone && (
+                <a
+                  href={`tel:${partnerInfo.phone}`}
+                  className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Partner Help: {partnerInfo.phone}</span>
+                </a>
+              )}
+
               {/* Cart Button */}
               <Link
                 href="/cart"

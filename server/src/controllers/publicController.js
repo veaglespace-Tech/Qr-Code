@@ -6,10 +6,19 @@ const ApiError = require('../utils/ApiError');
 // Resolves a partner-product link: returns product + partner info
 // Also increments click count
 exports.resolveProductLink = asyncHandler(async (req, res) => {
-  const { linkCode } = req.params;
+  const rawCode = req.params.linkCode || '';
+  const decoded = decodeURIComponent(rawCode).trim();
+  const normalized = decoded.replace(/\s+/g, '-');
 
-  const link = await prisma.partnerProductLink.findUnique({
-    where: { linkCode },
+  const link = await prisma.partnerProductLink.findFirst({
+    where: {
+      OR: [
+        { linkCode: rawCode },
+        { linkCode: decoded },
+        { linkCode: normalized },
+        { linkCode: normalized.toUpperCase() }
+      ]
+    },
     include: {
       product: true,
       admin: {

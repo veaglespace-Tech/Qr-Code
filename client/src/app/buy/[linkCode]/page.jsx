@@ -1,7 +1,7 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useResolveProductLinkQuery } from '@/redux/api/apiSlice';
 import {
   ShoppingCart,
@@ -60,11 +60,12 @@ function parseFeatures(raw) {
   }
 }
 
-export default function BuyPage({ params }) {
-  const { linkCode } = use(params);
+export default function BuyPage(props) {
+  const routeParams = useParams();
+  const linkCode = routeParams?.linkCode || props?.params?.linkCode;
   const router = useRouter();
 
-  const { data, isLoading, isError, error } = useResolveProductLinkQuery(linkCode);
+  const { data, isLoading, isError, error } = useResolveProductLinkQuery(linkCode, { skip: !linkCode });
   const [imgError, setImgError] = useState(false);
 
   // Store linkCode + linkId in sessionStorage so checkout can read it

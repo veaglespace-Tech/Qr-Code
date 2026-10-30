@@ -240,7 +240,6 @@ export default function AdminDashboardPage() {
   const navItems = [
     { id: 'overview', label: 'Overview & Earnings', icon: LayoutDashboard },
     { id: 'products', label: 'My Product Links', icon: Link2 },
-    { id: 'referrals', label: 'Marketing Link & QR', icon: Share2 },
     { id: 'orders', label: 'Referred Orders', icon: Package, badge: recentOrders.length },
     { id: 'payouts', label: 'Withdrawals & Balances', icon: IndianRupee },
   ];

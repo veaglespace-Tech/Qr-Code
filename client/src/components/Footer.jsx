@@ -90,7 +90,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} ReviewXpress • Offered by Veagle Space Technology Pvt. Ltd. All rights reserved.</p>
+          <p>Designed &amp; Developed by <strong className="text-slate-800 font-bold">Veagle Space Technology Pvt. Ltd.</strong> | © 2026 All Rights Reserved.</p>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1 text-slate-600">
               Secured with <strong className="text-emerald-700">PayU Payment Gateway</strong> &amp; 256-Bit SSL

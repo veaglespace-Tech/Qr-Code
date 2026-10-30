@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { QrCode, Phone, Mail, MapPin, ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import { QrCode, Phone, Mail, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
 
@@ -89,15 +89,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="pt-8 text-center text-xs text-slate-500">
           <p>Designed &amp; Developed by <strong className="text-slate-800 font-bold">Veagle Space Technology Pvt. Ltd.</strong> | © 2026 All Rights Reserved.</p>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-slate-600">
-              Secured with <strong className="text-emerald-700">PayU Payment Gateway</strong> &amp; 256-Bit SSL
-            </span>
-            <span>•</span>
-            <span className="text-slate-600">Made with <Heart className="w-3.5 h-3.5 inline text-red-500" /> in India 🇮🇳</span>
-          </div>
         </div>
       </div>
     </footer>

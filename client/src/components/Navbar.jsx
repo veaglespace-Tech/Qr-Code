@@ -13,6 +13,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const dispatch = useDispatch();
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { user } = useSelector(state => state.auth);
+  const { items, partnerInfo } = useSelector(state => state.cart);
+  const { data: settings } = useSelector(state => state.settings);
 
   useEffect(() => {
     setMounted(true);
@@ -24,11 +29,6 @@ export default function Navbar() {
   }
 
   const isBuyPage = pathname?.startsWith('/buy/');
-  const { user } = useSelector(state => state.auth);
-  const { items, partnerInfo } = useSelector(state => state.cart);
-  const { data: settings } = useSelector(state => state.settings);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   const totalCartCount = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   const handleLogout = () => {

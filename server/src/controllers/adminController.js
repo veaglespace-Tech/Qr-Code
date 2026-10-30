@@ -39,6 +39,54 @@ exports.getAdminStats = asyncHandler(async (req, res) => {
 
   const availableBalance = Math.max(0.0, totalCommissionEarned - totalPaidOut - pendingPayoutRequests);
 
+  // Fetch all customers referred by this partner
+  const referredUsers = await prisma.user.findMany({
+    where: {
+      OR: [
+        { referredById: adminId },
+        { orders: { some: { adminReferralId: adminId } } }
+      ],
+      role: 'USER'
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      createdAt: true,
+      orders: {
+        where: { adminReferralId: adminId },
+        select: {
+          id: true,
+          orderNumber: true,
+          finalAmount: true,
+          paymentStatus: true,
+          adminCommissionAmount: true,
+          createdAt: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const referredCustomers = referredUsers.map(u => {
+    const paidCustOrders = u.orders.filter(o => o.paymentStatus === 'paid');
+    const totalSpent = paidCustOrders.reduce((sum, o) => sum + o.finalAmount, 0.0);
+    const commissionGenerated = paidCustOrders.reduce((sum, o) => sum + o.adminCommissionAmount, 0.0);
+    return {
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      phone: u.phone,
+      totalOrders: u.orders.length,
+      paidOrdersCount: paidCustOrders.length,
+      totalSpent: parseFloat(totalSpent.toFixed(2)),
+      commissionGenerated: parseFloat(commissionGenerated.toFixed(2)),
+      joinedAt: u.createdAt,
+      recentOrders: u.orders.slice(0, 3)
+    };
+  });
+
   return res.json({
     success: true,
     partner: {
@@ -56,6 +104,7 @@ exports.getAdminStats = asyncHandler(async (req, res) => {
     metrics: {
       totalReferredOrders: referredOrders.length,
       successfulOrders: paidOrders.length,
+      totalReferredCustomers: referredCustomers.length,
       totalSalesVolume: parseFloat(totalSalesVolume.toFixed(2)),
       totalCommissionEarned: parseFloat(totalCommissionEarned.toFixed(2)),
       totalPaidOut: parseFloat(totalPaidOut.toFixed(2)),
@@ -67,6 +116,7 @@ exports.getAdminStats = asyncHandler(async (req, res) => {
       ...o,
       items: o.items ? JSON.parse(o.items) : []
     })),
+    referredCustomers,
     payoutHistory: payouts
   });
 });

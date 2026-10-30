@@ -91,10 +91,64 @@ exports.createOrder = asyncHandler(async (req, res) => {
   const isCOD = req.body.paymentMethod === 'cod' || req.body.paymentMethod === 'Cash on Delivery';
   const selectedPaymentMethod = isCOD ? 'Cash on Delivery (COD)' : 'PayU Gateway (UPI / Cards / NetBanking)';
 
+  // 3. Find or auto-create customer User record
+  let customerUser = null;
+  if (req.user) {
+    customerUser = req.user;
+    if (adminReferralId && !customerUser.referredById) {
+      await prisma.user.update({
+        where: { id: customerUser.id },
+        data: { referredById: adminReferralId }
+      }).catch(() => {});
+    }
+  } else if (customerDetails.email) {
+    const cleanEmail = customerDetails.email.trim().toLowerCase();
+    customerUser = await prisma.user.findUnique({
+      where: { email: cleanEmail }
+    });
+
+    if (!customerUser) {
+      const bcrypt = require('bcryptjs');
+      const defaultPassword = await bcrypt.hash('ReviewXpress@123', 10);
+      customerUser = await prisma.user.create({
+        data: {
+          name: customerDetails.name.trim(),
+          email: cleanEmail,
+          phone: customerDetails.phone ? customerDetails.phone.trim() : null,
+          password: defaultPassword,
+          role: 'USER',
+          referredById: adminReferralId || null
+        }
+      });
+    } else if (adminReferralId && !customerUser.referredById) {
+      customerUser = await prisma.user.update({
+        where: { id: customerUser.id },
+        data: { referredById: adminReferralId }
+      });
+    }
+  }
+
+  // Issue session cookie so guest customer is automatically authenticated
+  if (customerUser) {
+    const jwt = require('jsonwebtoken');
+    const jwtSecret = process.env.JWT_KEY || process.env.JWT_SECRET || 'secret';
+    const token = jwt.sign(
+      { id: customerUser.id, role: customerUser.role },
+      jwtSecret,
+      { expiresIn: '30d' }
+    );
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+  }
+
   const newOrder = await prisma.order.create({
     data: {
       orderNumber,
-      userId: req.user ? req.user.id : null,
+      userId: customerUser ? customerUser.id : null,
       customerName: customerDetails.name,
       customerEmail: customerDetails.email || (req.user ? req.user.email : 'guest@example.com'),
       customerPhone: customerDetails.phone,

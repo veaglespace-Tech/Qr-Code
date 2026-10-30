@@ -32,15 +32,34 @@ router.post('/response', asyncHandler(async (req, res) => {
   }
 
   if (status === 'success') {
-    await prisma.order.update({
+    const updatedOrder = await prisma.order.update({
       where: { id: order.id },
       data: {
         paymentStatus: 'paid',
         orderStatus: 'customizing',
         payuMihPayId: mihpayid || '',
         adminCommissionStatus: order.adminReferralId ? 'approved' : null
-      }
+      },
+      include: { user: true }
     });
+
+    // Ensure session cookie is set so customer immediately sees their orders in customer portal
+    if (updatedOrder.user) {
+      const jwt = require('jsonwebtoken');
+      const jwtSecret = process.env.JWT_KEY || process.env.JWT_SECRET || 'secret';
+      const token = jwt.sign(
+        { id: updatedOrder.user.id, role: updatedOrder.user.role },
+        jwtSecret,
+        { expiresIn: '30d' }
+      );
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000
+      });
+    }
+
     return res.redirect(`${clientUrl}/checkout/success?orderId=${order.id}`);
   } else {
     await prisma.order.update({

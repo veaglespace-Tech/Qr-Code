@@ -38,8 +38,8 @@ export default function Footer() {
                 <span>GST Registered: <strong className="text-slate-800">{settings?.gstNumber || '27AABCR1234F1Z8'}</strong> (HSN: {settings?.hsnCode || '852352'})</span>
               </div>
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-brand-600" />
-                <span>{settings?.address || 'Pune, Maharashtra, India'}</span>
+                <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
+                <span className="line-clamp-2">{settings?.address || "'Kudale Patil Tower', Office No. 207, Vadgaon Budruk, Pune, Maharashtra 411041"}</span>
               </div>
             </div>
           </div>
@@ -74,12 +74,12 @@ export default function Footer() {
             <h4 className="text-slate-900 text-sm font-bold mb-4 tracking-wider uppercase">Contact &amp; Support</h4>
             <ul className="space-y-2.5 text-sm">
               <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-brand-600" />
-                <a href={`tel:${settings?.supportPhone}`} className="hover:text-brand-600">{settings?.supportPhone || '+91 98765 43210'}</a>
+                <Phone className="w-4 h-4 text-brand-600 shrink-0" />
+                <a href={`tel:${settings?.supportPhone || '+918237999101'}`} className="hover:text-brand-600">{settings?.supportPhone || '+91 8237999101'}</a>
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-brand-600" />
-                <a href={`mailto:${settings?.supportEmail}`} className="hover:text-brand-600">{settings?.supportEmail || 'support@reviewexpress.in'}</a>
+                <Mail className="w-4 h-4 text-brand-600 shrink-0" />
+                <a href={`mailto:${settings?.supportEmail || 'info@veaglespace.com'}`} className="hover:text-brand-600">{settings?.supportEmail || 'info@veaglespace.com'}</a>
               </li>
               <li className="pt-2"><Link href="/policies/terms" className="hover:text-brand-600 text-xs">Terms &amp; Conditions</Link></li>
               <li><Link href="/policies/privacy" className="hover:text-brand-600 text-xs">Privacy Policy</Link></li>

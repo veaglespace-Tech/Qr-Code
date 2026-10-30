@@ -2,148 +2,209 @@
 
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Clock, Building2, ShieldCheck } from 'lucide-react';
 
 export default function ContactPage() {
   const { data: settings } = useSelector(state => state.settings);
   const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', email: '', message: '' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', subject: 'Inquiry about Smart NFC Stands', message: '' });
+
+  const supportEmail = settings?.supportEmail || 'info@veaglespace.com';
+  const supportPhone = settings?.supportPhone || '+91 8237999101';
+  const whatsappNumber = settings?.whatsappNumber || '918237999101';
+  const officeAddress = settings?.address || "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041";
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitted(true);
-    setForm({ name: '', phone: '', email: '', message: '' });
+    setForm({ name: '', phone: '', email: '', subject: 'Inquiry about Smart NFC Stands', message: '' });
   };
 
   const openWhatsApp = () => {
-    const num = settings?.whatsappNumber || '919876543210';
-    window.open(`https://api.whatsapp.com/send?phone=${num}&text=Hello%20Review%20Express,%20I%20am%20interested%20in%20smart%20review%20stands`, '_blank');
+    const text = encodeURIComponent('Hello Veagle Space Technology, I am interested in ReviewXpress Smart NFC & QR Google Review stands.');
+    window.open(`https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${text}`, '_blank');
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
-      <div className="text-center max-w-2xl mx-auto space-y-3">
-        <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-          Get in Touch with Review Express
-        </h1>
-        <p className="text-sm text-slate-600">
-          Have queries about bulk orders, custom company branding, or partner organization onboarding?
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Contact Info */}
-        <div className="lg:col-span-5 glass-panel bg-white rounded-3xl p-8 border border-slate-200 space-y-6 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900">Direct Assistance</h3>
-
-          <div className="space-y-4 text-xs">
-            <div className="flex items-start gap-3">
-              <Phone className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-slate-900">Call / Helpline</p>
-                <a href={`tel:${settings?.supportPhone}`} className="text-slate-600 hover:text-brand-600">
-                  {settings?.supportPhone || '+91 98765 43210'}
-                </a>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Mail className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-slate-900">Official Email</p>
-                <a href={`mailto:${settings?.supportEmail}`} className="text-slate-600 hover:text-brand-600">
-                  {settings?.supportEmail || 'support@reviewexpress.in'}
-                </a>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-slate-900">Headquarters</p>
-                <p className="text-slate-600">{settings?.address || 'Tech Hub Towers, Pune, Maharashtra'}</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-slate-50 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wider">
+            <Building2 className="w-3.5 h-3.5" /> Veagle Space Technology Support
           </div>
-
-          <div className="pt-4 border-t border-slate-100">
-            <button
-              onClick={openWhatsApp}
-              className="w-full py-3.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>Chat on WhatsApp Directly</span>
-            </button>
-          </div>
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            Get in Touch with Us
+          </h1>
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+            Have questions about hardware specifications, custom laser branding, or bulk orders? Our Pune support team is here to help you scale your business ratings.
+          </p>
         </div>
 
-        {/* Contact Form */}
-        <div className="lg:col-span-7 glass-panel bg-white rounded-3xl p-8 border border-slate-200 space-y-5 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900">Send Us a Quick Enquiry</h3>
-
-          {submitted ? (
-            <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
-              <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-              <h4 className="font-bold text-slate-900 text-sm">Thank You! Your message was received.</h4>
-              <p className="text-xs text-slate-600">Our support specialist will connect with you via phone / WhatsApp shortly.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* LEFT: Real Contact Info Cards */}
+          <div className="lg:col-span-5 bg-white rounded-3xl p-7 sm:p-8 border border-slate-200 space-y-6 shadow-xs">
+            <div>
+              <h3 className="text-lg font-black text-slate-900">Direct Contact Details</h3>
+              <p className="text-xs text-slate-400 mt-1">Official communication channels for Veagle Space Technology Pvt. Ltd.</p>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Your Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-brand-500 focus:bg-white"
-                  />
+
+            <div className="space-y-4">
+              {/* Email */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3.5 hover:border-purple-200 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                  <Mail className="w-5 h-5" />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-brand-500 focus:bg-white"
-                  />
+                <div className="min-w-0">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Email Us</span>
+                  <a href={`mailto:${supportEmail}`} className="text-sm font-bold text-slate-900 hover:text-purple-600 truncate block">
+                    {supportEmail}
+                  </a>
+                  <span className="text-[11px] text-slate-500 mt-0.5 block flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-purple-500" /> Available 24/7
+                  </span>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Email Address *</label>
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-brand-500 focus:bg-white"
-                />
+              {/* Phone */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3.5 hover:border-purple-200 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Phone className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Call Support</span>
+                  <a href={`tel:${supportPhone}`} className="text-sm font-black text-slate-900 hover:text-purple-600 block">
+                    {supportPhone}
+                  </a>
+                  <span className="text-[11px] text-slate-500 mt-0.5 block">
+                    Mon - Sat, 10:00 AM - 7:00 PM
+                  </span>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Message / Requirements *</label>
-                <textarea
-                  rows={4}
-                  required
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  placeholder="How many stands do you need? Custom logo requirement?"
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-brand-500 focus:bg-white"
-                />
+              {/* Office Address */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-3.5 hover:border-purple-200 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Visit Office</span>
+                  <p className="text-xs font-semibold text-slate-800 leading-relaxed mt-0.5">
+                    {officeAddress}
+                  </p>
+                </div>
               </div>
+            </div>
 
+            {/* WhatsApp Quick Button */}
+            <div className="pt-2">
               <button
-                type="submit"
-                className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20 flex items-center justify-center gap-2"
+                onClick={openWhatsApp}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#25D366] hover:bg-[#20ba5a] active:scale-[0.99] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
               >
-                <Send className="w-4 h-4" />
-                <span>Submit Enquiry</span>
+                <MessageSquare className="w-4 h-4" />
+                <span>Chat on Official WhatsApp Directly</span>
               </button>
-            </form>
-          )}
+              <p className="text-center text-[11px] text-slate-400 mt-2">
+                Usually responds within 15 minutes during office hours
+              </p>
+            </div>
+          </div>
+
+          {/* RIGHT: Send a Message Form */}
+          <div className="lg:col-span-7 bg-white rounded-3xl p-7 sm:p-8 border border-slate-200 space-y-5 shadow-xs">
+            <div>
+              <h3 className="text-lg font-black text-slate-900">Send Us a Direct Message</h3>
+              <p className="text-xs text-slate-400 mt-1">Leave your contact details and requirements. Our support team will get back to you promptly.</p>
+            </div>
+
+            {submitted ? (
+              <div className="p-8 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3 my-6">
+                <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
+                <h4 className="font-bold text-slate-900 text-base">Thank You! Your Enquiry Was Received.</h4>
+                <p className="text-xs text-slate-600 max-w-md mx-auto">
+                  Our customer success executive from Veagle Space Technology will contact you via phone / WhatsApp shortly.
+                </p>
+                <button
+                  onClick={() => setSubmitted(false)}
+                  className="mt-2 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-colors"
+                >
+                  Send Another Message
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul Sharma"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="+91 98765 43210"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="rahul@example.com"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Subject / Requirement</label>
+                    <input
+                      type="text"
+                      placeholder="Bulk Order / Custom Branding / Query"
+                      value={form.subject}
+                      onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">How Can We Help You? *</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={form.message}
+                    onChange={(e) => setForm({ ...form, message: e.target.value })}
+                    placeholder="Describe your business, quantity of review stands needed, or any questions you have..."
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-[0.99] text-white font-bold text-xs shadow-md shadow-purple-600/25 flex items-center justify-center gap-2 transition-all"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Send Message to Support</span>
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>

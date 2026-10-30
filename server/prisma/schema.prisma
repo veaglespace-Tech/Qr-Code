@@ -144,8 +144,8 @@ model Setting {
   defaultCommissionPercent Float    @default(15.0)
   minPayoutAmount          Float    @default(500.0)
   payuMode                 String   @default("test") // "test" | "live"
-  payuMerchantKey          String   @default("PAYU_DEMO_KEY_123")
-  payuMerchantSalt         String   @default("PAYU_DEMO_SALT_456")
+  payuMerchantKey          String   @default("GKJE3Z")
+  payuMerchantSalt         String   @default("0zqiCnB4GslxAanSxjEAutWkWuggFiGs")
   announcementBanner       String   @db.Text
   heroHeading              String   @db.Text
   heroSubheading           String   @db.Text

@@ -188,8 +188,41 @@ exports.createOrder = asyncHandler(async (req, res) => {
   });
 
 
-  const payuKey = settings?.payuMerchantKey || process.env.PAYU_TEST_KEY || process.env.PAYU_MERCHANT_KEY || 'GKJE3Z';
-  const payuSalt = settings?.payuMerchantSalt || process.env.PAYU_TEST_SALT || process.env.PAYU_MERCHANT_SALT || '0zqiCnB4GslxAanSxjEAutWkWuggFiGs';
+  const isDummyOrInvalid = (val) => {
+    if (!val || typeof val !== 'string') return true;
+    const s = val.trim();
+    if (s.length < 5) return true;
+    if (s.toUpperCase().includes('DEMO')) return true;
+    if (s.includes('••••')) return true;
+    return false;
+  };
+
+  const isLive = settings && settings.payuMode === 'live';
+  const defaultTestKey = 'GKJE3Z';
+  const defaultTestSalt = '0zqiCnB4GslxAanSxjEAutWkWuggFiGs';
+
+  let payuKey;
+  let payuSalt;
+
+  if (isLive) {
+    payuKey = (!isDummyOrInvalid(settings?.payuMerchantKey) ? settings.payuMerchantKey.trim() : null)
+      || process.env.PAYU_MERCHANT_KEY
+      || defaultTestKey;
+    payuSalt = (!isDummyOrInvalid(settings?.payuMerchantSalt) ? settings.payuMerchantSalt.trim() : null)
+      || process.env.PAYU_MERCHANT_SALT
+      || defaultTestSalt;
+  } else {
+    payuKey = (!isDummyOrInvalid(settings?.payuMerchantKey) ? settings.payuMerchantKey.trim() : null)
+      || process.env.PAYU_TEST_KEY
+      || defaultTestKey;
+    payuSalt = (!isDummyOrInvalid(settings?.payuMerchantSalt) ? settings.payuMerchantSalt.trim() : null)
+      || process.env.PAYU_TEST_SALT
+      || defaultTestSalt;
+  }
+
+  // Emergency safety check: never allow dummy or masked credentials
+  if (isDummyOrInvalid(payuKey)) payuKey = defaultTestKey;
+  if (isDummyOrInvalid(payuSalt)) payuSalt = defaultTestSalt;
 
   const payuHash = generatePayUHash({
     key: payuKey,
@@ -228,7 +261,11 @@ exports.createOrder = asyncHandler(async (req, res) => {
       hash: payuHash,
       surl: `${process.env.SERVER_BASE_URL || 'http://localhost:5000'}/api/payu/response`,
       furl: `${process.env.SERVER_BASE_URL || 'http://localhost:5000'}/api/payu/response`,
-      udf1: newOrder.id.toString()
+      udf1: newOrder.id.toString(),
+      udf2: '',
+      udf3: '',
+      udf4: '',
+      udf5: ''
     }
   });
 });

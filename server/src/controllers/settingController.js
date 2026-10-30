@@ -8,7 +8,9 @@ exports.getSettings = asyncHandler(async (req, res) => {
       data: {
         id: 1,
         siteName: "Review Express",
-        address: "Pune, Maharashtra"
+        address: "Pune, Maharashtra",
+        payuMerchantKey: "GKJE3Z",
+        payuMerchantSalt: "0zqiCnB4GslxAanSxjEAutWkWuggFiGs"
       }
     });
   }
@@ -23,12 +25,41 @@ exports.getSettings = asyncHandler(async (req, res) => {
 });
 
 exports.updateSettings = asyncHandler(async (req, res) => {
-  const updates = req.body;
+  const updates = { ...req.body };
+
+  // Never overwrite salt if it's empty, whitespace, masked bullets, or dummy
+  if (
+    !updates.payuMerchantSalt ||
+    typeof updates.payuMerchantSalt !== 'string' ||
+    updates.payuMerchantSalt.trim() === '' ||
+    updates.payuMerchantSalt.includes('••••') ||
+    updates.payuMerchantSalt.toUpperCase().includes('DEMO')
+  ) {
+    delete updates.payuMerchantSalt;
+  } else {
+    updates.payuMerchantSalt = updates.payuMerchantSalt.trim();
+  }
+
+  // Never overwrite key if it's empty, dummy, or invalid
+  if (updates.payuMerchantKey !== undefined) {
+    const k = typeof updates.payuMerchantKey === 'string' ? updates.payuMerchantKey.trim() : '';
+    if (k === '' || k.toUpperCase().includes('DEMO') || k.length < 4) {
+      delete updates.payuMerchantKey;
+    } else {
+      updates.payuMerchantKey = k;
+    }
+  }
+
   let settings = await prisma.setting.findFirst();
 
   if (!settings) {
     settings = await prisma.setting.create({
-      data: { id: 1, ...updates }
+      data: {
+        id: 1,
+        payuMerchantKey: 'GKJE3Z',
+        payuMerchantSalt: '0zqiCnB4GslxAanSxjEAutWkWuggFiGs',
+        ...updates
+      }
     });
   } else {
     settings = await prisma.setting.update({

@@ -43,8 +43,8 @@ export default function Navbar() {
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
-              <span>
-                Shopping with Authorized Partner: <strong className="text-amber-300 font-extrabold">{partnerInfo.orgName || partnerInfo.name}</strong>
+              <span suppressHydrationWarning>
+                Shopping with Authorized Partner: <strong className="text-amber-300 font-extrabold" suppressHydrationWarning>{partnerInfo.orgName || partnerInfo.name}</strong>
               </span>
               <span className="hidden md:inline text-purple-200 text-[11px] font-semibold bg-purple-800/80 px-2 py-0.5 rounded-full">
                 🎁 5% Referral Discount Auto-Applied
@@ -75,10 +75,10 @@ export default function Navbar() {
             {isBuyPage ? (
               <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-200 text-xs font-bold text-purple-900">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>
+                <span suppressHydrationWarning>
                   Exclusive Partner Store:{' '}
-                  <strong className="text-purple-700 font-black">
-                    {mounted && partnerInfo?.orgName ? partnerInfo.orgName : 'Official Partner'}
+                  <strong className="text-purple-700 font-black" suppressHydrationWarning>
+                    {mounted ? (partnerInfo?.orgName || 'Official Partner') : 'Official Partner'}
                   </strong>
                 </span>
               </div>

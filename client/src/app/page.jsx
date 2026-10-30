@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useGetProductsQuery } from '@/redux/api/apiSlice';
 import {
   Sparkles,
   Smartphone,
@@ -28,18 +27,8 @@ import {
   HeartHandshake
 } from 'lucide-react';
 import LiveNfcStandDemo from '@/components/LiveNfcStandDemo';
-import ProductCard from '@/components/ProductCard';
 
 export default function HomePage() {
-  const { data: productsData, isLoading: loading } = useGetProductsQuery();
-  const products = productsData?.products || [];
-
-  // Active products sorted strictly by Superadmin's Public View displayOrder (1, 2, 3, 4...)
-  const activeProducts = useMemo(() => {
-    return products
-      .filter(p => p.isActive !== false)
-      .sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999) || a.id - b.id);
-  }, [products]);
 
   // ROI Calculator states
   const [dailyFootfall, setDailyFootfall] = useState(80);
@@ -121,19 +110,19 @@ export default function HomePage() {
           {/* Action Button Group */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
             <Link
-              href="/shop"
+              href="/partner"
               className="w-full sm:w-auto px-8 py-4 rounded-2xl btn-primary-rx font-black text-base flex items-center justify-center gap-3 shadow-glow-green active:scale-95 transition-all"
             >
-              <span>Explore Smart Stands</span>
+              <Sparkles className="w-5 h-5 text-amber-300" />
+              <span>Partner Program &amp; Org Login</span>
               <ArrowRight className="w-5 h-5 stroke-[2.5]" />
             </Link>
 
             <Link
-              href="/partner"
+              href="/how-it-works"
               className="w-full sm:w-auto px-8 py-4 rounded-2xl btn-secondary-rx font-extrabold text-base flex items-center justify-center gap-2.5 active:scale-95 transition-all"
             >
-              <Sparkles className="w-5 h-5 text-amber-500" />
-              <span>Partner &amp; Earn 20% (Affiliate)</span>
+              <span>How It Works</span>
             </Link>
           </div>
 
@@ -397,10 +386,11 @@ export default function HomePage() {
               </div>
 
               <Link
-                href="/shop"
+                href="/partner"
                 className="w-full py-3.5 px-4 rounded-xl btn-primary-rx text-xs font-black flex items-center justify-center gap-2"
               >
-                <span>Get Stand for ₹899</span>
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Join Partner Program &amp; Earn 20%</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -408,42 +398,157 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. HARDWARE PRODUCTS CATALOG */}
+      {/* 6. ENTERPRISE HARDWARE TECHNOLOGY SHOWCASE */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rxblue-100 text-rxblue-800 text-xs font-bold mb-2">
-              <Award className="w-3.5 h-3.5" /> High-Performance Hardware
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight">
-              Featured ReviewXpress Hardware
-            </h2>
-            <p className="text-sm text-slate-600 mt-1">
-              Engineered with NTAG213 chips, laser-cut cast acrylic, and lifetime validity
-            </p>
+        <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-900 text-xs font-bold">
+            <Award className="w-3.5 h-3.5 text-purple-600" /> High-Performance Smart Hardware
           </div>
-
-          <Link
-            href="/shop"
-            className="text-xs font-extrabold text-rxblue-600 hover:text-rxblue-700 flex items-center gap-1 self-start sm:self-auto"
-          >
-            <span>View All Products</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 font-heading tracking-tight">
+            ReviewXpress Smart Hardware Lineup
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600">
+            Engineered with high-frequency NTAG213 chips, UV laser precision print, and zero recurring fees.
+            Exclusively distributed across India through our Certified Partner Network.
+          </p>
         </div>
 
-        {loading ? (
-          <div className="py-20 text-center space-y-4">
-            <div className="w-10 h-10 border-4 border-rxgreen-500 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-slate-500 text-sm">Loading ReviewXpress products...</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Card 1: Acrylic Smart Stand */}
+          <div className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6 hover:border-purple-300 transition-all flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Custom Acrylic NFC Stand</h3>
+                <p className="text-xs text-purple-700 font-bold mt-0.5">Most Popular for Billing Counters</p>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Premium 3mm cast acrylic counter stand. Built-in instant tap NFC chip + high-resolution laser-printed QR code personalized with your business logo.
+              </p>
+              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>NTAG213 High-Sensitivity NFC</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>100% Waterproof &amp; Scratch Resistant</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Zero Batteries / Lifetime Validity</span>
+                </li>
+              </ul>
+            </div>
+            <div className="pt-4 border-t border-slate-100">
+              <div className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-2 rounded-xl border border-purple-200 text-center">
+                🔒 Available Exclusively via Partner Direct Link
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {activeProducts.slice(0, 4).map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+
+          {/* Card 2: Executive NFC Review Card */}
+          <div className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6 hover:border-purple-300 transition-all flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Executive Pocket NFC Card</h3>
+                <p className="text-xs text-blue-700 font-bold mt-0.5">Best for Managers &amp; Field Staff</p>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Matte PVC smart review card designed for sales executives, service managers, real estate consultants, and on-field team members.
+              </p>
+              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Compact Wallet-Fit PVC Design</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Instant Tap on iPhone &amp; Android</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Direct 5-Star Review Box Trigger</span>
+                </li>
+              </ul>
+            </div>
+            <div className="pt-4 border-t border-slate-100">
+              <div className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-2 rounded-xl border border-purple-200 text-center">
+                🔒 Available Exclusively via Partner Direct Link
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Card 3: Metal Countertop Plate */}
+          <div className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6 hover:border-purple-300 transition-all flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900">Metal-Touch Luxury Plate</h3>
+                <p className="text-xs text-amber-700 font-bold mt-0.5">For Boutique Hotels &amp; Fine Dining</p>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Brushed metallic finish luxury counter plate for high-end boutique hotels, luxury showrooms, dental studios, and fine dining.
+              </p>
+              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Brushed Metal Luxury Aesthetic</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Anti-Interference Metal Shielding</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Heavy-Duty Permanent Counter Grip</span>
+                </li>
+              </ul>
+            </div>
+            <div className="pt-4 border-t border-slate-100">
+              <div className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-2 rounded-xl border border-purple-200 text-center">
+                🔒 Available Exclusively via Partner Direct Link
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Partner Program Banner */}
+        <div className="mt-12 p-7 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
+          <div className="space-y-2 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Partner Distribution Model</span>
+            </div>
+            <h4 className="text-xl sm:text-2xl font-black text-white">
+              Want to Distribute ReviewXpress to Businesses in Your City?
+            </h4>
+            <p className="text-xs sm:text-sm text-purple-200 max-w-xl">
+              Agencies, POS providers, digital marketers, and freelancers earn flat 20% commission on every device sold, with dedicated branded storefront links.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+            <Link
+              href="/partner/register"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-purple-950 font-black text-xs shadow-md transition-all text-center"
+            >
+              Register as Partner (Free)
+            </Link>
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-purple-800/80 hover:bg-purple-800 text-white font-bold text-xs border border-purple-700/80 transition-all text-center"
+            >
+              Partner / Org Login
+            </Link>
+          </div>
+        </div>
       </section>
 
       {/* 7. CUSTOMER REVIEW WORKFLOW COMPARISON (FROM PDF PAGE 3) */}

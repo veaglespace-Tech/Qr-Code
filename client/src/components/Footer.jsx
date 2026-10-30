@@ -46,13 +46,13 @@ export default function Footer() {
 
           {/* Quick links */}
           <div>
-            <h4 className="text-slate-900 text-sm font-bold mb-4 tracking-wider uppercase">Products</h4>
+            <h4 className="text-slate-900 text-sm font-bold mb-4 tracking-wider uppercase">Smart Hardware</h4>
             <ul className="space-y-2.5 text-sm">
-              <li><Link href="/shop" className="hover:text-brand-600 transition-colors">Acrylic NFC Stand</Link></li>
-              <li><Link href="/shop" className="hover:text-brand-600 transition-colors">Executive NFC Card</Link></li>
-              <li><Link href="/shop" className="hover:text-brand-600 transition-colors">Metal Counter Plate</Link></li>
-              <li><Link href="/shop" className="hover:text-brand-600 transition-colors">Weatherproof Stickers</Link></li>
-              <li><Link href="/how-it-works" className="hover:text-brand-600 transition-colors">NFC vs QR Comparison</Link></li>
+              <li><span className="text-slate-500">Custom Acrylic NFC Stand</span></li>
+              <li><span className="text-slate-500">Executive Pocket NFC Card</span></li>
+              <li><span className="text-slate-500">Metal Countertop Plate</span></li>
+              <li><Link href="/how-it-works" className="hover:text-brand-600 transition-colors">How NFC &amp; QR Works</Link></li>
+              <li><Link href="/partner" className="text-amber-700 hover:text-amber-800 font-semibold transition-colors">Partner Storefronts (20%)</Link></li>
             </ul>
           </div>
 

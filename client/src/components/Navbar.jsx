@@ -84,15 +84,12 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-1">
-                <Link href="/shop" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
-                  Shop Hardware
-                </Link>
                 <Link href="/how-it-works" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
                   How It Works
                 </Link>
                 <Link href="/partner" className="px-3.5 py-2 rounded-xl text-sm font-bold text-amber-800 hover:text-amber-900 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/90 flex items-center gap-1.5 transition-all shadow-xs">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  Refer &amp; Earn (20%)
+                  Partner Program (20%)
                 </Link>
                 <Link href="/contact" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
                   Support
@@ -112,19 +109,21 @@ export default function Navbar() {
                 </a>
               )}
 
-              {/* Cart Button */}
-              <Link
-                href="/cart"
-                className="relative p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 transition-colors border border-slate-200"
-                title="View Cart"
-              >
-                <ShoppingBag className="w-5 h-5 text-slate-700" />
-                {mounted && totalCartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-rxgreen-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md">
-                    {totalCartCount}
-                  </span>
-                )}
-              </Link>
+              {/* Cart Button: ONLY visible when shopping through a partner link or on checkout flow */}
+              {(isBuyPage || pathname === '/cart' || pathname === '/checkout' || (mounted && partnerInfo)) && (
+                <Link
+                  href="/cart"
+                  className="relative p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 transition-colors border border-slate-200"
+                  title="View Cart"
+                >
+                  <ShoppingBag className="w-5 h-5 text-slate-700" />
+                  {mounted && totalCartCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-rxgreen-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md">
+                      {totalCartCount}
+                    </span>
+                  )}
+                </Link>
+              )}
 
               {/* Logged in User Pill */}
               {user ? (
@@ -198,13 +197,6 @@ export default function Navbar() {
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-6 space-y-3 shadow-lg">
-            <Link
-              href="/shop"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 text-slate-700 font-semibold hover:text-brand-600"
-            >
-              Shop Products
-            </Link>
             <Link
               href="/how-it-works"
               onClick={() => setMobileMenuOpen(false)}

@@ -20,11 +20,13 @@ import {
   useUpdateProductMutation,
   useDeleteProductMutation,
   useUploadProductImageMutation,
+  useReorderProductsMutation,
   useUpdateAdminMutation,
   useDeleteAdminMutation,
   useUpdatePayoutStatusMutation,
   useUpdateProfileMutation
 } from '@/redux/api/apiSlice';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -73,7 +75,13 @@ import {
   Banknote,
   TrendingDown,
   UserX,
-  User
+  User,
+  ArrowUp,
+  ArrowDown,
+  Play,
+  Pause,
+  SlidersHorizontal,
+  Layers
 } from 'lucide-react';
 import Link from 'next/link';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
@@ -85,8 +93,24 @@ export default function SuperadminDashboardPage() {
 
   const [activeTab, setActiveTab] = useState('analytics');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Orders search & debounce
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedOrderSearch = useDebounce(searchTerm, 300);
   const [orderFilter, setOrderFilter] = useState('all');
+
+  // Product Search, Filter & Ordering states
+  const [productSearch, setProductSearch] = useState('');
+  const debouncedProductSearch = useDebounce(productSearch, 300);
+  const [productStatusFilter, setProductStatusFilter] = useState('all'); // 'all' | 'active' | 'paused' | 'low_stock'
+  const [productSortBy, setProductSortBy] = useState('displayOrder'); // 'displayOrder' | 'price_asc' | 'price_desc' | 'rating' | 'stock'
+
+  // Admin & User search with debounce
+  const [adminSearch, setAdminSearch] = useState('');
+  const debouncedAdminSearch = useDebounce(adminSearch, 300);
+
+  const [userSearch, setUserSearch] = useState('');
+  const debouncedUserSearch = useDebounce(userSearch, 300);
 
   // RTK Query endpoints
   const { data: anaData, isLoading: anaLoading, refetch: refetchAna } = useGetAnalyticsQuery();
@@ -103,6 +127,7 @@ export default function SuperadminDashboardPage() {
   const [updateProduct, { isLoading: isUpdatingProduct }] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
   const [uploadProductImage] = useUploadProductImageMutation();
+  const [reorderProducts, { isLoading: isReorderingProducts }] = useReorderProductsMutation();
   const [updateAdmin] = useUpdateAdminMutation();
   const [deleteAdmin] = useDeleteAdminMutation();
   const [updatePayoutStatus] = useUpdatePayoutStatusMutation();
@@ -235,28 +260,130 @@ export default function SuperadminDashboardPage() {
     stock: 100,
     image: '',
     description: '',
-    features: ''
+    features: '',
+    isActive: true,
+    displayOrder: 1
   });
 
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [adminCommissionInput, setAdminCommissionInput] = useState(15);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Filtered orders
+  // Filtered orders with debounced search
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchSearch =
-        order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customerPhone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.businessName?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearch = !debouncedOrderSearch.trim() ||
+        order.orderNumber?.toLowerCase().includes(debouncedOrderSearch.toLowerCase()) ||
+        order.customerName?.toLowerCase().includes(debouncedOrderSearch.toLowerCase()) ||
+        order.customerPhone?.toLowerCase().includes(debouncedOrderSearch.toLowerCase()) ||
+        order.businessName?.toLowerCase().includes(debouncedOrderSearch.toLowerCase());
 
       if (orderFilter === 'all') return matchSearch;
       if (orderFilter === 'paid') return matchSearch && order.paymentStatus === 'paid';
       if (orderFilter === 'pending') return matchSearch && order.paymentStatus === 'pending';
       return matchSearch && order.orderStatus === orderFilter;
     });
-  }, [orders, searchTerm, orderFilter]);
+  }, [orders, debouncedOrderSearch, orderFilter]);
+
+  // Filtered & Sorted Products with debounced search
+  const filteredProducts = useMemo(() => {
+    let list = [...products];
+
+    // Search filter
+    if (debouncedProductSearch.trim()) {
+      const q = debouncedProductSearch.toLowerCase().trim();
+      list = list.filter(p =>
+        p.title?.toLowerCase().includes(q) ||
+        p.subtitle?.toLowerCase().includes(q) ||
+        p.badge?.toLowerCase().includes(q) ||
+        p.slug?.toLowerCase().includes(q)
+      );
+    }
+
+    // Status filter
+    if (productStatusFilter === 'active') {
+      list = list.filter(p => p.isActive !== false);
+    } else if (productStatusFilter === 'paused') {
+      list = list.filter(p => p.isActive === false);
+    } else if (productStatusFilter === 'low_stock') {
+      list = list.filter(p => (p.stock || 0) < 20);
+    }
+
+    // Sorting
+    if (productSortBy === 'price_asc') {
+      list.sort((a, b) => (a.price || 0) - (b.price || 0));
+    } else if (productSortBy === 'price_desc') {
+      list.sort((a, b) => (b.price || 0) - (a.price || 0));
+    } else if (productSortBy === 'rating') {
+      list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (productSortBy === 'stock') {
+      list.sort((a, b) => (a.stock || 0) - (b.stock || 0));
+    } else {
+      // Default: displayOrder
+      list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    }
+
+    return list;
+  }, [products, debouncedProductSearch, productStatusFilter, productSortBy]);
+
+  // Filtered Admins with debounced search
+  const filteredAdmins = useMemo(() => {
+    if (!debouncedAdminSearch.trim()) return admins;
+    const q = debouncedAdminSearch.toLowerCase().trim();
+    return admins.filter(a =>
+      a.name?.toLowerCase().includes(q) ||
+      a.orgName?.toLowerCase().includes(q) ||
+      a.email?.toLowerCase().includes(q) ||
+      a.phone?.toLowerCase().includes(q) ||
+      a.referralCode?.toLowerCase().includes(q)
+    );
+  }, [admins, debouncedAdminSearch]);
+
+  // Filtered Users with debounced search
+  const filteredUsers = useMemo(() => {
+    if (!debouncedUserSearch.trim()) return users;
+    const q = debouncedUserSearch.toLowerCase().trim();
+    return users.filter(u =>
+      u.name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.phone?.toLowerCase().includes(q) ||
+      u.businessName?.toLowerCase().includes(q)
+    );
+  }, [users, debouncedUserSearch]);
+
+  // Product Reordering: Move Up / Down
+  const handleMoveProductOrder = async (prodId, direction) => {
+    const idx = products.findIndex(p => p.id === prodId);
+    if (idx === -1) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= products.length) return;
+
+    const newProducts = [...products];
+    const temp = newProducts[idx];
+    newProducts[idx] = newProducts[targetIdx];
+    newProducts[targetIdx] = temp;
+
+    const payload = newProducts.map((p, i) => ({ id: p.id, displayOrder: i + 1 }));
+    try {
+      await reorderProducts({ orders: payload }).unwrap();
+      refetchProd();
+      triggerNotice('Product display order updated successfully!');
+    } catch {
+      triggerNotice('Failed to update product order', true);
+    }
+  };
+
+  // Product Pause / Unpause toggle
+  const handleToggleProductStatus = async (prod) => {
+    try {
+      const newActive = prod.isActive === false ? true : false;
+      await updateProduct({ id: prod.id, isActive: newActive }).unwrap();
+      refetchProd();
+      triggerNotice(`Product "${prod.title}" ${newActive ? 'Resumed (Active)' : 'Paused (Hidden from shop)'}`);
+    } catch {
+      triggerNotice('Failed to update product status', true);
+    }
+  };
 
   // Upload Photo / PDF to backend
   const handleImageFileUpload = (e) => {
@@ -607,7 +734,9 @@ export default function SuperadminDashboardPage() {
                     stock: 100,
                     image: '',
                     description: '',
-                    features: ''
+                    features: '',
+                    isActive: true,
+                    displayOrder: products.length + 1
                   });
                   setProductModalOpen(true);
                 }}
@@ -925,92 +1054,291 @@ export default function SuperadminDashboardPage() {
 
           {/* ================= TAB 3: PRODUCTS CATALOG ================= */}
           {activeTab === 'products' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map(prod => (
-                  <div
-                    key={prod.id}
-                    className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4 hover:border-purple-300 transition-all flex flex-col justify-between"
-                  >
-                    <div className="space-y-3">
-                      <div className="relative h-48 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center">
-                        {prod.image && (prod.image.toLowerCase().endsWith('.pdf') || prod.image.includes('.pdf')) ? (
-                          <div className="text-center p-4">
-                            <span className="text-5xl block mb-2">📄</span>
-                            <span className="text-xs font-bold text-rose-700 uppercase">PDF Document</span>
-                          </div>
-                        ) : (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={prod.image || 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=800&q=80'}
-                            alt={prod.title}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                        {prod.badge && (
-                          <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-md bg-slate-900/90 text-white text-[10px] font-bold shadow-xs">
-                            {prod.badge}
-                          </span>
-                        )}
-                      </div>
-
-                      <div>
-                        <h4 className="font-bold text-slate-900 text-sm">{prod.title}</h4>
-                        <p className="text-xs text-slate-400 line-clamp-1">{prod.subtitle || prod.description}</p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-black text-slate-900">₹{prod.price}</span>
-                        {prod.originalPrice > prod.price && (
-                          <span className="text-xs text-slate-400 line-through">₹{prod.originalPrice}</span>
-                        )}
-                        <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded ml-auto">
-                          Stock: {prod.stock || 100} units
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+            <div className="space-y-5">
+              {/* Product Search, Filter & Sort Toolbar */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                  {/* Search input with Debounce */}
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      placeholder="Search products by title, subtitle, badge, slug..."
+                      className="w-full pl-9 pr-9 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                    />
+                    {productSearch && (
                       <button
-                        onClick={() => {
-                          setEditingProduct(prod);
-                          setProductForm({
-                            title: prod.title || '',
-                            subtitle: prod.subtitle || '',
-                            price: prod.price || '',
-                            originalPrice: prod.originalPrice || '',
-                            badge: prod.badge || '',
-                            stock: prod.stock || 100,
-                            image: prod.image || '',
-                            description: prod.description || '',
-                            features: prod.features || ''
-                          });
-                          setProductModalOpen(true);
-                        }}
-                        className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        onClick={() => setProductSearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
                       >
-                        <Edit className="w-3.5 h-3.5" />
-                        <span>Edit Product</span>
+                        <X className="w-3.5 h-3.5" />
                       </button>
-
-                      <button
-                        onClick={() => handleDeleteProduct(prod.id)}
-                        className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
-                        title="Delete Product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    )}
                   </div>
-                ))}
+
+                  {/* Right side: Sort Dropdown & Add Button */}
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+                      <span className="text-[11px] font-bold text-slate-600">Sort:</span>
+                      <select
+                        value={productSortBy}
+                        onChange={(e) => setProductSortBy(e.target.value)}
+                        className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-hidden cursor-pointer"
+                      >
+                        <option value="displayOrder">Display Order (Storefront)</option>
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="price_desc">Price: High to Low</option>
+                        <option value="rating">Customer Rating</option>
+                        <option value="stock">Stock Available</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setEditingProduct(null);
+                        setProductForm({
+                          title: '',
+                          subtitle: '',
+                          price: '',
+                          originalPrice: '',
+                          badge: 'Trending',
+                          stock: 100,
+                          image: '',
+                          description: '',
+                          features: '',
+                          isActive: true,
+                          displayOrder: products.length + 1
+                        });
+                        setProductModalOpen(true);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Product</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter Badges / Pills */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Status:</span>
+                  {[
+                    { id: 'all', label: 'All Products', count: products.length },
+                    { id: 'active', label: 'Active in Store', count: products.filter(p => p.isActive !== false).length },
+                    { id: 'paused', label: 'Paused / Hidden', count: products.filter(p => p.isActive === false).length },
+                    { id: 'low_stock', label: 'Low Stock (<20)', count: products.filter(p => (p.stock || 0) < 20).length },
+                  ].map(filter => {
+                    const isSelected = productStatusFilter === filter.id;
+                    return (
+                      <button
+                        key={filter.id}
+                        onClick={() => setProductStatusFilter(filter.id)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span>{filter.label}</span>
+                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {filter.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Notice banner for ordering */}
+              {productSortBy === 'displayOrder' && !debouncedProductSearch.trim() && productStatusFilter === 'all' && (
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-50/70 border border-purple-100 text-[11px] text-purple-800">
+                  <Layers className="w-4 h-4 text-purple-600 shrink-0" />
+                  <span>
+                    <strong>Storefront Sequence:</strong> Use the <strong>Move Up (↑)</strong> and <strong>Move Down (↓)</strong> buttons on each card to arrange exactly how products appear to customers on the Hardware Shop page.
+                  </span>
+                </div>
+              )}
+
+              {/* Product Cards Grid */}
+              {filteredProducts.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl bg-white border border-slate-200 space-y-2">
+                  <Package className="w-10 h-10 text-slate-300 mx-auto" />
+                  <h4 className="font-bold text-slate-800 text-sm">No products matched your criteria</h4>
+                  <p className="text-xs text-slate-400">Try adjusting your search query or status filter.</p>
+                  <button
+                    onClick={() => { setProductSearch(''); setProductStatusFilter('all'); }}
+                    className="mt-2 text-xs font-bold text-purple-600 hover:underline"
+                  >
+                    Reset filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProducts.map((prod, idx) => {
+                    const isPaused = prod.isActive === false;
+                    return (
+                      <div
+                        key={prod.id}
+                        className={`p-5 rounded-2xl bg-white border shadow-xs space-y-4 transition-all flex flex-col justify-between ${
+                          isPaused
+                            ? 'border-amber-200/80 bg-slate-50/40 opacity-90'
+                            : 'border-slate-200 hover:border-purple-300'
+                        }`}
+                      >
+                        <div className="space-y-3">
+                          {/* Image & Badges */}
+                          <div className="relative h-48 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center">
+                            {prod.image && (prod.image.toLowerCase().endsWith('.pdf') || prod.image.includes('.pdf')) ? (
+                              <div className="text-center p-4">
+                                <span className="text-5xl block mb-2">📄</span>
+                                <span className="text-xs font-bold text-rose-700 uppercase">PDF Document</span>
+                              </div>
+                            ) : (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={prod.image || 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=800&q=80'}
+                                alt={prod.title}
+                                className={`w-full h-full object-cover transition-transform duration-300 ${isPaused ? 'grayscale-50' : ''}`}
+                              />
+                            )}
+
+                            {/* Display Order Sequence Badge */}
+                            <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-lg bg-slate-900/90 text-white text-[11px] font-mono font-black shadow-xs flex items-center gap-1 backdrop-blur-xs">
+                              #{prod.displayOrder ?? (idx + 1)}
+                            </span>
+
+                            {/* Active / Paused Badge */}
+                            <span className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-xs flex items-center gap-1 ${
+                              isPaused
+                                ? 'bg-amber-500 text-white'
+                                : 'bg-emerald-600 text-white'
+                            }`}>
+                              {isPaused ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
+                              {isPaused ? 'Paused' : 'Active'}
+                            </span>
+
+                            {prod.badge && (
+                              <span className="absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-purple-600/95 text-white text-[10px] font-bold shadow-xs">
+                                {prod.badge}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Details */}
+                          <div>
+                            <div className="flex items-center justify-between gap-2">
+                              <h4 className="font-bold text-slate-900 text-sm line-clamp-1">{prod.title}</h4>
+                            </div>
+                            <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{prod.subtitle || prod.description}</p>
+                          </div>
+
+                          {/* Price & Stock */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-black text-slate-900">₹{prod.price}</span>
+                            {prod.originalPrice > prod.price && (
+                              <span className="text-xs text-slate-400 line-through">₹{prod.originalPrice}</span>
+                            )}
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded ml-auto ${
+                              (prod.stock || 0) < 20
+                                ? 'text-rose-700 bg-rose-50 border border-rose-200'
+                                : 'text-emerald-700 bg-emerald-50'
+                            }`}>
+                              Stock: {prod.stock || 100} units
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Order Reordering & Controls */}
+                        <div className="space-y-2 pt-3 border-t border-slate-100">
+                          {/* Reorder Buttons & Pause Toggle */}
+                          <div className="flex items-center justify-between gap-1.5">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase mr-1">Position:</span>
+                              <button
+                                onClick={() => handleMoveProductOrder(prod.id, 'up')}
+                                disabled={idx === 0 || isReorderingProducts}
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                                title="Move Up in Storefront"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleMoveProductOrder(prod.id, 'down')}
+                                disabled={idx === filteredProducts.length - 1 || isReorderingProducts}
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                                title="Move Down in Storefront"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+
+                            {/* Pause / Resume Button */}
+                            <button
+                              onClick={() => handleToggleProductStatus(prod)}
+                              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors ${
+                                isPaused
+                                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                  : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200'
+                              }`}
+                              title={isPaused ? 'Resume selling in storefront' : 'Pause selling and hide from storefront'}
+                            >
+                              {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                              <span>{isPaused ? 'Resume' : 'Pause'}</span>
+                            </button>
+                          </div>
+
+                          {/* Edit & Delete Action Buttons */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <button
+                              onClick={() => {
+                                setEditingProduct(prod);
+                                setProductForm({
+                                  title: prod.title || '',
+                                  subtitle: prod.subtitle || '',
+                                  price: prod.price || '',
+                                  originalPrice: prod.originalPrice || '',
+                                  badge: prod.badge || '',
+                                  stock: prod.stock || 100,
+                                  image: prod.image || '',
+                                  description: prod.description || '',
+                                  features: prod.features || '',
+                                  isActive: prod.isActive !== false,
+                                  displayOrder: prod.displayOrder || idx + 1
+                                });
+                                setProductModalOpen(true);
+                              }}
+                              className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span>Edit SKU</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteProduct(prod.id)}
+                              className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                              title="Delete Product"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
           {/* ================= TAB 4: PARTNER ADMINS ================= */}
           {activeTab === 'admins' && (
             <div className="space-y-5">
-              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-slate-900 text-base">Affiliate Organizations &amp; Marketing Partners</h3>
@@ -1024,6 +1352,26 @@ export default function SuperadminDashboardPage() {
                       {admins.filter(a => a.status === 'inactive').length} Blocked
                     </span>
                   </div>
+                </div>
+
+                {/* Debounced Search Input */}
+                <div className="relative max-w-md pt-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={adminSearch}
+                    onChange={(e) => setAdminSearch(e.target.value)}
+                    placeholder="Search by name, organization, email, phone or promo code..."
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                  />
+                  {adminSearch && (
+                    <button
+                      onClick={() => setAdminSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1042,12 +1390,14 @@ export default function SuperadminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {admins.length === 0 ? (
+                    {filteredAdmins.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-slate-400">No partner organizations registered yet.</td>
+                        <td colSpan={8} className="py-12 text-center text-slate-400">
+                          {debouncedAdminSearch ? 'No partners matched your search query.' : 'No partner organizations registered yet.'}
+                        </td>
                       </tr>
                     ) : (
-                      admins.map(adm => (
+                      filteredAdmins.map(adm => (
                         <tr
                           key={adm.id}
                           onClick={() => router.push(`/superadmin/partners/${adm.id}`)}
@@ -1110,7 +1460,7 @@ export default function SuperadminDashboardPage() {
           {/* ================= TAB 5: CUSTOMER DIRECTORY ================= */}
           {activeTab === 'users' && (
             <div className="space-y-5">
-              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+              <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-slate-900 text-base">Registered Customer Accounts</h3>
@@ -1128,6 +1478,26 @@ export default function SuperadminDashboardPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* Debounced Search Input */}
+                <div className="relative max-w-md pt-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="Search by customer name, email, phone, or company..."
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                  />
+                  {userSearch && (
+                    <button
+                      onClick={() => setUserSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
@@ -1144,12 +1514,14 @@ export default function SuperadminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {users.length === 0 ? (
+                    {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-slate-400">No customer accounts found.</td>
+                        <td colSpan={7} className="py-12 text-center text-slate-400">
+                          {debouncedUserSearch ? 'No customer accounts matched your search query.' : 'No customer accounts found.'}
+                        </td>
                       </tr>
                     ) : (
-                      users.map(usr => (
+                      filteredUsers.map(usr => (
                         <tr
                           key={usr.id}
                           onClick={() => router.push(`/superadmin/customers/${usr.id}`)}
@@ -1909,6 +2281,28 @@ export default function SuperadminDashboardPage() {
                       />
                     </div>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Display Order (Storefront Sequence)</label>
+                  <input
+                    type="number"
+                    value={productForm.displayOrder ?? 1}
+                    onChange={(e) => setProductForm({ ...productForm, displayOrder: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Visibility Status</label>
+                  <select
+                    value={productForm.isActive ? 'active' : 'paused'}
+                    onChange={(e) => setProductForm({ ...productForm, isActive: e.target.value === 'active' })}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white"
+                  >
+                    <option value="active">Active (Visible in Store)</option>
+                    <option value="paused">Paused (Hidden from Store)</option>
+                  </select>
                 </div>
 
                 <div className="col-span-2">

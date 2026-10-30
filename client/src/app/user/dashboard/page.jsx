@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { useGetOrdersQuery, useUpdateProfileMutation } from '@/redux/api/apiSlice';
 import { logoutUser } from '@/redux/slice/authSlice';
+import { useDebounce } from '@/hooks/useDebounce';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import {
@@ -60,6 +61,7 @@ export default function UserDashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [copiedLink, setCopiedLink] = useState('');
   const [qrCodeUrls, setQrCodeUrls] = useState({});
@@ -174,11 +176,12 @@ export default function UserDashboardPage() {
   // Filtered orders for tab 1
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchesSearch =
-        order.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.trackingId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.city?.toLowerCase().includes(searchQuery.toLowerCase());
+      const q = debouncedSearchQuery.trim().toLowerCase();
+      const matchesSearch = !q ||
+        order.orderNumber?.toLowerCase().includes(q) ||
+        order.businessName?.toLowerCase().includes(q) ||
+        order.trackingId?.toLowerCase().includes(q) ||
+        order.city?.toLowerCase().includes(q);
 
       const matchesStatus =
         statusFilter === 'ALL' ||
@@ -188,7 +191,7 @@ export default function UserDashboardPage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [orders, searchQuery, statusFilter]);
+  }, [orders, debouncedSearchQuery, statusFilter]);
 
   // Unique delivery addresses extracted from orders
   const uniqueAddresses = useMemo(() => {
@@ -501,8 +504,16 @@ export default function UserDashboardPage() {
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search by Order #, Business Name, City or Tracking AWB..."
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
+                    className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">

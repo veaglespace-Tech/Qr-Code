@@ -36,18 +36,27 @@ export default function ShopPage() {
 // Simple admin-only shop view
 import { useState } from 'react';
 import { useGetProductsQuery } from '@/redux/api/apiSlice';
+import { useDebounce } from '@/hooks/useDebounce';
 import ProductCard from '@/components/ProductCard';
-import { Search, Sparkles, ShieldCheck, Zap, Truck } from 'lucide-react';
+import { Search, Sparkles, ShieldCheck, Zap, Truck, X } from 'lucide-react';
 
 function AdminShopView() {
   const { data: productsData, isLoading: loading } = useGetProductsQuery();
   const products = productsData?.products || [];
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase()) ||
-                          p.description?.toLowerCase().includes(search.toLowerCase());
+    // Only display active products in shop
+    if (p.isActive === false) return false;
+
+    const q = debouncedSearch.toLowerCase().trim();
+    const matchesSearch = !q ||
+                          p.title?.toLowerCase().includes(q) ||
+                          p.description?.toLowerCase().includes(q) ||
+                          p.subtitle?.toLowerCase().includes(q);
+
     if (selectedCategory === 'all') return matchesSearch;
     if (selectedCategory === 'stands') return matchesSearch && p.title.toLowerCase().includes('stand');
     if (selectedCategory === 'cards') return matchesSearch && p.title.toLowerCase().includes('card');
@@ -116,8 +125,16 @@ function AdminShopView() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search stand, card..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rxgreen-500 shadow-xs"
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rxgreen-500 shadow-xs"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 

@@ -97,6 +97,14 @@ export const apiSlice = createApi({
         body,
       }),
     }),
+    reorderProducts: builder.mutation({
+      query: (body) => ({
+        url: '/products/batch/reorder',
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: [{ type: 'Product', id: 'LIST' }],
+    }),
 
     // ---------------- SETTINGS ENDPOINTS ----------------
     getSettings: builder.query({
@@ -272,6 +280,7 @@ export const {
   useUpdateProductMutation,
   useDeleteProductMutation,
   useUploadProductImageMutation,
+  useReorderProductsMutation,
 
   // Settings hooks
   useGetSettingsQuery,

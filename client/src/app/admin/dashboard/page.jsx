@@ -11,6 +11,7 @@ import {
   useToggleProductLinkMutation
 } from '@/redux/api/apiSlice';
 import { logoutUser } from '@/redux/slice/authSlice';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -113,6 +114,7 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [orderSearch, setOrderSearch] = useState('');
+  const debouncedOrderSearch = useDebounce(orderSearch, 300);
 
   // Product detail view modal (Read-only)
   const [viewingProduct, setViewingProduct] = useState(null);
@@ -269,14 +271,14 @@ export default function AdminDashboardPage() {
   const recentOrders = stats?.recentOrders || [];
 
   const filteredOrders = useMemo(() => {
-    if (!orderSearch.trim()) return recentOrders;
-    const q = orderSearch.toLowerCase();
+    if (!debouncedOrderSearch.trim()) return recentOrders;
+    const q = debouncedOrderSearch.toLowerCase();
     return recentOrders.filter(o =>
       o.orderNumber?.toLowerCase().includes(q) ||
       o.customerName?.toLowerCase().includes(q) ||
       o.businessName?.toLowerCase().includes(q)
     );
-  }, [recentOrders, orderSearch]);
+  }, [recentOrders, debouncedOrderSearch]);
 
   const navItems = [
     { id: 'overview', label: 'Overview & Earnings', icon: LayoutDashboard },

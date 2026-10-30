@@ -7,7 +7,10 @@ const path = require('path');
 
 exports.getProducts = asyncHandler(async (req, res) => {
   const products = await prisma.product.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: [
+      { displayOrder: 'asc' },
+      { id: 'asc' }
+    ]
   });
 
   const parsed = products.map(p => ({
@@ -45,7 +48,7 @@ exports.getProductBySlug = asyncHandler(async (req, res) => {
 });
 
 exports.createProduct = asyncHandler(async (req, res) => {
-  const { title, subtitle, price, originalPrice, description, image, features, specs, badge, stock } = req.body;
+  const { title, subtitle, price, originalPrice, description, image, features, specs, badge, stock, displayOrder, isActive } = req.body;
 
   if (!title || !price) {
     throw new ApiError(400, 'Title and price are required');
@@ -62,6 +65,8 @@ exports.createProduct = asyncHandler(async (req, res) => {
       originalPrice: parseFloat(originalPrice || price * 1.5),
       badge: badge || 'New',
       stock: parseInt(stock || 100),
+      displayOrder: parseInt(displayOrder || 0),
+      isActive: isActive !== undefined ? Boolean(isActive) : true,
       image: image || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?auto=format&fit=crop&w=800&q=80',
       description: description || '',
       features: JSON.stringify(Array.isArray(features) ? features : (features ? features.split('\n').filter(Boolean) : [])),
@@ -82,7 +87,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
 
 exports.updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title, subtitle, price, originalPrice, description, image, features, specs, badge, stock } = req.body;
+  const { title, subtitle, price, originalPrice, description, image, features, specs, badge, stock, displayOrder, isActive } = req.body;
 
   const existing = await prisma.product.findUnique({
     where: { id: parseInt(id) }
@@ -101,6 +106,8 @@ exports.updateProduct = asyncHandler(async (req, res) => {
       originalPrice: originalPrice ? parseFloat(originalPrice) : existing.originalPrice,
       badge: badge !== undefined ? badge : existing.badge,
       stock: stock !== undefined ? parseInt(stock) : existing.stock,
+      displayOrder: displayOrder !== undefined ? parseInt(displayOrder) : existing.displayOrder,
+      isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
       image: image || existing.image,
       description: description !== undefined ? description : existing.description,
       features: features ? JSON.stringify(Array.isArray(features) ? features : features.split('\n').filter(Boolean)) : existing.features,
@@ -117,6 +124,21 @@ exports.updateProduct = asyncHandler(async (req, res) => {
     },
     message: 'Product updated successfully'
   });
+});
+
+exports.reorderProducts = asyncHandler(async (req, res) => {
+  const { orders } = req.body; // array of { id, displayOrder }
+  if (Array.isArray(orders)) {
+    await prisma.$transaction(
+      orders.map(o =>
+        prisma.product.update({
+          where: { id: parseInt(o.id) },
+          data: { displayOrder: parseInt(o.displayOrder) }
+        })
+      )
+    );
+  }
+  return res.json({ success: true, message: 'Products display ordering updated' });
 });
 
 exports.deleteProduct = asyncHandler(async (req, res) => {

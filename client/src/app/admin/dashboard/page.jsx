@@ -56,6 +56,45 @@ import {
 import QRCode from 'qrcode';
 import Link from 'next/link';
 
+// Safe parsers for specifications & features
+function parseSpecs(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) {
+      return parsed.map((item, idx) => {
+        if (typeof item === 'object' && item !== null) {
+          const key = item.key || item.label || item.name || Object.keys(item)[0] || `Spec #${idx + 1}`;
+          const value = item.value || Object.values(item)[0] || '';
+          return { key, value };
+        }
+        return { key: `Spec #${idx + 1}`, value: String(item) };
+      });
+    }
+    if (typeof parsed === 'object' && parsed !== null) {
+      return Object.entries(parsed).map(([key, value]) => ({
+        key,
+        value: typeof value === 'object' ? JSON.stringify(value) : String(value)
+      }));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function parseFeatures(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) return parsed.map(String);
+    if (typeof parsed === 'object' && parsed !== null) return Object.values(parsed).map(String);
+    return [String(parsed)];
+  } catch {
+    return [];
+  }
+}
+
 export default function AdminDashboardPage() {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
@@ -1445,8 +1484,7 @@ export default function AdminDashboardPage() {
 
               {/* Key Features */}
               {(() => {
-                let features = [];
-                try { features = JSON.parse(viewingProduct.product.features || '[]'); } catch {}
+                const features = parseFeatures(viewingProduct.product.features);
                 if (!features || features.length === 0) return null;
                 return (
                   <div className="space-y-2 pt-2 border-t border-slate-100">
@@ -1455,7 +1493,7 @@ export default function AdminDashboardPage() {
                       {features.map((f, i) => (
                         <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700">
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                          <span>{typeof f === 'string' ? f : JSON.stringify(f)}</span>
+                          <span>{f}</span>
                         </div>
                       ))}
                     </div>
@@ -1465,8 +1503,7 @@ export default function AdminDashboardPage() {
 
               {/* Technical Specifications */}
               {(() => {
-                let specs = [];
-                try { specs = JSON.parse(viewingProduct.product.specs || '[]'); } catch {}
+                const specs = parseSpecs(viewingProduct.product.specs);
                 if (!specs || specs.length === 0) return null;
                 return (
                   <div className="space-y-2 pt-2 border-t border-slate-100">
@@ -1474,8 +1511,8 @@ export default function AdminDashboardPage() {
                     <div className="rounded-xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
                       {specs.map((s, i) => (
                         <div key={i} className="flex items-center justify-between p-2.5 text-xs bg-white hover:bg-slate-50">
-                          <span className="text-slate-500 font-medium">{s.key || s.label || s.name || `Spec #${i+1}`}</span>
-                          <span className="text-slate-900 font-bold">{s.value || JSON.stringify(s)}</span>
+                          <span className="text-slate-500 font-medium">{s.key}</span>
+                          <span className="text-slate-900 font-bold">{s.value}</span>
                         </div>
                       ))}
                     </div>

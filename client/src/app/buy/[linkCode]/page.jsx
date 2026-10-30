@@ -21,6 +21,45 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+// Safe parsers for specifications & features
+function parseSpecs(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) {
+      return parsed.map((item, idx) => {
+        if (typeof item === 'object' && item !== null) {
+          const key = item.key || item.label || item.name || Object.keys(item)[0] || `Spec #${idx + 1}`;
+          const value = item.value || Object.values(item)[0] || '';
+          return { key, value };
+        }
+        return { key: `Spec #${idx + 1}`, value: String(item) };
+      });
+    }
+    if (typeof parsed === 'object' && parsed !== null) {
+      return Object.entries(parsed).map(([key, value]) => ({
+        key,
+        value: typeof value === 'object' ? JSON.stringify(value) : String(value)
+      }));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function parseFeatures(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) return parsed.map(String);
+    if (typeof parsed === 'object' && parsed !== null) return Object.values(parsed).map(String);
+    return [String(parsed)];
+  } catch {
+    return [];
+  }
+}
+
 export default function BuyPage({ params }) {
   const { linkCode } = use(params);
   const router = useRouter();
@@ -66,10 +105,8 @@ export default function BuyPage({ params }) {
   }
 
   const { product, partner } = data;
-  let features = [];
-  let specs = [];
-  try { features = JSON.parse(product.features || '[]'); } catch {}
-  try { specs = JSON.parse(product.specs || '[]'); } catch {}
+  const features = parseFeatures(product.features);
+  const specs = parseSpecs(product.specs);
 
   const handleBuyNow = () => {
     // Redirect to checkout with product slug

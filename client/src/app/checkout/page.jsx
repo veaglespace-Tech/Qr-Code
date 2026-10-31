@@ -21,6 +21,24 @@ export default function CheckoutPage() {
   const dispatch = useDispatch();
   const [mounted, setMounted] = useState(false);
 
+  const { items, referralCode, partnerInfo } = useSelector(state => state.cart);
+  const { user } = useSelector(state => state.auth);
+  const { data: settings } = useSelector(state => state.settings);
+  const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+
+  // Form states
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    businessName: items[0]?.businessName || '',
+    googleReviewLink: items[0]?.googleReviewLink || '',
+    address: '',
+    city: 'Pune',
+    state: 'Maharashtra',
+    pincode: '411004'
+  });
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -35,25 +53,6 @@ export default function CheckoutPage() {
       }));
     }
   }, [user]);
-
-  const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
-
-  const { items, referralCode, partnerInfo } = useSelector(state => state.cart);
-  const { user } = useSelector(state => state.auth);
-  const { data: settings } = useSelector(state => state.settings);
-
-  // Form states
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    businessName: items[0]?.businessName || '',
-    googleReviewLink: items[0]?.googleReviewLink || '',
-    address: '',
-    city: 'Pune',
-    state: 'Maharashtra',
-    pincode: '411004'
-  });
 
   const [paymentMode, setPaymentMode] = useState('payu');
   const [errors, setErrors] = useState({});

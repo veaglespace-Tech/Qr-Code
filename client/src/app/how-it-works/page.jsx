@@ -106,18 +106,6 @@ export default function HowItWorksPage() {
           </div>
         </div>
       </div>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                <span><strong>3. REVIEW:</strong> Tap 5 stars and submit rating effortlessly</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                <span><strong>Result:</strong> 10X higher review conversion with zero typing</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
       {/* Interactive Demo */}
       <LiveNfcStandDemo />

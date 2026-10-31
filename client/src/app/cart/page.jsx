@@ -83,10 +83,10 @@ export default function CartPage() {
               You haven&apos;t added any Review Express smart stands or NFC cards yet. Explore our hardware products to boost your business Google reviews.
             </p>
             <Link
-              href="/shop"
+              href="/"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-all shadow-md shadow-brand-500/20"
             >
-              <span>Browse Smart Stands</span>
+              <span>Return to Home</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

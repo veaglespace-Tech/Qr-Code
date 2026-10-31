@@ -98,10 +98,10 @@ function CheckoutSuccessContent() {
         </Link>
 
         <Link
-          href="/shop"
+          href="/"
           className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-sm flex items-center justify-center gap-2 shadow-sm"
         >
-          <span>Continue Shopping</span>
+          <span>Back to Home</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

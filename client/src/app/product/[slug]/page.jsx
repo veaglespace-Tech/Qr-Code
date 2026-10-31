@@ -72,10 +72,10 @@ export default function ProductDetailPage() {
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Product Not Found</h2>
         <p className="text-slate-500 text-sm mb-6">The requested product could not be located.</p>
         <button
-          onClick={() => router.push('/shop')}
+          onClick={() => router.push('/')}
           className="px-6 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm"
         >
-          Return to Shop
+          Return to Home
         </button>
       </div>
     );

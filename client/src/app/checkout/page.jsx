@@ -214,10 +214,10 @@ export default function CheckoutPage() {
           <div>
             <p className="text-xs text-slate-500 mb-3">Add Review Express stands or cards before checking out.</p>
             <button
-              onClick={() => router.push('/shop')}
+              onClick={() => router.push('/')}
               className="px-6 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm shadow-md shadow-brand-500/25 cursor-pointer"
             >
-              Return to Shop
+              Return to Home
             </button>
           </div>
         )}

@@ -140,10 +140,10 @@ export default function HowItWorksPage() {
 
         <div className="pt-4 text-center">
           <Link
-            href="/shop"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md shadow-brand-500/20"
+            href="/partner"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-md shadow-amber-500/20"
           >
-            <span>Order Your Smart Stand Today</span>
+            <span>Explore Partner Program (20% Commission)</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

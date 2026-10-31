@@ -354,11 +354,11 @@ export default function UserDashboardPage() {
               Equip more counters, checkout registers, or tables with 1-tap Google NFC review stands.
             </p>
             <Link
-              href="/shop"
+              href="/contact"
               className="w-full py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/20 transition-all"
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Order More Stands</span>
+              <Phone className="w-3.5 h-3.5" />
+              <span>Contact Partner / Support</span>
             </Link>
           </div>
         </div>
@@ -449,11 +449,11 @@ export default function UserDashboardPage() {
             </button>
 
             <Link
-              href="/shop"
+              href="/contact"
               className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/30 transition-all"
             >
-              <ShoppingBag className="w-4 h-4" />
-              <span>Buy More Stands</span>
+              <Phone className="w-4 h-4" />
+              <span>Support & Reorders</span>
             </Link>
           </div>
         </header>
@@ -576,11 +576,11 @@ export default function UserDashboardPage() {
                       : "You haven't placed any ReviewXpress orders yet. Explore our custom NFC stands to start collecting reviews!"}
                   </p>
                   <Link
-                    href="/shop"
+                    href="/contact"
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition-colors shadow-md shadow-purple-600/30"
                   >
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>Browse Hardware Catalog</span>
+                    <Phone className="w-4 h-4" />
+                    <span>Contact Support to Order</span>
                   </Link>
                 </div>
               ) : (

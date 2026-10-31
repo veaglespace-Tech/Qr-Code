@@ -23,18 +23,37 @@ function getTransporter() {
  * @param {string} toEmail
  * @param {string} otp
  * @param {string} name
- * @param {string} purpose
+ * @param {string} purpose 'Partner' | 'Password Reset' | 'Security Verification'
  * @returns {Promise<{ delivered: boolean, error?: string }>}
  */
-async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose = 'Account Access') {
+async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose = 'Password Reset') {
   const mailTransporter = getTransporter();
 
   const isPartner = purpose.toLowerCase().includes('partner');
-  const title = isPartner ? 'Verify Your ReviewXpress Partner Email' : 'Your ReviewXpress Login Verification Code';
-  const subTitle = isPartner ? 'Official Partner Program Verification' : 'Customer Account Security';
-  const introMessage = isPartner
-    ? 'Thank you for registering as an Official Organization Partner with ReviewXpress. To ensure security and prevent unauthorized access, please enter the following verification code:'
-    : 'Use the one-time verification code below to securely sign into your ReviewXpress Customer Account:';
+  const isReset = purpose.toLowerCase().includes('reset');
+
+  let title = 'ReviewXpress Security Verification';
+  let subTitle = 'Account Security Verification';
+  let headerText = 'Security Verification Code';
+  let badgeText = 'SECURITY VERIFICATION';
+  let introMessage = 'Please enter the following 6-digit verification code:';
+  let emailSubject = `[${otp}] Your ReviewXpress Security Verification Code`;
+
+  if (isPartner) {
+    title = 'Verify Your ReviewXpress Partner Email';
+    subTitle = 'Official Partner Program Verification';
+    headerText = 'Verify Your Email Address';
+    badgeText = 'PARTNER VERIFICATION';
+    introMessage = 'Thank you for registering as an Official Organization Partner with ReviewXpress. To ensure security and prevent unauthorized access, please enter the following verification code:';
+    emailSubject = `[${otp}] Verify Your ReviewXpress Partner Email Address`;
+  } else if (isReset) {
+    title = 'Reset Your ReviewXpress Password';
+    subTitle = 'Password Reset Request';
+    headerText = 'Password Reset Code';
+    badgeText = 'PASSWORD RESET';
+    introMessage = 'We received a request to reset your ReviewXpress account password. Enter the 6-digit verification code below to set your new password:';
+    emailSubject = `[${otp}] Reset Your ReviewXpress Account Password`;
+  }
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -64,20 +83,20 @@ async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose
           <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0;">${subTitle}</p>
         </div>
         <div style="text-align: center;">
-          <span class="badge">SECURITY VERIFICATION</span>
-          <h2>${isPartner ? 'Verify Your Email Address' : 'Sign In Verification Code'}</h2>
+          <span class="badge">${badgeText}</span>
+          <h2>${headerText}</h2>
         </div>
         <p>Hello <strong>${name}</strong>,</p>
         <p>${introMessage}</p>
         
         <div class="otp-container">
-          <div style="font-size: 11px; font-weight: 700; color: #9333ea; text-transform: uppercase; margin-bottom: 6px;">Your 6-Digit OTP Code</div>
+          <div style="font-size: 11px; font-weight: 700; color: #9333ea; text-transform: uppercase; margin-bottom: 6px;">Your 6-Digit Verification Code</div>
           <div class="otp-code">${otp}</div>
           <div style="font-size: 11px; color: #a855f7; margin-top: 6px;">Valid for 10 minutes</div>
         </div>
 
         <p class="warning">
-          🛡️ If you did not request this verification code, please ignore this email. Never share this code with anyone.
+          🛡️ If you did not request this password reset code, please ignore this email or update your credentials. Never share this code with anyone.
         </p>
 
         <div class="footer">
@@ -97,7 +116,7 @@ async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose
     const info = await mailTransporter.sendMail({
       from: `"ReviewXpress Security" <${process.env.EMAIL}>`,
       to: toEmail,
-      subject: `[${otp}] Your ReviewXpress Security Verification Code`,
+      subject: emailSubject,
       html: htmlContent
     });
     console.log(`✅ [OTP EMAIL SENT] to ${toEmail}: messageId=${info.messageId}`);

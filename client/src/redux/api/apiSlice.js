@@ -25,20 +25,19 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Auth', 'Order', 'Admin', 'Superadmin'],
     }),
-    sendLoginOtp: builder.mutation({
+    forgotPassword: builder.mutation({
       query: (data) => ({
-        url: '/auth/send-login-otp',
+        url: '/auth/forgot-password',
         method: 'POST',
         body: data,
       }),
     }),
-    verifyLoginOtp: builder.mutation({
+    resetPassword: builder.mutation({
       query: (data) => ({
-        url: '/auth/verify-login-otp',
+        url: '/auth/reset-password',
         method: 'POST',
         body: data,
       }),
-      invalidatesTags: ['Auth', 'Order', 'Admin', 'Superadmin'],
     }),
     sendPartnerOtp: builder.mutation({
       query: (data) => ({
@@ -298,8 +297,8 @@ export const {
   // Auth hooks
   useGetMeQuery,
   useLoginMutation,
-  useSendLoginOtpMutation,
-  useVerifyLoginOtpMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
   useSendPartnerOtpMutation,
   useVerifyPartnerOtpMutation,
   useRegisterMutation,

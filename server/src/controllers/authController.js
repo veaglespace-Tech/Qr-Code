@@ -203,7 +203,7 @@ exports.register = asyncHandler(async (req, res) => {
   });
 });
 
-exports.sendLoginOTP = asyncHandler(async (req, res) => {
+exports.forgotPassword = asyncHandler(async (req, res) => {
   const { identifier } = req.body;
 
   if (!identifier) {
@@ -241,22 +241,23 @@ exports.sendLoginOTP = asyncHandler(async (req, res) => {
   }
 
   if (!user) {
-    throw new ApiError(404, 'No account found with this email or mobile number. Please check or create an account.');
+    throw new ApiError(404, 'No account found with this email address or mobile number.');
   }
 
   if (user.status === 'inactive') {
     throw new ApiError(403, 'Your account is deactivated. Please contact support.');
   }
 
-  // Generate 6-digit OTP using the user's email as the key
+  // Generate 6-digit OTP using the user's email as key
   const otpRes = createOTP(user.email);
   if (!otpRes.success) {
-    throw new ApiError(429, otpRes.error || 'Please wait before requesting another code.');
+    throw new ApiError(429, otpRes.error || 'Please wait before requesting another reset code.');
   }
 
-  const sendRes = await sendVerificationEmail(user.email, otpRes.otp, user.name || 'Valued Customer', 'Login OTP');
+  // Send Password Reset email
+  const sendRes = await sendVerificationEmail(user.email, otpRes.otp, user.name || 'Valued User', 'Password Reset');
 
-  // Mask email for privacy
+  // Mask email for privacy (e.g., ro***@gmail.com)
   const [uname, domain] = user.email.split('@');
   const maskedEmail = (uname.length > 2 ? uname.slice(0, 2) + '***' : uname + '***') + '@' + domain;
 
@@ -265,24 +266,28 @@ exports.sendLoginOTP = asyncHandler(async (req, res) => {
     email: user.email,
     maskedEmail,
     message: sendRes.delivered
-      ? `Verification code sent to ${maskedEmail}. Please check your inbox.`
-      : `Verification code generated for ${maskedEmail}.`,
+      ? `A 6-digit password reset code has been sent to ${maskedEmail}.`
+      : `Password reset code generated for ${maskedEmail}.`,
     devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
   });
 });
 
-exports.verifyLoginOTP = asyncHandler(async (req, res) => {
-  const { email, otp } = req.body;
+exports.resetPassword = asyncHandler(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
 
-  if (!email || !otp) {
-    throw new ApiError(400, 'Email address and 6-digit OTP code are required.');
+  if (!email || !otp || !newPassword) {
+    throw new ApiError(400, 'Email address, 6-digit reset code, and new password are required.');
+  }
+
+  if (newPassword.trim().length < 6) {
+    throw new ApiError(400, 'New password must be at least 6 characters long.');
   }
 
   const cleanEmail = email.trim().toLowerCase();
   const verifyRes = verifyOTP(cleanEmail, otp);
 
   if (!verifyRes.success) {
-    throw new ApiError(400, verifyRes.error || 'Invalid or expired OTP code.');
+    throw new ApiError(400, verifyRes.error || 'Invalid or expired password reset code.');
   }
 
   const user = await prisma.user.findUnique({
@@ -297,24 +302,19 @@ exports.verifyLoginOTP = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Your account is deactivated. Please contact support.');
   }
 
-  // Consume OTP so it cannot be reused
-  consumeEmailVerification(cleanEmail);
-
-  const token = generateToken(user);
-  const { password: _, ...safeUser } = user;
-
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000
+  // Hash new password and update in database
+  const hashedPassword = await bcrypt.hash(newPassword.trim(), 10);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { password: hashedPassword }
   });
+
+  // Invalidate OTP code so it cannot be used again
+  consumeEmailVerification(cleanEmail);
 
   return res.status(200).json({
     success: true,
-    user: safeUser,
-    token,
-    message: `Welcome back, ${user.name}!`
+    message: 'Your password has been reset successfully! You can now sign in with your new password.'
   });
 });
 
@@ -364,7 +364,7 @@ exports.login = asyncHandler(async (req, res) => {
     if (user.role === 'USER') {
       throw new ApiError(
         401,
-        'Incorrect password. If your account was auto-created during checkout, your default password is ReviewXpress@123, or you can use "Sign in with OTP".'
+        'Incorrect password. If you forgot your password, please click "Forgot Password?" to reset it.'
       );
     }
     throw new ApiError(401, 'Invalid email or password');

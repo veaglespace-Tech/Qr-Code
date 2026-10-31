@@ -87,7 +87,7 @@ function CheckoutSuccessContent() {
                 <span>Customer Account Activated</span>
               </div>
               <p className="text-purple-800 leading-relaxed">
-                Your account is ready for <strong>{order.customerEmail}</strong>. You can sign in anytime using your email/mobile and default password <code className="bg-purple-100 px-1.5 py-0.5 rounded text-purple-950 font-bold font-mono">ReviewXpress@123</code> or via one-click <strong>OTP Login</strong>!
+                Your account is ready for <strong>{order.customerEmail}</strong>. You can sign in anytime using your email/mobile and default password <code className="bg-purple-100 px-1.5 py-0.5 rounded text-purple-950 font-bold font-mono">ReviewXpress@123</code> (or use <strong>Forgot Password?</strong> anytime to set your own password).
               </p>
             </div>
 

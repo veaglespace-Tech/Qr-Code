@@ -25,6 +25,20 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Auth', 'Order', 'Admin', 'Superadmin'],
     }),
+    sendPartnerOtp: builder.mutation({
+      query: (data) => ({
+        url: '/auth/send-partner-otp',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    verifyPartnerOtp: builder.mutation({
+      query: (data) => ({
+        url: '/auth/verify-partner-otp',
+        method: 'POST',
+        body: data,
+      }),
+    }),
     register: builder.mutation({
       query: (userData) => ({
         url: '/auth/register',
@@ -269,6 +283,8 @@ export const {
   // Auth hooks
   useGetMeQuery,
   useLoginMutation,
+  useSendPartnerOtpMutation,
+  useVerifyPartnerOtpMutation,
   useRegisterMutation,
   useLogoutMutation,
   useUpdateProfileMutation,

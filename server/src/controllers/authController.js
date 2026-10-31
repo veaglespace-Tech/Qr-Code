@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../lib/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const { validateEmail } = require('../utils/emailValidator');
+const { createOTP, verifyOTP, isEmailVerified, consumeEmailVerification } = require('../utils/otpStore');
+const { sendVerificationEmail } = require('../utils/mailer');
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -12,6 +15,68 @@ const generateToken = (user) => {
   );
 };
 
+exports.sendPartnerOTP = asyncHandler(async (req, res) => {
+  const { email, name } = req.body;
+
+  if (!email) {
+    throw new ApiError(400, 'Email address is required.');
+  }
+
+  // 1. Strict validation (RFC syntax, disposable blocklist, active DNS MX check)
+  const validation = await validateEmail(email);
+  if (!validation.isValid) {
+    throw new ApiError(400, validation.error || 'Invalid email address.');
+  }
+
+  const cleanEmail = validation.normalizedEmail;
+
+  // 2. Check if email is already registered
+  const existing = await prisma.user.findUnique({
+    where: { email: cleanEmail }
+  });
+  if (existing) {
+    throw new ApiError(400, 'An account with this email address already exists. Please sign in.');
+  }
+
+  // 3. Generate secure 6-digit OTP
+  const otpRes = createOTP(cleanEmail);
+  if (!otpRes.success) {
+    throw new ApiError(429, otpRes.error || 'Please wait before requesting another code.');
+  }
+
+  // 4. Send verification email via Nodemailer
+  const sendRes = await sendVerificationEmail(cleanEmail, otpRes.otp, name || 'Partner');
+
+  return res.json({
+    success: true,
+    message: sendRes.delivered
+      ? `Verification OTP sent to ${cleanEmail}. Please check your inbox.`
+      : `Verification code generated for ${cleanEmail}.`,
+    // For development convenience if SMTP credentials fail
+    devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
+  });
+});
+
+exports.verifyPartnerOTP = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    throw new ApiError(400, 'Email address and 6-digit OTP are required.');
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const verifyRes = verifyOTP(cleanEmail, otp);
+
+  if (!verifyRes.success) {
+    throw new ApiError(400, verifyRes.error || 'Invalid or expired verification code.');
+  }
+
+  return res.json({
+    success: true,
+    message: 'Email address verified successfully!'
+  });
+});
+
 exports.register = asyncHandler(async (req, res) => {
   const { name, email, password, phone, role = 'USER', orgName, bankDetails, referralCodeUsed } = req.body;
 
@@ -19,8 +84,20 @@ exports.register = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Name, email and password are required');
   }
 
+  // 1. Strict email validation for all users (RFC, disposable blocklist, MX check)
+  const emailValidation = await validateEmail(email);
+  if (!emailValidation.isValid) {
+    throw new ApiError(400, emailValidation.error || 'Please provide a valid, active email address.');
+  }
+  const cleanEmail = emailValidation.normalizedEmail;
+
+  // 2. For Partners (ADMIN role), require verified email OTP
+  if (role === 'ADMIN' && !isEmailVerified(cleanEmail)) {
+    throw new ApiError(400, 'Email verification required. Please verify your email with the 6-digit OTP code before submitting registration.');
+  }
+
   const existingUser = await prisma.user.findUnique({
-    where: { email: email.toLowerCase().trim() }
+    where: { email: cleanEmail }
   });
 
   if (existingUser) {
@@ -57,7 +134,7 @@ exports.register = asyncHandler(async (req, res) => {
   const newUser = await prisma.user.create({
     data: {
       name: name.trim(),
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       password: hashedPassword,
       phone: phone || '',
       role: assignedRole,
@@ -72,6 +149,10 @@ exports.register = asyncHandler(async (req, res) => {
       referredById
     }
   });
+
+  if (assignedRole === 'ADMIN') {
+    consumeEmailVerification(cleanEmail);
+  }
 
   const token = generateToken(newUser);
   const { password: _, ...safeUser } = newUser;

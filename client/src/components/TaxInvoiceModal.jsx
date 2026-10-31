@@ -165,15 +165,15 @@ export default function TaxInvoiceModal({ order, settings, onClose }) {
               <div className="mb-2">
                 <ReviewXpressLogo size="default" />
               </div>
-              <p className="text-gray-900 font-bold text-sm">Veagle Space Technology Pvt. Ltd.</p>
+              <p className="text-gray-900 font-bold text-sm">{settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'}</p>
               <p className="text-gray-600 font-medium text-[11px]">Brand: ReviewXpress (Smart NFC &amp; QR Systems)</p>
               <p className="text-gray-600 mt-1 leading-relaxed">
-                'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra - 411041
+                {settings?.address || "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra - 411041"}
               </p>
               <div className="mt-1.5 space-y-0.5 text-gray-700">
                 <p><strong>GSTIN:</strong> {settings?.gstNumber || '27AAECV8237P1Z5'}</p>
-                <p><strong>Phone:</strong> +91 8237999101</p>
-                <p><strong>Email:</strong> info@veaglespace.com</p>
+                <p><strong>Phone:</strong> {settings?.supportPhone || '+91 8237999101'}</p>
+                <p><strong>Email:</strong> {settings?.supportEmail || 'info@veaglespace.com'}</p>
                 <p><strong>State:</strong> Maharashtra (State Code: 27)</p>
               </div>
             </div>
@@ -285,10 +285,10 @@ export default function TaxInvoiceModal({ order, settings, onClose }) {
           <div className="pt-6 border-t flex justify-between items-end text-center">
             <div className="text-left text-[10px] text-gray-500">
               <p>This is a computer-generated tax invoice issued under GST law.</p>
-              <p className="mt-0.5">Veagle Space Technology Pvt. Ltd. • All rights reserved</p>
+              <p className="mt-0.5">{settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'} • All rights reserved</p>
             </div>
             <div className="space-y-2 text-right">
-              <p className="text-[10px] text-gray-600 font-bold">For Veagle Space Technology Pvt. Ltd.</p>
+              <p className="text-[10px] text-gray-600 font-bold">For {settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'}</p>
               <div className="h-8 flex items-center justify-end">
                 <span className="font-serif italic text-xs text-gray-400">Authorized Signatory</span>
               </div>

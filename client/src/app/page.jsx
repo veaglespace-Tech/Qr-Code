@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useSelector } from 'react-redux';
+import { useGetProductsQuery } from '@/redux/api/apiSlice';
 import {
   Sparkles,
   Smartphone,
@@ -29,6 +31,9 @@ import {
 import LiveNfcStandDemo from '@/components/LiveNfcStandDemo';
 
 export default function HomePage() {
+  const { data: settings } = useSelector(state => state.settings);
+  const { data: productsData, isLoading: loadingProducts } = useGetProductsQuery();
+  const products = useMemo(() => productsData?.products || [], [productsData]);
 
   // ROI Calculator states
   const [dailyFootfall, setDailyFootfall] = useState(80);
@@ -89,7 +94,7 @@ export default function HomePage() {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rxgreen-500" />
             </span>
             <span className="font-heading tracking-wide uppercase text-[11px] sm:text-xs">
-              Offered by Veagle Space Technology Pvt. Ltd. • Simple • Fast • Convenient
+              {settings?.announcementBanner || `Offered by ${settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'} • Simple • Fast • Convenient`}
             </span>
             <Zap className="w-3.5 h-3.5 text-rxgreen-600 fill-rxgreen-500" />
           </div>
@@ -413,110 +418,95 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Card 1: Acrylic Smart Stand */}
-          <div className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6 hover:border-purple-300 transition-all flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-                <Smartphone className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900">Custom Acrylic NFC Stand</h3>
-                <p className="text-xs text-purple-700 font-bold mt-0.5">Most Popular for Billing Counters</p>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Sturdy 3mm acrylic counter stand. Built-in instant 1-tap NFC chip and clear QR code with your business name.
-              </p>
-              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Works with all iPhone &amp; Android phones</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>100% Waterproof &amp; Scratch Resistant</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>No batteries or charging needed</span>
-                </li>
-              </ul>
-            </div>
-            <div className="pt-4 border-t border-slate-100">
-              <div className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-2 rounded-xl border border-purple-200 text-center">
-                🔒 Available Exclusively via Partner Direct Link
-              </div>
-            </div>
-          </div>
+          {products.filter(p => p.isActive).length > 0 ? (
+            products.filter(p => p.isActive).map((product) => {
+              const parseFeatures = (feat) => {
+                if (!feat) return [];
+                if (Array.isArray(feat)) return feat;
+                try {
+                  const parsed = JSON.parse(feat);
+                  if (Array.isArray(parsed)) return parsed;
+                } catch (e) {}
+                return String(feat).split('\n').map(s => s.trim()).filter(Boolean);
+              };
+              const features = parseFeatures(product.features);
 
-          {/* Card 2: Executive NFC Review Card */}
-          <div className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6 hover:border-purple-300 transition-all flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                <Award className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900">Executive Pocket NFC Card</h3>
-                <p className="text-xs text-blue-700 font-bold mt-0.5">Best for Managers &amp; Field Staff</p>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Wallet-size smart review card for sales managers, field executives, and on-site service teams.
-              </p>
-              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Fits in any pocket or wallet</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Instant 1-Tap on iPhone &amp; Android</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Directly opens your Google Review page</span>
-                </li>
-              </ul>
-            </div>
-            <div className="pt-4 border-t border-slate-100">
-              <div className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-2 rounded-xl border border-purple-200 text-center">
-                🔒 Available Exclusively via Partner Direct Link
-              </div>
-            </div>
-          </div>
+              return (
+                <div
+                  key={product.id}
+                  className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6 hover:border-purple-300 transition-all flex flex-col justify-between"
+                >
+                  <div className="space-y-4">
+                    <div className="aspect-square w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center p-3">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.title}
+                          className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                          <Smartphone className="w-8 h-8" />
+                        </div>
+                      )}
+                    </div>
 
-          {/* Card 3: Metal Countertop Plate */}
-          <div className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-6 hover:border-purple-300 transition-all flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-                <ShieldCheck className="w-6 h-6" />
+                    <div>
+                      {product.badge && (
+                        <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 mb-1.5">
+                          {product.badge}
+                        </span>
+                      )}
+                      <h3 className="text-xl font-black text-slate-900">{product.title}</h3>
+                      {product.subtitle && (
+                        <p className="text-xs text-purple-700 font-bold mt-0.5">{product.subtitle}</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-baseline gap-2 pt-1">
+                      <span className="text-2xl font-black text-slate-900">
+                        ₹{product.price.toLocaleString('en-IN')}
+                      </span>
+                      {product.originalPrice > product.price && (
+                        <span className="text-sm text-slate-400 line-through">
+                          ₹{product.originalPrice.toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                      {product.description}
+                    </p>
+
+                    {features.length > 0 && (
+                      <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
+                        {features.slice(0, 3).map((feat, idx) => (
+                          <li key={idx} className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-2 rounded-xl border border-purple-200 text-center">
+                      🔒 Available Exclusively via Partner Direct Link
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            [1, 2, 3].map((i) => (
+              <div key={i} className="p-8 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4 animate-pulse">
+                <div className="aspect-square bg-slate-100 rounded-2xl" />
+                <div className="h-4 bg-slate-100 rounded w-3/4" />
+                <div className="h-3 bg-slate-100 rounded w-1/2" />
               </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900">Metal-Touch Luxury Plate</h3>
-                <p className="text-xs text-amber-700 font-bold mt-0.5">For Clinics, Hotels &amp; Showrooms</p>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Brushed metallic finish luxury counter plate for doctors, clinics, luxury showrooms, and premium hotels.
-              </p>
-              <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Premium Brushed Metal Look</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Special metal-compatible NFC technology</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Heavy-Duty anti-slip counter grip</span>
-                </li>
-              </ul>
-            </div>
-            <div className="pt-4 border-t border-slate-100">
-              <div className="text-[11px] font-bold text-purple-700 bg-purple-50 px-3 py-2 rounded-xl border border-purple-200 text-center">
-                🔒 Available Exclusively via Partner Direct Link
-              </div>
-            </div>
-          </div>
+            ))
+          )}
         </div>
 
         {/* Partner Program Banner */}
@@ -530,7 +520,7 @@ export default function HomePage() {
               Want to Distribute ReviewXpress to Businesses in Your City?
             </h4>
             <p className="text-xs sm:text-sm text-purple-200 max-w-xl">
-              Agencies, POS providers, digital marketers, and freelancers earn flat 20% commission on every device sold, with dedicated branded storefront links.
+              Agencies, POS providers, digital marketers, and freelancers earn flat {settings?.defaultCommissionPercent || 20}% commission on every device sold, with dedicated branded storefront links.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">

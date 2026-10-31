@@ -89,7 +89,7 @@ export default function Navbar() {
                 </Link>
                 <Link href="/partner" className="px-3.5 py-2 rounded-xl text-sm font-bold text-amber-800 hover:text-amber-900 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/90 flex items-center gap-1.5 transition-all shadow-xs">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  Partner Program (20%)
+                  Partner Program ({settings?.defaultCommissionPercent || 15}%)
                 </Link>
                 <Link href="/contact" className="px-3.5 py-2 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all">
                   Support

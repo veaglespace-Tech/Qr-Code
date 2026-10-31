@@ -1,16 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useSelector } from 'react-redux';
 import { Wifi, CheckCircle2, ArrowRight, ShieldCheck, QrCode, Zap } from 'lucide-react';
 import LiveNfcStandDemo from '@/components/LiveNfcStandDemo';
 
 export default function HowItWorksPage() {
+  const { data: settings } = useSelector(state => state.settings);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-20">
       {/* Title */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-rxblue-800 text-xs font-bold">
-          <Zap className="w-3.5 h-3.5 text-rxblue-600" /> Offered by Veagle Space Technology Pvt. Ltd.
+          <Zap className="w-3.5 h-3.5 text-rxblue-600" /> Offered by {settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'}
         </div>
         <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight font-heading">
           Make Google Reviews Easier: Simple 3-Step Process

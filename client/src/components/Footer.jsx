@@ -27,7 +27,7 @@ export default function Footer() {
               <ReviewXpressLogo size="default" />
             </Link>
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 border border-blue-200/80 text-[11px] font-bold text-rxblue-700">
-              <span>Offered By: <strong>Veagle Space Technology Pvt. Ltd.</strong></span>
+              <span>Offered By: <strong>{settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'}</strong></span>
             </div>
             <p className="text-sm text-slate-600 max-w-sm leading-relaxed">
               <strong>Make Google Reviews Easier</strong> — Simple • Fast • Convenient. Helping businesses boost 5-star ratings across customer touchpoints with 1-tap NFC &amp; Smart QR stands.
@@ -90,7 +90,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="pt-8 text-center text-xs text-slate-500">
-          <p>Designed &amp; Developed by <strong className="text-slate-800 font-bold">Veagle Space Technology Pvt. Ltd.</strong> | © 2026 All Rights Reserved.</p>
+          <p>Designed &amp; Developed by <strong className="text-slate-800 font-bold">{settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'}</strong> | © {new Date().getFullYear()} All Rights Reserved.</p>
         </div>
       </div>
     </footer>

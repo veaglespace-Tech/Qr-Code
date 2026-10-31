@@ -1859,17 +1859,52 @@ export default function SuperadminDashboardPage() {
                     <Store className="w-5 h-5 text-amber-600" />
                     <div>
                       <h4 className="font-bold text-slate-900 text-sm">Brand &amp; Support Contact</h4>
-                      <p className="text-[11px] text-slate-400">Support channels shown across website</p>
+                      <p className="text-[11px] text-slate-400">Company details shown on invoices, footer, and support pages</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Support Phone / WhatsApp</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Company / Site Name</label>
+                      <input
+                        type="text"
+                        value={siteSettings.siteName || ''}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, siteName: e.target.value })}
+                        placeholder="e.g. Veagle Space Technology Pvt. Ltd."
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Default Partner Commission (%)</label>
+                      <input
+                        type="number"
+                        value={siteSettings.defaultCommissionPercent || 15}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, defaultCommissionPercent: parseFloat(e.target.value) })}
+                        placeholder="15"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Official Registered Office Address</label>
+                    <textarea
+                      rows={2}
+                      value={siteSettings.address || ''}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, address: e.target.value })}
+                      placeholder="e.g. 'Kudale Patil Tower', Office No. 207, Vadgaon Budruk, Pune, Maharashtra 411041"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Support Phone</label>
                       <input
                         type="text"
                         value={siteSettings.supportPhone || ''}
                         onChange={(e) => setSiteSettings({ ...siteSettings, supportPhone: e.target.value })}
+                        placeholder="+91 8237999101"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
                       />
                     </div>
@@ -1879,6 +1914,7 @@ export default function SuperadminDashboardPage() {
                         type="email"
                         value={siteSettings.supportEmail || ''}
                         onChange={(e) => setSiteSettings({ ...siteSettings, supportEmail: e.target.value })}
+                        placeholder="info@veaglespace.com"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
                       />
                     </div>
@@ -1890,7 +1926,7 @@ export default function SuperadminDashboardPage() {
                       type="text"
                       value={siteSettings.announcementBanner || ''}
                       onChange={(e) => setSiteSettings({ ...siteSettings, announcementBanner: e.target.value })}
-                      placeholder="e.g. Free Express Shipping on Orders Above ₹999!"
+                      placeholder="e.g. Simple • Fast • Convenient Google Review Hardware by Veagle Space Technology"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
                     />
                   </div>

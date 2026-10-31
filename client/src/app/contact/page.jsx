@@ -21,7 +21,7 @@ export default function ContactPage() {
   };
 
   const openWhatsApp = () => {
-    const text = encodeURIComponent('Hello Veagle Space Technology, I am interested in ReviewXpress Smart NFC & QR Google Review stands.');
+    const text = encodeURIComponent(`Hello ${settings?.siteName || 'Veagle Space Technology'}, I am interested in ReviewXpress Smart NFC & QR Google Review stands.`);
     window.open(`https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${text}`, '_blank');
   };
 
@@ -31,13 +31,13 @@ export default function ContactPage() {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wider">
-            <Building2 className="w-3.5 h-3.5" /> Veagle Space Technology Support
+            <Building2 className="w-3.5 h-3.5" /> {settings?.siteName || 'Veagle Space Technology'} Support
           </div>
           <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
             Get in Touch with Us
           </h1>
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-            Have questions about hardware specifications, custom laser branding, or bulk orders? Our Pune support team is here to help you scale your business ratings.
+            Have questions about hardware specifications, custom laser branding, or bulk orders? Our support team is here to help you scale your business ratings.
           </p>
         </div>
 
@@ -46,7 +46,7 @@ export default function ContactPage() {
           <div className="lg:col-span-5 bg-white rounded-3xl p-7 sm:p-8 border border-slate-200 space-y-6 shadow-xs">
             <div>
               <h3 className="text-lg font-black text-slate-900">Direct Contact Details</h3>
-              <p className="text-xs text-slate-400 mt-1">Official communication channels for Veagle Space Technology Pvt. Ltd.</p>
+              <p className="text-xs text-slate-400 mt-1">Official communication channels for {settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'}</p>
             </div>
 
             <div className="space-y-4">
@@ -123,7 +123,7 @@ export default function ContactPage() {
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
                 <h4 className="font-bold text-slate-900 text-base">Thank You! Your Enquiry Was Received.</h4>
                 <p className="text-xs text-slate-600 max-w-md mx-auto">
-                  Our customer success executive from Veagle Space Technology will contact you via phone / WhatsApp shortly.
+                  Our customer success executive from {settings?.siteName || 'Veagle Space Technology'} will contact you via phone / WhatsApp shortly.
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}

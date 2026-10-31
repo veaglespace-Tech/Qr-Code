@@ -68,9 +68,22 @@ export default function UserDashboardPage() {
 
   // Alerts
   const [notice, setNotice] = useState({ text: '', isError: false });
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const triggerNotice = (text, isError = false) => {
     setNotice({ text, isError });
     setTimeout(() => setNotice({ text: '', isError: false }), 4500);
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      if (refetch) await refetch();
+      triggerNotice('Orders data refreshed successfully!', false);
+    } catch (err) {
+      triggerNotice('Failed to refresh data.', true);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 600);
+    }
   };
 
   // Profile Form state
@@ -432,11 +445,12 @@ export default function UserDashboardPage() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <button
-              onClick={() => refetch()}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors disabled:opacity-60 flex items-center justify-center cursor-pointer shadow-xs active:scale-95"
               title="Refresh Data"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-purple-600' : ''}`} />
             </button>
 
             <button

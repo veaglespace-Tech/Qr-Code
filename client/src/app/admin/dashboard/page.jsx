@@ -143,12 +143,28 @@ export default function AdminDashboardPage() {
   const [payoutNotes, setPayoutNotes] = useState('');
   const [payoutMsg, setPayoutMsg] = useState('');
   const [payoutError, setPayoutError] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Alerts
   const [notice, setNotice] = useState({ text: '', isError: false });
   const triggerNotice = (text, isError = false) => {
     setNotice({ text, isError });
     setTimeout(() => setNotice({ text: '', isError: false }), 4500);
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      await Promise.all([
+        refetch ? refetch() : Promise.resolve(),
+        refetchLinks ? refetchLinks() : Promise.resolve()
+      ]);
+      triggerNotice('Dashboard data refreshed successfully!', false);
+    } catch (err) {
+      triggerNotice('Failed to refresh data. Please try again.', true);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 600);
+    }
   };
 
   // Robust universal copy to clipboard with fallback
@@ -506,11 +522,12 @@ export default function AdminDashboardPage() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <button
-              onClick={() => refetch()}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors disabled:opacity-60 flex items-center justify-center cursor-pointer shadow-xs active:scale-95"
               title="Refresh Data"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-purple-600' : ''}`} />
             </button>
 
             <button

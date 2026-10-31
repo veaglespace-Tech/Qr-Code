@@ -349,17 +349,17 @@ export default function AdminDashboardPage() {
 
   const navItems = [
     { id: 'overview', label: 'Overview & Earnings', icon: LayoutDashboard },
-    { id: 'products', label: 'My Product Links', icon: Link2 },
-    { id: 'orders', label: 'Referred Orders', icon: Package, badge: recentOrders.length },
-    { id: 'customers', label: 'Referred Customers', icon: Users, badge: referredCustomers.length },
-    { id: 'payouts', label: 'Withdrawals & Balances', icon: IndianRupee },
+    { id: 'products', label: 'Product Links', icon: Link2 },
+    { id: 'orders', label: 'Customer Orders', icon: Package, badge: recentOrders.length },
+    { id: 'customers', label: 'My Customers', icon: Users, badge: referredCustomers.length },
+    { id: 'payouts', label: 'Payouts & Bank', icon: IndianRupee },
   ];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#090d16] flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-300 text-sm font-medium">Loading Organization Partner Console...</p>
+        <p className="text-slate-300 text-sm font-medium">Loading Partner Dashboard...</p>
       </div>
     );
   }
@@ -395,7 +395,7 @@ export default function AdminDashboardPage() {
                   Partner
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">Organization Console</p>
+              <p className="text-[11px] text-slate-400 font-medium">Partner Dashboard</p>
             </div>
           </div>
           <button
@@ -410,7 +410,7 @@ export default function AdminDashboardPage() {
         <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
           <div>
             <span className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-              Partner Navigation
+              Menu
             </span>
             <nav className="mt-2 space-y-1">
               {navItems.map(item => {
@@ -460,7 +460,7 @@ export default function AdminDashboardPage() {
           >
             <div className="flex items-center gap-2">
               <Store className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Browse Hardware Store</span>
+              <span>Browse Products</span>
             </div>
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
           </Link>
@@ -510,12 +510,12 @@ export default function AdminDashboardPage() {
             </button>
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight capitalize">
-                {activeTab === 'overview' && 'Partner Overview & Performance'}
+                {activeTab === 'overview' && 'Overview & Earnings'}
                 {activeTab === 'products' && 'Product Catalog & Referral Links'}
-                {activeTab === 'orders' && 'Referred Customer Orders'}
-                {activeTab === 'customers' && 'Referred Customer Accounts'}
-                {activeTab === 'payouts' && 'Commission Balances & Withdrawals'}
-                {activeTab === 'profile' && 'Organization Profile & Bank Information'}
+                {activeTab === 'orders' && 'Customer Orders'}
+                {activeTab === 'customers' && 'My Referred Customers'}
+                {activeTab === 'payouts' && 'Payouts & Bank Transfers'}
+                {activeTab === 'profile' && 'Profile & Bank Details'}
               </h2>
             </div>
           </div>
@@ -571,24 +571,24 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Total Sales Volume</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">Total Sales</span>
                     <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center">
                       <TrendingUp className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-slate-900">₹{metrics.totalSalesVolume}</div>
-                  <p className="text-[11px] text-slate-500">From {metrics.successfulOrders} successful client purchases</p>
+                  <p className="text-[11px] text-slate-500">From {metrics.successfulOrders} customer purchases</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Total Earned</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">Total Commission Earned</span>
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
                       <Sparkles className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-indigo-600">₹{metrics.totalCommissionEarned}</div>
-                  <p className="text-[11px] text-slate-500">At {stats?.partner?.commissionPercent || 15}% commission rate</p>
+                  <p className="text-[11px] text-slate-500">Your {stats?.partner?.commissionPercent || 15}% share from sales</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
@@ -599,18 +599,18 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="text-3xl font-black text-emerald-600">₹{metrics.availableBalance}</div>
-                  <p className="text-[11px] text-slate-500">Ready for instant withdrawal request</p>
+                  <p className="text-[11px] text-slate-500">Ready to withdraw to bank / UPI</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Total Disbursed</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">Total Withdrawn</span>
                     <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
                       <Check className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-slate-900">₹{metrics.totalPaidOut}</div>
-                  <p className="text-[11px] text-slate-500">Pending payouts: ₹{metrics.pendingPayoutRequests}</p>
+                  <p className="text-[11px] text-slate-500">Paid to your bank account</p>
                 </div>
               </div>
 
@@ -618,13 +618,13 @@ export default function AdminDashboardPage() {
               <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-purple-50 via-white to-indigo-50 border border-purple-100 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
                 <div className="space-y-2 max-w-xl">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-900 text-xs font-bold border border-purple-200">
-                    <Zap className="w-3.5 h-3.5 text-purple-600" /> Per-Product Referral System
+                    <Zap className="w-3.5 h-3.5 text-purple-600" /> Quick Referral Links
                   </div>
                   <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                    Generate Exclusive Purchase Links for Specific Products
+                    Share Product Links &amp; Earn Commission
                   </h3>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Browse our full hardware catalog, view complete technical specifications and images, and generate unique tracking links to share with clients. You earn <strong>{stats?.partner?.commissionPercent || 15}%</strong> on every purchase.
+                    Select any product from the catalog, copy your unique referral link, and share it on WhatsApp or with your business network. When someone buys through your link, your <strong>{stats?.partner?.commissionPercent || 15}%</strong> commission is automatically credited.
                   </p>
                 </div>
                 <button
@@ -632,7 +632,7 @@ export default function AdminDashboardPage() {
                   className="px-5 py-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-purple-600/25 shrink-0 transition-all hover:scale-[1.02]"
                 >
                   <Package className="w-4 h-4" />
-                  <span>View Product Catalog ({linksData?.items?.length || 0})</span>
+                  <span>View Products ({linksData?.items?.length || 0})</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -641,8 +641,8 @@ export default function AdminDashboardPage() {
               <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Recent Referred Orders</h3>
-                    <p className="text-xs text-slate-400">Latest customer purchases tagged to your partner code</p>
+                    <h3 className="font-bold text-slate-900 text-sm">Recent Orders</h3>
+                    <p className="text-xs text-slate-400">Latest orders placed using your referral links</p>
                   </div>
                   <button
                     onClick={() => setActiveTab('orders')}
@@ -658,18 +658,18 @@ export default function AdminDashboardPage() {
                     <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
                       <tr>
                         <th className="py-2.5 px-3">Order #</th>
-                        <th className="py-2.5 px-3">Customer / Business</th>
+                        <th className="py-2.5 px-3">Customer &amp; Business</th>
                         <th className="py-2.5 px-3">Date</th>
-                        <th className="py-2.5 px-3">Subtotal</th>
-                        <th className="py-2.5 px-3">Your Commission</th>
-                        <th className="py-2.5 px-3">Payment</th>
+                        <th className="py-2.5 px-3">Order Amount</th>
+                        <th className="py-2.5 px-3">My Commission</th>
+                        <th className="py-2.5 px-3">Payment Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {recentOrders.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-8 text-center text-slate-400">
-                            No referral orders yet. Share your link to start generating earnings!
+                            No orders yet. Share your product links on WhatsApp or Instagram to start earning!
                           </td>
                         </tr>
                       ) : (
@@ -712,9 +712,9 @@ export default function AdminDashboardPage() {
                     <Zap className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">Official Hardware Catalog & Per-Product Links</h3>
+                    <h3 className="text-sm font-bold text-slate-900">Products &amp; Your Referral Links</h3>
                     <p className="text-xs text-slate-600 mt-0.5">
-                      View complete specifications and generate unique tracking links. Customers who land on your link see <strong>only that specific product</strong>.
+                      Share these direct product links with your clients. When someone buys using your link, your commission is automatically credited.
                     </p>
                   </div>
                 </div>
@@ -767,7 +767,7 @@ export default function AdminDashboardPage() {
                                   link.isActive ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
                                 }`}
                               >
-                                {link.isActive ? 'Link Active' : 'Paused'}
+                                {link.isActive ? 'Active Link' : 'Paused'}
                               </span>
                             )}
                           </div>
@@ -791,11 +791,11 @@ export default function AdminDashboardPage() {
                                     <span className="text-xs text-slate-400 line-through">₹{product.originalPrice?.toLocaleString('en-IN')}</span>
                                   )}
                                 </div>
-                                <span className="text-[10px] text-slate-400">MRP Tax Inclusive</span>
+                                <span className="text-[10px] text-slate-400">Incl. GST</span>
                               </div>
 
                               <div className="text-right">
-                                <span className="text-[10px] uppercase font-bold text-purple-600 block">Your Commission</span>
+                                <span className="text-[10px] uppercase font-bold text-purple-600 block">You Earn</span>
                                 <span className="text-sm font-black text-purple-700">₹{commissionAmount}</span>
                               </div>
                             </div>
@@ -813,7 +813,7 @@ export default function AdminDashboardPage() {
                               className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 hover:border-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                              <span>View Specs & Full Description</span>
+                              <span>View Details</span>
                             </button>
                           </div>
                         </div>
@@ -859,7 +859,7 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center justify-between text-[11px] text-slate-500">
                                 <span className="flex items-center gap-1 font-semibold text-slate-700">
                                   <TrendingUp className="w-3 h-3 text-purple-500" />
-                                  {link.clickCount || 0} visits
+                                  {link.clickCount || 0} clicks
                                 </span>
                                 <span className="font-mono text-slate-400 text-[10px]">{link.linkCode}</span>
                               </div>
@@ -918,7 +918,7 @@ export default function AdminDashboardPage() {
                               ) : (
                                 <Link2 className="w-4 h-4" />
                               )}
-                              <span>{generatingLinkId === product.id ? 'Generating...' : 'Generate My Referral Link'}</span>
+                              <span>{generatingLinkId === product.id ? 'Creating...' : 'Create Referral Link'}</span>
                             </button>
                           )}
                         </div>
@@ -927,7 +927,7 @@ export default function AdminDashboardPage() {
                   })}
                   {(linksData?.items || []).length === 0 && (
                     <div className="col-span-3 text-center py-20 text-slate-400 text-sm">
-                      No products available in catalog. Superadmin has not added any hardware SKUs yet.
+                      No products available in catalog.
                     </div>
                   )}
                 </div>
@@ -940,8 +940,8 @@ export default function AdminDashboardPage() {
             <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Referred Customer Purchases</h3>
-                  <p className="text-xs text-slate-400">All orders placed using your referral code or direct link</p>
+                  <h3 className="font-bold text-slate-900 text-base">Orders via Your Referral Link</h3>
+                  <p className="text-xs text-slate-400">All customer purchases placed using your affiliate links</p>
                 </div>
 
                 <div className="relative w-full sm:w-72">
@@ -950,7 +950,7 @@ export default function AdminDashboardPage() {
                     type="text"
                     value={orderSearch}
                     onChange={(e) => setOrderSearch(e.target.value)}
-                    placeholder="Search by order # or client..."
+                    placeholder="Search by order number or customer name..."
                     className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white"
                   />
                 </div>
@@ -961,12 +961,12 @@ export default function AdminDashboardPage() {
                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
                     <tr>
                       <th className="py-3 px-4">Order #</th>
-                      <th className="py-3 px-4">Customer / Shop</th>
+                      <th className="py-3 px-4">Customer &amp; Business</th>
                       <th className="py-3 px-4">Date</th>
-                      <th className="py-3 px-4">Order Subtotal</th>
-                      <th className="py-3 px-4">Your Cut</th>
-                      <th className="py-3 px-4">Payment</th>
-                      <th className="py-3 px-4">Fulfillment</th>
+                      <th className="py-3 px-4">Order Amount</th>
+                      <th className="py-3 px-4">My Commission</th>
+                      <th className="py-3 px-4">Payment Status</th>
+                      <th className="py-3 px-4">Delivery Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -1017,8 +1017,8 @@ export default function AdminDashboardPage() {
             <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Referred Customer Directory ({referredCustomers.length})</h3>
-                  <p className="text-xs text-slate-400">Clients who placed orders using your partner storefront links or referral code</p>
+                  <h3 className="font-bold text-slate-900 text-base">My Customers ({referredCustomers.length})</h3>
+                  <p className="text-xs text-slate-400">Customers who ordered products using your referral links</p>
                 </div>
 
                 <div className="relative w-full sm:w-72">
@@ -1027,7 +1027,7 @@ export default function AdminDashboardPage() {
                     type="text"
                     value={customerSearch}
                     onChange={(e) => setCustomerSearch(e.target.value)}
-                    placeholder="Search by client name, email..."
+                    placeholder="Search by customer name, email or phone..."
                     className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white"
                   />
                   {customerSearch && (
@@ -1047,17 +1047,17 @@ export default function AdminDashboardPage() {
                     <tr>
                       <th className="py-3 px-4">Customer</th>
                       <th className="py-3 px-4">Contact</th>
-                      <th className="py-3 px-4">Joined On</th>
-                      <th className="py-3 px-4">Total Orders</th>
+                      <th className="py-3 px-4">Date Joined</th>
+                      <th className="py-3 px-4">Orders Placed</th>
                       <th className="py-3 px-4">Total Spent</th>
-                      <th className="py-3 px-4">Commission Generated</th>
+                      <th className="py-3 px-4">Commission Earned</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {filteredCustomers.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-12 text-center text-slate-400">
-                          {debouncedCustomerSearch ? 'No clients matched your search query.' : 'No referred customers yet. Share your product links to start acquiring clients!'}
+                          {debouncedCustomerSearch ? 'No customers matched your search query.' : 'No customers yet. Share your product links on WhatsApp or Instagram to get customers!'}
                         </td>
                       </tr>
                     ) : (
@@ -1101,28 +1101,28 @@ export default function AdminDashboardPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
-                  <span className="text-xs font-bold uppercase text-slate-400">Available For Withdrawal</span>
+                  <span className="text-xs font-bold uppercase text-slate-400">Available Balance</span>
                   <div className="text-3xl font-black text-emerald-600">₹{metrics.availableBalance}</div>
                   <p className="text-[11px] text-slate-500">Minimum withdrawal: ₹{metrics.minPayoutAmount}</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2">
-                  <span className="text-xs font-bold uppercase text-slate-400">Total Transferred</span>
+                  <span className="text-xs font-bold uppercase text-slate-400">Total Paid Out</span>
                   <div className="text-3xl font-black text-slate-900">₹{metrics.totalPaidOut}</div>
-                  <p className="text-[11px] text-slate-500">Successfully sent via IMPS / UPI</p>
+                  <p className="text-[11px] text-slate-500">Transferred to your bank account / UPI</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 flex flex-col justify-between">
                   <div>
-                    <span className="text-xs font-bold uppercase text-slate-400">Ready to Cash Out?</span>
-                    <p className="text-[11px] text-slate-500 mt-1">Processed within 24-48 hours to registered bank/UPI.</p>
+                    <span className="text-xs font-bold uppercase text-slate-400">Request Payout</span>
+                    <p className="text-[11px] text-slate-500 mt-1">Transferred directly to your bank account or UPI ID within 24 to 48 hours.</p>
                   </div>
                   <button
                     onClick={() => setPayoutModalOpen(true)}
                     disabled={metrics.availableBalance < metrics.minPayoutAmount}
                     className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/30 disabled:opacity-50 transition-all"
                   >
-                    Submit Withdrawal Request
+                    Request Bank Transfer
                   </button>
                 </div>
               </div>
@@ -1132,7 +1132,7 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                     <Building className="w-4 h-4 text-purple-600" />
-                    <span>Your Active Payout Destination</span>
+                    <span>Your Bank &amp; UPI Details</span>
                   </h4>
                   <button
                     onClick={() => setActiveTab('profile')}
@@ -1216,15 +1216,15 @@ export default function AdminDashboardPage() {
                     <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                       <Building className="w-5 h-5 text-purple-600" />
                       <div>
-                        <h4 className="font-bold text-slate-900 text-sm">Organization &amp; Contact Info</h4>
-                        <p className="text-[11px] text-slate-400">Update your agency identity and phone number</p>
+                        <h4 className="font-bold text-slate-900 text-sm">Organization &amp; Contact Details</h4>
+                        <p className="text-[11px] text-slate-400">Your business name and mobile number</p>
                       </div>
                     </div>
 
                     <div className="space-y-4">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                          Organization / Agency Name <span className="text-red-500">*</span>
+                          Organization / Business Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -1278,7 +1278,7 @@ export default function AdminDashboardPage() {
                           <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-3" />
                         </div>
                         <p className="text-[10px] text-slate-400 mt-1">
-                          Partner email is linked to your commission account and cannot be modified directly.
+                          Partner email is linked to your account and cannot be modified.
                         </p>
                       </div>
                     </div>
@@ -1289,15 +1289,15 @@ export default function AdminDashboardPage() {
                     <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                       <CreditCard className="w-5 h-5 text-indigo-600" />
                       <div>
-                        <h4 className="font-bold text-slate-900 text-sm">Payout Destination (Bank &amp; UPI)</h4>
-                        <p className="text-[11px] text-slate-400">Withdrawals are directly sent to these coordinates</p>
+                        <h4 className="font-bold text-slate-900 text-sm">Bank Account &amp; UPI Details</h4>
+                        <p className="text-[11px] text-slate-400">Your payouts will be sent to this bank account or UPI ID</p>
                       </div>
                     </div>
 
                     <div className="space-y-4">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                          UPI ID (Fastest Settlement)
+                          UPI ID (Fastest Transfer)
                         </label>
                         <input
                           type="text"
@@ -1337,7 +1337,7 @@ export default function AdminDashboardPage() {
                           type="text"
                           value={profileForm.bankAccount}
                           onChange={(e) => setProfileForm({ ...profileForm, bankAccount: e.target.value })}
-                          placeholder="9 to 18 digits"
+                          placeholder="Enter account number"
                           className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono focus:bg-white focus:border-purple-500 focus:outline-hidden transition-all"
                         />
                       </div>
@@ -1348,7 +1348,7 @@ export default function AdminDashboardPage() {
                           type="text"
                           value={profileForm.bankHolder}
                           onChange={(e) => setProfileForm({ ...profileForm, bankHolder: e.target.value })}
-                          placeholder="Name exactly as printed on passbook"
+                          placeholder="Name as per bank passbook"
                           className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-semibold focus:bg-white focus:border-purple-500 focus:outline-hidden transition-all"
                         />
                       </div>
@@ -1361,8 +1361,8 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                     <Lock className="w-5 h-5 text-purple-600" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Security &amp; Password Update</h4>
-                      <p className="text-[11px] text-slate-400">Leave blank if you do not want to change your partner password</p>
+                      <h4 className="font-bold text-slate-900 text-sm">Change Password</h4>
+                      <p className="text-[11px] text-slate-400">Leave blank if you do not want to change your password</p>
                     </div>
                   </div>
 
@@ -1431,7 +1431,7 @@ export default function AdminDashboardPage() {
                     ) : (
                       <Save className="w-4 h-4" />
                     )}
-                    <span>{savingProfile ? 'Saving Details...' : 'Save Profile & Payout Information'}</span>
+                    <span>{savingProfile ? 'Saving Details...' : 'Save Details'}</span>
                   </button>
                 </div>
               </form>
@@ -1447,7 +1447,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <IndianRupee className="w-4 h-4 text-purple-600" />
-                <span>Request Commission Withdrawal</span>
+                <span>Request Bank Transfer (Withdraw)</span>
               </h3>
               <button onClick={() => setPayoutModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
@@ -1464,7 +1464,7 @@ export default function AdminDashboardPage() {
                 <span>₹{metrics.minPayoutAmount}</span>
               </div>
               <div className="flex justify-between">
-                <span>Payout Destination:</span>
+                <span>Transfer To:</span>
                 <span className="font-bold text-slate-900 truncate max-w-[200px]">
                   {profileForm.upiId || profileForm.bankAccount || 'Not configured'}
                 </span>
@@ -1504,13 +1504,13 @@ export default function AdminDashboardPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Notes / Specific UPI or IMPS details:
+                  Notes or Specific UPI/Bank Details (Optional):
                 </label>
                 <textarea
                   rows={2}
                   value={payoutNotes}
                   onChange={(e) => setPayoutNotes(e.target.value)}
-                  placeholder="e.g. Please transfer to GPay UPI: agency@okaxis"
+                  placeholder="e.g. Please transfer to GPay UPI: 9876543210@upi"
                   className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-hidden focus:border-purple-500 focus:bg-white"
                 />
               </div>
@@ -1528,7 +1528,7 @@ export default function AdminDashboardPage() {
                   disabled={submittingPayout || metrics.availableBalance < metrics.minPayoutAmount}
                   className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs disabled:opacity-50 shadow-md shadow-purple-600/30 transition-all"
                 >
-                  {submittingPayout ? 'Submitting...' : 'Confirm Request'}
+                  {submittingPayout ? 'Submitting...' : 'Submit Withdrawal Request'}
                 </button>
               </div>
             </form>
@@ -1690,7 +1690,7 @@ export default function AdminDashboardPage() {
               <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-3">
                 <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
                   <Link2 className="w-4 h-4 text-purple-600" />
-                  Your Exclusive Referral Link for this SKU
+                  Your Referral Link for this Product
                 </span>
 
                 {viewingProduct.link ? (
@@ -1792,12 +1792,12 @@ export default function AdminDashboardPage() {
 
             {/* Modal Footer */}
             <div className="flex items-center justify-between p-4 px-6 border-t border-slate-100 bg-slate-50">
-              <span className="text-xs text-slate-400">ReviewXpress Verified Hardware SKU</span>
+              <span className="text-xs text-slate-400">ReviewXpress Official Product</span>
               <button
                 onClick={() => setViewingProduct(null)}
                 className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors"
               >
-                Close Preview
+                Close
               </button>
             </div>
           </div>

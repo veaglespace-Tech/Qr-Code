@@ -543,20 +543,20 @@ export default function SuperadminDashboardPage() {
   };
 
   const navItems = [
-    { id: 'analytics', label: 'Overview & Analytics', icon: LayoutDashboard },
-    { id: 'orders', label: 'Orders & Tracking', icon: Package, badge: orders.length },
-    { id: 'products', label: 'Hardware Catalog', icon: Sparkles, badge: products.length },
-    { id: 'admins', label: 'Partner Program', icon: Building, badge: admins.length },
-    { id: 'users', label: 'Customers Directory', icon: UserCheck, badge: users.length },
-    { id: 'payouts', label: 'Affiliate Payouts', icon: IndianRupee, badge: payouts.filter(p => p.status === 'pending').length || null, badgeColor: 'bg-amber-500' },
-    { id: 'settings', label: 'Gateway & GST Settings', icon: Sliders },
+    { id: 'analytics', label: 'Overview', icon: LayoutDashboard },
+    { id: 'orders', label: 'Orders', icon: Package, badge: orders.length },
+    { id: 'products', label: 'Products', icon: Sparkles, badge: products.length },
+    { id: 'admins', label: 'Partners', icon: Building, badge: admins.length },
+    { id: 'users', label: 'Customers', icon: UserCheck, badge: users.length },
+    { id: 'payouts', label: 'Payout Requests', icon: IndianRupee, badge: payouts.filter(p => p.status === 'pending').length || null, badgeColor: 'bg-amber-500' },
+    { id: 'settings', label: 'Settings', icon: Sliders },
   ];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-300 text-sm font-medium">Loading ReviewXpress Superadmin Console...</p>
+        <p className="text-slate-300 text-sm font-medium">Loading Super Admin Dashboard...</p>
       </div>
     );
   }
@@ -589,10 +589,10 @@ export default function SuperadminDashboardPage() {
               <div className="flex items-center gap-1.5">
                 <span className="font-black text-white text-base tracking-tight">ReviewXpress</span>
                 <span className="text-[9px] uppercase font-extrabold tracking-widest bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">
-                  Master
+                  Admin
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">Superadmin Control Suite</p>
+              <p className="text-[11px] text-slate-400 font-medium">Super Admin</p>
             </div>
           </div>
           <button
@@ -607,7 +607,7 @@ export default function SuperadminDashboardPage() {
         <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
           <div>
             <span className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-              Navigation Menu
+              Menu
             </span>
             <nav className="mt-2 space-y-1">
               {navItems.map(item => {
@@ -659,7 +659,7 @@ export default function SuperadminDashboardPage() {
           >
             <div className="flex items-center gap-2">
               <Store className="w-3.5 h-3.5 text-emerald-400" />
-              <span>View Public Storefront</span>
+              <span>View Website / Shop</span>
             </div>
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
           </Link>
@@ -707,14 +707,14 @@ export default function SuperadminDashboardPage() {
             </button>
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight capitalize">
-                {activeTab === 'analytics' && 'Platform Overview & Financial Analytics'}
-                {activeTab === 'orders' && 'Customer Orders & Courier Fulfillment'}
-                {activeTab === 'products' && 'Smart NFC Hardware Product Catalog'}
-                {activeTab === 'admins' && 'Affiliate Organizations & Partner Admins'}
-                {activeTab === 'users' && 'Registered Customers Directory'}
-                {activeTab === 'payouts' && 'Partner Commission Withdrawal Payouts'}
-                {activeTab === 'settings' && 'Global Payment Gateway & GST Settings'}
-                {activeTab === 'profile' && 'Superadmin Profile & Security Settings'}
+                {activeTab === 'analytics' && 'Overview & Analytics'}
+                {activeTab === 'orders' && 'Orders & Courier Tracking'}
+                {activeTab === 'products' && 'Product Catalog'}
+                {activeTab === 'admins' && 'Partners & Affiliates'}
+                {activeTab === 'users' && 'Customers Directory'}
+                {activeTab === 'payouts' && 'Partner Payout Requests'}
+                {activeTab === 'settings' && 'Payment & Tax Settings'}
+                {activeTab === 'profile' && 'Profile & Security'}
               </h2>
             </div>
           </div>
@@ -729,7 +729,7 @@ export default function SuperadminDashboardPage() {
                 refetchAdm();
                 refetchUsr();
                 refetchPay();
-                triggerNotice('Data refreshed from MySQL database!');
+                triggerNotice('Data refreshed successfully!');
               }}
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
               title="Refresh Data"
@@ -768,7 +768,7 @@ export default function SuperadminDashboardPage() {
                 className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/25 transition-all"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Hardware SKU</span>
+                <span className="hidden sm:inline">Add Product</span>
               </button>
             )}
           </div>
@@ -808,24 +808,24 @@ export default function SuperadminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Gross Sales</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Sales</span>
                     <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                       ₹
                     </div>
                   </div>
                   <div className="text-3xl font-black text-slate-900">₹{analytics.totalRevenue}</div>
-                  <p className="text-[11px] text-slate-500 font-medium">{analytics.paidOrdersCount} Paid Orders Confirmed</p>
+                  <p className="text-[11px] text-slate-500 font-medium">{analytics.paidOrdersCount} successful paid orders</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">GST Tax Collected</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total GST Collected</span>
                     <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
                       %
                     </div>
                   </div>
                   <div className="text-3xl font-black text-blue-700">₹{analytics.totalGstCollected}</div>
-                  <p className="text-[11px] text-slate-500 font-medium">CGST + SGST (Official Invoices)</p>
+                  <p className="text-[11px] text-slate-500 font-medium">18% GST collected on orders</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
@@ -836,18 +836,18 @@ export default function SuperadminDashboardPage() {
                     </div>
                   </div>
                   <div className="text-3xl font-black text-amber-700">₹{analytics.totalAdminCommissions}</div>
-                  <p className="text-[11px] text-slate-500 font-medium">Disbursed: ₹{analytics.totalPaidOut}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Total partner commissions earned</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Net Platform Margin</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Net Platform Earnings</span>
                     <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
                       <TrendingUp className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-purple-700">₹{analytics.netPlatformProfit}</div>
-                  <p className="text-[11px] text-slate-500 font-medium">Clean Earnings After Tax &amp; Commission</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Net profit after GST &amp; commissions</p>
                 </div>
               </div>
 
@@ -858,7 +858,7 @@ export default function SuperadminDashboardPage() {
                   className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-purple-300 hover:shadow-sm transition-all"
                 >
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Affiliate Partners</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase">Registered Partners</span>
                     <div className="text-2xl font-black text-slate-900">{analytics.partnersCount} Orgs</div>
                   </div>
                   <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
@@ -871,7 +871,7 @@ export default function SuperadminDashboardPage() {
                   className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-purple-300 hover:shadow-sm transition-all"
                 >
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Customer Base</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase">Total Customers</span>
                     <div className="text-2xl font-black text-slate-900">{analytics.customersCount} Users</div>
                   </div>
                   <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
@@ -884,7 +884,7 @@ export default function SuperadminDashboardPage() {
                   className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between cursor-pointer hover:border-purple-300 hover:shadow-sm transition-all"
                 >
                   <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Catalog Products</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase">Products in Store</span>
                     <div className="text-2xl font-black text-slate-900">{analytics.productsCount} SKUs</div>
                   </div>
                   <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
@@ -897,8 +897,8 @@ export default function SuperadminDashboardPage() {
               <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Recent Platform Orders</h3>
-                    <p className="text-xs text-slate-400">Latest customer purchases across India</p>
+                    <h3 className="font-bold text-slate-900 text-sm">Recent Orders</h3>
+                    <p className="text-xs text-slate-400">Latest customer purchases</p>
                   </div>
                   <button
                     onClick={() => setActiveTab('orders')}
@@ -914,10 +914,10 @@ export default function SuperadminDashboardPage() {
                     <thead className="bg-slate-50 text-slate-400 font-bold uppercase border-y border-slate-100">
                       <tr>
                         <th className="py-2.5 px-3">Order #</th>
-                        <th className="py-2.5 px-3">Customer / Store</th>
+                        <th className="py-2.5 px-3">Customer &amp; Business</th>
                         <th className="py-2.5 px-3">Amount</th>
-                        <th className="py-2.5 px-3">Payment</th>
-                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3">Payment Status</th>
+                        <th className="py-2.5 px-3">Delivery Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -997,11 +997,11 @@ export default function SuperadminDashboardPage() {
                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
                     <tr>
                       <th className="py-3 px-4">Order #</th>
-                      <th className="py-3 px-4">Customer &amp; Engraving</th>
+                      <th className="py-3 px-4">Customer &amp; Custom Name</th>
                       <th className="py-3 px-4">Date</th>
                       <th className="py-3 px-4">Total</th>
                       <th className="py-3 px-4">Payment</th>
-                      <th className="py-3 px-4">Fulfillment</th>
+                      <th className="py-3 px-4">Delivery Status</th>
                       <th className="py-3 px-4">Courier &amp; AWB</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
@@ -1022,7 +1022,7 @@ export default function SuperadminDashboardPage() {
                             <p className="text-[11px] text-slate-500">{order.customerPhone}</p>
                             {order.businessName && (
                               <p className="text-[10px] text-purple-700 font-semibold mt-0.5">
-                                Engrave: &ldquo;{order.businessName}&rdquo;
+                                Custom Name: &ldquo;{order.businessName}&rdquo;
                               </p>
                             )}
                           </td>
@@ -1398,8 +1398,8 @@ export default function SuperadminDashboardPage() {
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base">Affiliate Organizations &amp; Marketing Partners</h3>
-                    <p className="text-xs text-slate-400">Click any partner row to view full details, edit, block/unblock, or delete.</p>
+                    <h3 className="font-bold text-slate-900 text-base">Affiliate Partners</h3>
+                    <p className="text-xs text-slate-400">Click any partner to view details, change commission %, or manage access.</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
@@ -1418,7 +1418,7 @@ export default function SuperadminDashboardPage() {
                     type="text"
                     value={adminSearch}
                     onChange={(e) => setAdminSearch(e.target.value)}
-                    placeholder="Search by name, organization, email, phone or promo code..."
+                    placeholder="Search by partner name, organization, or referral code..."
                     className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
                   />
                   {adminSearch && (
@@ -1436,11 +1436,11 @@ export default function SuperadminDashboardPage() {
                 <table className="w-full text-left text-xs divide-y divide-slate-100">
                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
                     <tr>
-                      <th className="py-3 px-4">Organization / Contact</th>
+                      <th className="py-3 px-4">Partner / Organization</th>
                       <th className="py-3 px-4">Referral Code</th>
                       <th className="py-3 px-4">Commission %</th>
-                      <th className="py-3 px-4">Orders</th>
-                      <th className="py-3 px-4">Gross Revenue</th>
+                      <th className="py-3 px-4">Paid Orders</th>
+                      <th className="py-3 px-4">Total Sales</th>
                       <th className="py-3 px-4">Commission Earned</th>
                       <th className="py-3 px-4">Status</th>
                       <th className="py-3 px-4 text-right">Actions</th>
@@ -1520,8 +1520,8 @@ export default function SuperadminDashboardPage() {
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-slate-900 text-base">Registered Customer Accounts</h3>
-                    <p className="text-xs text-slate-400">Click any customer row to view full profile, lifetime orders, and referral details.</p>
+                    <h3 className="font-bold text-slate-900 text-base">Customer Directory</h3>
+                    <p className="text-xs text-slate-400">All registered customer accounts and their orders.</p>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="font-bold px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
@@ -1543,7 +1543,7 @@ export default function SuperadminDashboardPage() {
                     type="text"
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    placeholder="Search by customer name, email, phone, or company..."
+                    placeholder="Search by customer name, email, phone..."
                     className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
                   />
                   {userSearch && (
@@ -1563,10 +1563,10 @@ export default function SuperadminDashboardPage() {
                     <tr>
                       <th className="py-3 px-4">Customer</th>
                       <th className="py-3 px-4">Contact</th>
-                      <th className="py-3 px-4">Referred By (Partner / Code)</th>
+                      <th className="py-3 px-4">Referred By</th>
                       <th className="py-3 px-4">Total Orders</th>
                       <th className="py-3 px-4">Total Spent</th>
-                      <th className="py-3 px-4">Member Since</th>
+                      <th className="py-3 px-4">Joined On</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1638,8 +1638,8 @@ export default function SuperadminDashboardPage() {
           {activeTab === 'payouts' && (
             <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Partner Commission Withdrawal Requests</h3>
-                <p className="text-xs text-slate-400">Review and approve bank IMPS or UPI transfers for affiliate earnings.</p>
+                <h3 className="font-bold text-slate-900 text-base">Partner Payout Requests</h3>
+                <p className="text-xs text-slate-400">Review, approve, and record bank transfers or UPI payouts to partners.</p>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -1649,9 +1649,9 @@ export default function SuperadminDashboardPage() {
                       <th className="py-3 px-4">Partner</th>
                       <th className="py-3 px-4">Amount</th>
                       <th className="py-3 px-4">Date</th>
-                      <th className="py-3 px-4">Destination Details</th>
+                      <th className="py-3 px-4">Bank / UPI Details</th>
                       <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4">UTR Reference</th>
+                      <th className="py-3 px-4">UTR / Ref #</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -1725,8 +1725,8 @@ export default function SuperadminDashboardPage() {
                   <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                     <CreditCard className="w-5 h-5 text-purple-600" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">PayU Payment Gateway Integration</h4>
-                      <p className="text-[11px] text-slate-400">Dynamic SHA512 hash verification keys</p>
+                      <h4 className="font-bold text-slate-900 text-sm">PayU Payment Gateway</h4>
+                      <p className="text-[11px] text-slate-400">API credentials for PayU online payments</p>
                     </div>
                   </div>
 
@@ -1737,8 +1737,8 @@ export default function SuperadminDashboardPage() {
                       onChange={(e) => setSiteSettings({ ...siteSettings, payuMode: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white"
                     >
-                      <option value="test">Sandbox / Test Gateway (test.payu.in)</option>
-                      <option value="live">Live Production Gateway (secure.payu.in)</option>
+                      <option value="test">Test Mode (test.payu.in)</option>
+                      <option value="live">Live Mode (secure.payu.in)</option>
                     </select>
                   </div>
 
@@ -1770,8 +1770,8 @@ export default function SuperadminDashboardPage() {
                   <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                     <FileText className="w-5 h-5 text-blue-600" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Official GST Tax Invoicing</h4>
-                      <p className="text-[11px] text-slate-400">Automated CGST/SGST tax invoices</p>
+                      <h4 className="font-bold text-slate-900 text-sm">GST Tax Invoicing</h4>
+                      <p className="text-[11px] text-slate-400">Automatic CGST &amp; SGST calculation on orders</p>
                     </div>
                   </div>
 
@@ -1815,7 +1815,7 @@ export default function SuperadminDashboardPage() {
                       type="text"
                       value={siteSettings.gstNumber || ''}
                       onChange={(e) => setSiteSettings({ ...siteSettings, gstNumber: e.target.value })}
-                      placeholder="e.g. 27AABCR1234F1Z8"
+                      placeholder="e.g. 27AAECV8237P1Z5"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono uppercase focus:bg-white"
                     />
                   </div>
@@ -1826,8 +1826,8 @@ export default function SuperadminDashboardPage() {
                   <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                     <Truck className="w-5 h-5 text-emerald-600" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Delivery &amp; Courier Fees</h4>
-                      <p className="text-[11px] text-slate-400">Shipping thresholds across India</p>
+                      <h4 className="font-bold text-slate-900 text-sm">Shipping &amp; Delivery Charges</h4>
+                      <p className="text-[11px] text-slate-400">Free shipping rules and delivery charges</p>
                     </div>
                   </div>
 
@@ -1858,8 +1858,8 @@ export default function SuperadminDashboardPage() {
                   <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                     <Store className="w-5 h-5 text-amber-600" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Brand &amp; Support Contact</h4>
-                      <p className="text-[11px] text-slate-400">Company details shown on invoices, footer, and support pages</p>
+                      <h4 className="font-bold text-slate-900 text-sm">Company &amp; Contact Information</h4>
+                      <p className="text-[11px] text-slate-400">Details shown on tax invoices, website footer, and contact page</p>
                     </div>
                   </div>
 
@@ -1961,7 +1961,7 @@ export default function SuperadminDashboardPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-black text-slate-900">{user?.name || 'Superadmin'}</h3>
                       <span className="text-[10px] font-extrabold uppercase tracking-widest bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full border border-purple-200">
-                        Level 1 Master
+                        Administrator
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">{user?.email || 'admin@reviewexpress.in'}</p>
@@ -1979,7 +1979,7 @@ export default function SuperadminDashboardPage() {
 
                 <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
                   <span className="px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-100 text-xs font-bold flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5" /> Full Root Access
+                    <Shield className="w-3.5 h-3.5" /> Super Admin Access
                   </span>
                 </div>
               </div>
@@ -2040,7 +2040,7 @@ export default function SuperadminDashboardPage() {
                           <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-3" />
                         </div>
                         <p className="text-[10px] text-slate-400 mt-1">
-                          System Master email address cannot be changed directly for platform security.
+                          Administrator email address cannot be changed directly.
                         </p>
                       </div>
 
@@ -2052,7 +2052,7 @@ export default function SuperadminDashboardPage() {
                           type="text"
                           readOnly
                           disabled
-                          value="SUPERADMIN (Master Administrator)"
+                          value="SUPERADMIN"
                           className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-purple-700 text-xs font-bold cursor-not-allowed"
                         />
                       </div>
@@ -2064,7 +2064,7 @@ export default function SuperadminDashboardPage() {
                     <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                       <Lock className="w-5 h-5 text-indigo-600" />
                       <div>
-                        <h4 className="font-bold text-slate-900 text-sm">Security &amp; Password</h4>
+                        <h4 className="font-bold text-slate-900 text-sm">Change Password</h4>
                         <p className="text-[11px] text-slate-400">Leave blank if you do not want to change your password</p>
                       </div>
                     </div>
@@ -2249,7 +2249,7 @@ export default function SuperadminDashboardPage() {
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-purple-600" />
-                <span>{editingProduct ? 'Edit Hardware Product' : 'Add New Hardware SKU'}</span>
+                <span>{editingProduct ? 'Edit Product' : 'Add New Product'}</span>
               </h3>
               <button onClick={() => setProductModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />

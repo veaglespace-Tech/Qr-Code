@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { clearCart } from '@/redux/slice/cartSlice';
 import { useCreateOrderMutation } from '@/redux/api/apiSlice';
+import { useToast, formatUserFriendlyError } from '@/context/ToastContext';
 import {
   CreditCard,
   Lock,
@@ -19,6 +20,7 @@ import {
 export default function CheckoutPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
 
   const { items, referralCode, partnerInfo } = useSelector(state => state.cart);
@@ -133,7 +135,9 @@ export default function CheckoutPage() {
     e.preventDefault();
 
     if (!validateForm()) {
-      setErrorMsg('Please correct the highlighted errors in your order form.');
+      const msg = 'Please correct the highlighted fields in the delivery form.';
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
 
@@ -159,6 +163,7 @@ export default function CheckoutPage() {
 
       if (res.success) {
         dispatch(clearCart());
+        toast.success('Order placed successfully! Redirecting...');
 
         if (isCOD) {
           router.push(`/checkout/success?orderId=${res.order.id}`);
@@ -188,7 +193,9 @@ export default function CheckoutPage() {
         }
       }
     } catch (err) {
-      setErrorMsg(err?.data?.error || err?.message || 'Failed to place order. Please check details and try again.');
+      const friendly = formatUserFriendlyError(err);
+      setErrorMsg(friendly);
+      toast.error(friendly);
       setLoading(false);
     }
   };

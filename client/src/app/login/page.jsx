@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLoginMutation, useForgotPasswordMutation, useResetPasswordMutation } from '@/redux/api/apiSlice';
+import { useToast, formatUserFriendlyError } from '@/context/ToastContext';
 import Link from 'next/link';
 import {
   Lock,
@@ -23,6 +24,7 @@ import ReviewXpressLogo from '@/components/ReviewXpressLogo';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [login, { isLoading: loading, error: rtkError }] = useLoginMutation();
   const [forgotPassword, { isLoading: sendingResetOtp }] = useForgotPasswordMutation();
   const [resetPassword, { isLoading: resettingPassword }] = useResetPasswordMutation();
@@ -90,28 +92,37 @@ export default function LoginPage() {
 
     const cleanInput = identifier.trim();
     if (!cleanInput) {
-      setFormError('Please enter your email address or mobile number.');
+      const msg = 'Please enter your email address or mobile number.';
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
 
     if (!password || password.length < 4) {
-      setFormError('Please enter your password.');
+      const msg = 'Please enter your password.';
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
 
     // Verify calculation captcha
     const expected = captcha.num1 + captcha.num2;
     if (parseInt(captchaInput.trim(), 10) !== expected) {
-      setFormError(`Incorrect security verification answer. Please solve ${captcha.num1} + ${captcha.num2}.`);
+      const msg = `Security verification was incorrect. Please solve ${captcha.num1} + ${captcha.num2}.`;
+      setFormError(msg);
+      toast.error(msg);
       generateCaptcha();
       return;
     }
 
     try {
       const res = await login({ email: cleanInput, password }).unwrap();
+      toast.success(`Welcome back, ${res.user?.name || 'User'}!`);
       handleRedirect(res.user);
     } catch (err) {
-      setFormError(err?.data?.error || err?.message || 'Login failed. Please check your credentials.');
+      const friendly = formatUserFriendlyError(err);
+      setFormError(friendly);
+      toast.error(friendly);
       generateCaptcha();
     }
   };
@@ -136,7 +147,9 @@ export default function LoginPage() {
 
     const cleanInput = forgotIdentifier.trim();
     if (!cleanInput) {
-      setModalError('Please enter your registered email address or mobile number.');
+      const msg = 'Please enter your registered email address or mobile number.';
+      setModalError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -146,9 +159,13 @@ export default function LoginPage() {
       setMaskedEmail(res.maskedEmail || res.email);
       setForgotStep(2);
       setResendCooldown(60);
-      setModalSuccess(res.message || `Password reset code sent to ${res.maskedEmail || res.email}`);
+      const msg = res.message || `Password reset code sent to ${res.maskedEmail || res.email}`;
+      setModalSuccess(msg);
+      toast.success(msg);
     } catch (err) {
-      setModalError(err?.data?.error || err?.message || 'Could not find account. Please check your details.');
+      const friendly = formatUserFriendlyError(err);
+      setModalError(friendly);
+      toast.error(friendly);
     }
   };
 
@@ -159,17 +176,23 @@ export default function LoginPage() {
     setModalSuccess('');
 
     if (!resetOtp || resetOtp.trim().length !== 6) {
-      setModalError('Please enter the 6-digit reset code sent to your email.');
+      const msg = 'Please enter the 6-digit reset code sent to your email.';
+      setModalError(msg);
+      toast.error(msg);
       return;
     }
 
     if (!newPassword || newPassword.length < 6) {
-      setModalError('New password must be at least 6 characters long.');
+      const msg = 'New password must be at least 6 characters long.';
+      setModalError(msg);
+      toast.error(msg);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setModalError('New password and confirm password do not match.');
+      const msg = 'New password and confirmation password do not match.';
+      setModalError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -181,11 +204,15 @@ export default function LoginPage() {
       }).unwrap();
 
       setShowForgotModal(false);
-      setFormSuccess(res.message || 'Your password has been reset successfully! You can now sign in.');
+      const msg = res.message || 'Your password has been reset successfully! You can now sign in.';
+      setFormSuccess(msg);
+      toast.success(msg);
       setIdentifier(resetEmail);
       setPassword('');
     } catch (err) {
-      setModalError(err?.data?.error || err?.message || 'Failed to reset password. Please check your code.');
+      const friendly = formatUserFriendlyError(err);
+      setModalError(friendly);
+      toast.error(friendly);
     }
   };
 

@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { setUser } from '@/redux/slice/authSlice';
 
 import { useRegisterMutation } from '@/redux/api/apiSlice';
+import { useToast, formatUserFriendlyError } from '@/context/ToastContext';
 import Link from 'next/link';
 import { ArrowRight, AlertCircle } from 'lucide-react';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
@@ -13,6 +14,7 @@ import ReviewXpressLogo from '@/components/ReviewXpressLogo';
 export default function RegisterPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { toast } = useToast();
   const [register, { isLoading: loading }] = useRegisterMutation();
 
   const [formData, setFormData] = useState({
@@ -61,7 +63,9 @@ export default function RegisterPage() {
     setErrorMsg('');
 
     if (!validate()) {
-      setErrorMsg('Please correct the highlighted errors.');
+      const msg = 'Please fix the highlighted fields in the form.';
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
 
@@ -77,11 +81,14 @@ export default function RegisterPage() {
       }).unwrap();
 
       if (res.success) {
+        toast.success('Account created successfully! Welcome to ReviewXpress.');
         dispatch(setUser(res.user));
         router.push('/user/orders');
       }
     } catch (err) {
-      setErrorMsg(err?.data?.error || err?.message || 'Registration failed');
+      const friendly = formatUserFriendlyError(err);
+      setErrorMsg(friendly);
+      toast.error(friendly);
     }
   };
 

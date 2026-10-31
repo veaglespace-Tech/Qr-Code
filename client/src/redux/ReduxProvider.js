@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { checkAuth } from './slice/authSlice';
 import { fetchSettings } from './slice/settingsSlice';
 import { setReferralCode } from './slice/cartSlice';
+import { ToastProvider } from '@/context/ToastContext';
 
 
 function AppInitializer({ children }) {
@@ -29,7 +30,9 @@ function AppInitializer({ children }) {
 export default function ReduxProvider({ children }) {
   return (
     <Provider store={store}>
-      <AppInitializer>{children}</AppInitializer>
+      <ToastProvider>
+        <AppInitializer>{children}</AppInitializer>
+      </ToastProvider>
     </Provider>
   );
 }

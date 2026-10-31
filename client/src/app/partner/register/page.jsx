@@ -9,6 +9,7 @@ import {
   useSendPartnerOtpMutation,
   useVerifyPartnerOtpMutation
 } from '@/redux/api/apiSlice';
+import { useToast, formatUserFriendlyError } from '@/context/ToastContext';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -38,6 +39,7 @@ const DISPOSABLE_DOMAINS = new Set([
 export default function PartnerRegisterPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { toast } = useToast();
   const [register, { isLoading: loading }] = useRegisterMutation();
   const [sendPartnerOtp, { isLoading: sendingOtp }] = useSendPartnerOtpMutation();
   const [verifyPartnerOtp, { isLoading: verifyingOtp }] = useVerifyPartnerOtpMutation();
@@ -134,26 +136,32 @@ export default function PartnerRegisterPage() {
       if (res.success) {
         setOtpSent(true);
         setOtpTimer(60);
+        const msg = res.message || `6-digit verification code sent to ${formData.email}!`;
         setOtpNotice({
-          text: res.message || `6-digit verification code sent to ${formData.email}!`,
+          text: msg,
           isError: false
         });
+        toast.success(msg);
         if (res.devOtp) {
           setOtpCode(res.devOtp); // Auto-fill for convenience in test environment
         }
       }
     } catch (apiErr) {
+      const friendly = formatUserFriendlyError(apiErr);
       setOtpNotice({
-        text: apiErr?.data?.error || apiErr?.message || 'Failed to send verification code. Please check email address.',
+        text: friendly,
         isError: true
       });
+      toast.error(friendly);
     }
   };
 
   const handleVerifyOtp = async () => {
     setOtpNotice({ text: '', isError: false });
     if (!otpCode || otpCode.trim().length !== 6) {
-      setOtpNotice({ text: 'Please enter the 6-digit verification code.', isError: true });
+      const msg = 'Please enter the 6-digit verification code.';
+      setOtpNotice({ text: msg, isError: true });
+      toast.error(msg);
       return;
     }
 
@@ -166,13 +174,17 @@ export default function PartnerRegisterPage() {
       if (res.success) {
         setEmailVerified(true);
         setOtpSent(false);
-        setOtpNotice({ text: 'Official Partner Email Verified Successfully! ✓', isError: false });
+        const msg = 'Official Partner Email Verified Successfully! ✓';
+        setOtpNotice({ text: msg, isError: false });
+        toast.success(msg);
       }
     } catch (apiErr) {
+      const friendly = formatUserFriendlyError(apiErr);
       setOtpNotice({
-        text: apiErr?.data?.error || apiErr?.message || 'Incorrect verification code. Please check and try again.',
+        text: friendly,
         isError: true
       });
+      toast.error(friendly);
     }
   };
 
@@ -223,12 +235,16 @@ export default function PartnerRegisterPage() {
     setErrorMsg('');
 
     if (!validate()) {
-      setErrorMsg('Please correct the highlighted errors in your registration form.');
+      const msg = 'Please correct the highlighted errors in your registration form.';
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
 
     if (!emailVerified) {
-      setErrorMsg('Email verification required! Please verify your official email with the 6-digit OTP code before completing registration.');
+      const msg = 'Email verification required! Please verify your official email with the 6-digit OTP code before completing registration.';
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
 
@@ -252,11 +268,14 @@ export default function PartnerRegisterPage() {
 
       const res = await register(payload).unwrap();
       if (res.success) {
+        toast.success('Organization registered successfully! Welcome to ReviewXpress Partner Program.');
         dispatch(setUser(res.user));
         router.push('/admin/dashboard');
       }
     } catch (err) {
-      setErrorMsg(err?.data?.error || err?.message || 'Registration failed. Please try again.');
+      const friendly = formatUserFriendlyError(err);
+      setErrorMsg(friendly);
+      toast.error(friendly);
     }
   };
 

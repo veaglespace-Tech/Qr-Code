@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateQuantity, removeFromCart, setReferralCode } from '@/redux/slice/cartSlice';
-
+import { useToast } from '@/context/ToastContext';
 import { Trash2, ArrowRight, ShoppingBag, Sparkles, ShieldCheck, Tag } from 'lucide-react';
 
 export default function CartPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -42,9 +43,14 @@ export default function CartPage() {
 
   const handleApplyReferral = (e) => {
     e.preventDefault();
-    if (!inputRefCode.trim()) return;
+    if (!inputRefCode.trim()) {
+      toast.error('Please enter a referral code.');
+      return;
+    }
     dispatch(setReferralCode(inputRefCode.trim().toUpperCase()));
-    setAppliedMsg('Partner Referral applied! Order linked with authorized partner.');
+    const msg = 'Partner Referral applied! Order linked with authorized partner.';
+    setAppliedMsg(msg);
+    toast.success(msg);
   };
 
   if (!mounted) {
@@ -150,8 +156,11 @@ export default function CartPage() {
                 </div>
 
                 <button
-                  onClick={() => dispatch(removeFromCart(item.id))}
-                  className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  onClick={() => {
+                    dispatch(removeFromCart(item.id));
+                    toast.info('Item removed from cart.');
+                  }}
+                  className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                   title="Remove Item"
                 >
                   <Trash2 className="w-4 h-4" />

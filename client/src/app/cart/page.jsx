@@ -37,14 +37,14 @@ export default function CartPage() {
   const shippingFee = subtotal >= freeShippingAbove || items.length === 0 ? 0 : (settings?.standardShippingFee || 60);
 
   const hasReferral = Boolean((activeRefCode && activeRefCode.trim()) || partnerInfo?.linkCode);
-  const discountAmount = hasReferral ? Number((subtotal * 0.05).toFixed(2)) : 0;
+  const discountAmount = 0;
   const totalAmount = Number((subtotal + gstAmount + shippingFee - discountAmount).toFixed(2));
 
   const handleApplyReferral = (e) => {
     e.preventDefault();
     if (!inputRefCode.trim()) return;
     dispatch(setReferralCode(inputRefCode.trim().toUpperCase()));
-    setAppliedMsg('Partner Referral applied! Extra 5% customer discount applied.');
+    setAppliedMsg('Partner Referral applied! Order linked with authorized partner.');
   };
 
   if (!mounted) {
@@ -65,7 +65,7 @@ export default function CartPage() {
         {partnerInfo ? (
           <div className="space-y-4">
             <p className="text-sm text-slate-600 max-w-md mx-auto">
-              You are shopping with partner <strong>{partnerInfo.orgName || partnerInfo.name}</strong>. Add the recommended custom NFC stand to activate your exclusive 5% discount!
+              You are shopping with partner <strong>{partnerInfo.orgName || partnerInfo.name}</strong>. Add the recommended custom NFC stand to complete your order!
             </p>
             {partnerInfo.linkCode && (
               <Link
@@ -170,10 +170,10 @@ export default function CartPage() {
                   </div>
                   <div>
                     <p className="text-xs font-black text-purple-950">
-                      Partner Offer Active: {partnerInfo.orgName || partnerInfo.name}
+                      Partner Referral Active: {partnerInfo.orgName || partnerInfo.name}
                     </p>
                     <p className="text-[11px] text-purple-700 font-semibold">
-                      5% Partner discount automatically applied to your cart!
+                      Your order is verified and supported by an authorized partner.
                     </p>
                   </div>
                 </div>
@@ -187,7 +187,7 @@ export default function CartPage() {
                   <Sparkles className="w-4 h-4 text-amber-600" /> Partner / Affiliate Referral Code
                 </div>
                 <p className="text-xs text-slate-600">
-                  Have a referral code from a partner or organization? Enter it below to unlock an extra 5% instant discount!
+                  Have a referral code from a partner or organization? Enter it below to link your order.
                 </p>
                 <form onSubmit={handleApplyReferral} className="flex gap-2">
                   <input
@@ -224,10 +224,10 @@ export default function CartPage() {
               <span className="font-bold text-slate-900">₹{subtotal.toFixed(2)}</span>
             </div>
 
-            {hasReferral && (
+            {discountAmount > 0 && (
               <div className="flex justify-between text-emerald-700">
                 <span className="flex items-center gap-1 font-semibold">
-                  <Tag className="w-3.5 h-3.5" /> Partner Discount (5%):
+                  <Tag className="w-3.5 h-3.5" /> Discount:
                 </span>
                 <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
               </div>

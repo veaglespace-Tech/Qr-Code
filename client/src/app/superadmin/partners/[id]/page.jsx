@@ -487,7 +487,7 @@ export default function PartnerDetailPage() {
                 <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-200/80 space-y-2.5 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-purple-900">Partner Referral Link:</span>
-                    <span className="text-[10px] text-purple-700 font-bold">5% Customer Auto-Discount</span>
+                    <span className="text-[10px] text-purple-700 font-bold">Direct Partner Referral</span>
                   </div>
                   <div className="flex items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-purple-200">
                     <span className="font-mono text-[11px] text-purple-900 truncate">

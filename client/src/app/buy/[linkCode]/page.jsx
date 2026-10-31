@@ -323,7 +323,7 @@ export default function BuyPage(props) {
                 </span>
                 <span>•</span>
                 <span className="text-purple-600 font-bold">
-                  5% Partner Discount Auto-Applied
+                  Official Partner Store
                 </span>
               </div>
             </div>

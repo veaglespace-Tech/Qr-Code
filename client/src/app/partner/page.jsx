@@ -64,7 +64,7 @@ export default function PartnerProgramPage() {
           </div>
           <h3 className="text-lg font-bold text-slate-900">2. Businesses Order</h3>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Customers receive an instant 5% bonus discount by using your link or code. ReviewXpress takes care of laser printing, chip programming, and courier shipping.
+            Customers order custom-branded NFC stands directly using your link or code. ReviewXpress handles laser engraving, chip programming, and courier shipping.
           </p>
         </div>
 

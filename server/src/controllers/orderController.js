@@ -62,7 +62,8 @@ exports.createOrder = asyncHandler(async (req, res) => {
       partnerLinkId = pLink.id;
       adminCommissionPercent = pLink.admin.commissionPercent || (settings ? settings.defaultCommissionPercent : 15.0);
       adminCommissionAmount = parseFloat(((subtotal * adminCommissionPercent) / 100).toFixed(2));
-      discountAmount = parseFloat((subtotal * 0.05).toFixed(2)); // 5% discount for customer via partner link
+      // No partner discount for customers; customer pays full price, partner earns full commission
+      discountAmount = 0.0;
     }
   }
 
@@ -80,7 +81,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
         adminReferralId = partner.id;
         adminCommissionPercent = partner.commissionPercent || (settings ? settings.defaultCommissionPercent : 15.0);
         adminCommissionAmount = parseFloat(((subtotal * adminCommissionPercent) / 100).toFixed(2));
-        discountAmount = parseFloat((subtotal * 0.05).toFixed(2)); // 5% discount for customer via old flow
+        discountAmount = 0.0;
       }
     }
   }

@@ -71,7 +71,7 @@ export default function CheckoutPage() {
     (typeof localStorage !== 'undefined' ? localStorage.getItem('re_partner_link_code') : '') || '';
 
   const hasReferral = Boolean(activeRefCode && activeRefCode.trim()) || Boolean(activePartnerLink && activePartnerLink.trim());
-  const discountAmount = hasReferral ? Number((subtotal * 0.05).toFixed(2)) : 0;
+  const discountAmount = 0;
   const finalAmount = Number((subtotal + gstAmount + shippingFee - discountAmount).toFixed(2));
 
   const handleChange = (e) => {
@@ -208,7 +208,7 @@ export default function CheckoutPage() {
         {partnerInfo ? (
           <div className="space-y-4">
             <p className="text-xs text-slate-500 max-w-md mx-auto">
-              You are connected with partner <strong>{partnerInfo.orgName || partnerInfo.name}</strong>. Add your custom NFC stand to continue with your 5% discount!
+              You are connected with partner <strong>{partnerInfo.orgName || partnerInfo.name}</strong>. Add your custom NFC stand to complete your order!
             </p>
             {partnerInfo.linkCode && (
               <button
@@ -533,7 +533,7 @@ export default function CheckoutPage() {
                     Partner Affiliate: {partnerInfo.orgName || partnerInfo.name}
                   </p>
                   <p className="text-[11px] text-purple-700 font-semibold">
-                    Special 5% Partner discount applied to your order!
+                    Order verified and linked with authorized partner.
                   </p>
                 </div>
               </div>
@@ -556,9 +556,9 @@ export default function CheckoutPage() {
                 <span className="font-bold text-slate-900">₹{subtotal.toFixed(2)}</span>
               </div>
 
-              {hasReferral && (
+              {discountAmount > 0 && (
                 <div className="flex justify-between text-emerald-700 bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200">
-                  <span className="font-medium">Partner Discount ({partnerInfo?.orgName ? partnerInfo.orgName : activeRefCode}):</span>
+                  <span className="font-medium">Discount:</span>
                   <span className="font-bold">-₹{discountAmount.toFixed(2)}</span>
                 </div>
               )}

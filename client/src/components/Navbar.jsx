@@ -47,7 +47,7 @@ export default function Navbar() {
                 Shopping with Authorized Partner: <strong className="text-amber-300 font-extrabold" suppressHydrationWarning>{partnerInfo.orgName || partnerInfo.name}</strong>
               </span>
               <span className="hidden md:inline text-purple-200 text-[11px] font-semibold bg-purple-800/80 px-2 py-0.5 rounded-full">
-                🎁 5% Referral Discount Auto-Applied
+                ✨ Verified Partner Store
               </span>
             </div>
             {partnerInfo.linkCode && (

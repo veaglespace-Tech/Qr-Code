@@ -393,7 +393,7 @@ exports.login = asyncHandler(async (req, res) => {
 });
 
 exports.getMe = asyncHandler(async (req, res) => {
-  return res.json({ success: true, user: req.user });
+  return res.json({ success: true, user: req.user || null });
 });
 
 exports.logout = asyncHandler(async (req, res) => {

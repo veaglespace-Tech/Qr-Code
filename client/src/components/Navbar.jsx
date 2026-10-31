@@ -23,6 +23,11 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
+  // Auto-close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
   // Do not render consumer storefront navigation inside dashboard consoles
   if (pathname?.startsWith('/superadmin') || pathname?.startsWith('/admin') || pathname?.startsWith('/user')) {
     return null;

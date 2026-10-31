@@ -23,17 +23,25 @@ function getTransporter() {
  * @param {string} toEmail
  * @param {string} otp
  * @param {string} name
+ * @param {string} purpose
  * @returns {Promise<{ delivered: boolean, error?: string }>}
  */
-async function sendVerificationEmail(toEmail, otp, name = 'Partner') {
+async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose = 'Account Access') {
   const mailTransporter = getTransporter();
+
+  const isPartner = purpose.toLowerCase().includes('partner');
+  const title = isPartner ? 'Verify Your ReviewXpress Partner Email' : 'Your ReviewXpress Login Verification Code';
+  const subTitle = isPartner ? 'Official Partner Program Verification' : 'Customer Account Security';
+  const introMessage = isPartner
+    ? 'Thank you for registering as an Official Organization Partner with ReviewXpress. To ensure security and prevent unauthorized access, please enter the following verification code:'
+    : 'Use the one-time verification code below to securely sign into your ReviewXpress Customer Account:';
 
   const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Verify Your ReviewXpress Partner Email</title>
+      <title>${title}</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }
         .card { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -53,14 +61,14 @@ async function sendVerificationEmail(toEmail, otp, name = 'Partner') {
       <div class="card">
         <div class="logo-box">
           <div class="brand">Review<span>Xpress</span></div>
-          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0;">Official Partner Program Verification</p>
+          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0;">${subTitle}</p>
         </div>
         <div style="text-align: center;">
           <span class="badge">SECURITY VERIFICATION</span>
-          <h2>Verify Your Email Address</h2>
+          <h2>${isPartner ? 'Verify Your Email Address' : 'Sign In Verification Code'}</h2>
         </div>
         <p>Hello <strong>${name}</strong>,</p>
-        <p>Thank you for registering as an Official Organization Partner with ReviewXpress. To ensure security and prevent unauthorized access, please enter the following verification code:</p>
+        <p>${introMessage}</p>
         
         <div class="otp-container">
           <div style="font-size: 11px; font-weight: 700; color: #9333ea; text-transform: uppercase; margin-bottom: 6px;">Your 6-Digit OTP Code</div>
@@ -89,7 +97,7 @@ async function sendVerificationEmail(toEmail, otp, name = 'Partner') {
     const info = await mailTransporter.sendMail({
       from: `"ReviewXpress Security" <${process.env.EMAIL}>`,
       to: toEmail,
-      subject: `[${otp}] Verify Your ReviewXpress Partner Email Address`,
+      subject: `[${otp}] Your ReviewXpress Security Verification Code`,
       html: htmlContent
     });
     console.log(`✅ [OTP EMAIL SENT] to ${toEmail}: messageId=${info.messageId}`);

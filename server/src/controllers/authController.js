@@ -101,7 +101,36 @@ exports.register = asyncHandler(async (req, res) => {
   });
 
   if (existingUser) {
-    throw new ApiError(400, 'Account with this email already exists');
+    // If user account was created during guest checkout, allow setting their password & logging in
+    if (existingUser.role === 'USER' && role !== 'ADMIN') {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updatedUser = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          name: name.trim() || existingUser.name,
+          phone: phone || existingUser.phone,
+          password: hashedPassword
+        }
+      });
+      const token = generateToken(updatedUser);
+      const { password: _, ...safeUser } = updatedUser;
+
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+
+      return res.status(200).json({
+        success: true,
+        user: safeUser,
+        token,
+        message: 'Account password set and logged in successfully!'
+      });
+    }
+
+    throw new ApiError(400, 'An account with this email already exists. Please sign in or use OTP login.');
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -174,23 +203,170 @@ exports.register = asyncHandler(async (req, res) => {
   });
 });
 
+exports.sendLoginOTP = asyncHandler(async (req, res) => {
+  const { identifier } = req.body;
+
+  if (!identifier) {
+    throw new ApiError(400, 'Please enter your registered email address or mobile number.');
+  }
+
+  const cleanInput = identifier.trim();
+  const cleanDigits = cleanInput.replace(/\D/g, '');
+
+  let user = null;
+  if (cleanInput.includes('@')) {
+    user = await prisma.user.findUnique({
+      where: { email: cleanInput.toLowerCase() }
+    });
+  } else if (cleanDigits.length >= 10) {
+    const last10 = cleanDigits.slice(-10);
+    user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: cleanInput },
+          { phone: cleanDigits },
+          { phone: { endsWith: last10 } }
+        ]
+      }
+    });
+  } else {
+    user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: cleanInput.toLowerCase() },
+          { phone: cleanInput }
+        ]
+      }
+    });
+  }
+
+  if (!user) {
+    throw new ApiError(404, 'No account found with this email or mobile number. Please check or create an account.');
+  }
+
+  if (user.status === 'inactive') {
+    throw new ApiError(403, 'Your account is deactivated. Please contact support.');
+  }
+
+  // Generate 6-digit OTP using the user's email as the key
+  const otpRes = createOTP(user.email);
+  if (!otpRes.success) {
+    throw new ApiError(429, otpRes.error || 'Please wait before requesting another code.');
+  }
+
+  const sendRes = await sendVerificationEmail(user.email, otpRes.otp, user.name || 'Valued Customer', 'Login OTP');
+
+  // Mask email for privacy
+  const [uname, domain] = user.email.split('@');
+  const maskedEmail = (uname.length > 2 ? uname.slice(0, 2) + '***' : uname + '***') + '@' + domain;
+
+  return res.json({
+    success: true,
+    email: user.email,
+    maskedEmail,
+    message: sendRes.delivered
+      ? `Verification code sent to ${maskedEmail}. Please check your inbox.`
+      : `Verification code generated for ${maskedEmail}.`,
+    devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
+  });
+});
+
+exports.verifyLoginOTP = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    throw new ApiError(400, 'Email address and 6-digit OTP code are required.');
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const verifyRes = verifyOTP(cleanEmail, otp);
+
+  if (!verifyRes.success) {
+    throw new ApiError(400, verifyRes.error || 'Invalid or expired OTP code.');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: cleanEmail }
+  });
+
+  if (!user) {
+    throw new ApiError(404, 'User account not found.');
+  }
+
+  if (user.status === 'inactive') {
+    throw new ApiError(403, 'Your account is deactivated. Please contact support.');
+  }
+
+  // Consume OTP so it cannot be reused
+  consumeEmailVerification(cleanEmail);
+
+  const token = generateToken(user);
+  const { password: _, ...safeUser } = user;
+
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
+  return res.status(200).json({
+    success: true,
+    user: safeUser,
+    token,
+    message: `Welcome back, ${user.name}!`
+  });
+});
+
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    throw new ApiError(400, 'Email and password are required');
+    throw new ApiError(400, 'Email or Mobile and password are required');
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase().trim() }
-  });
+  const cleanInput = email.trim();
+  const cleanDigits = cleanInput.replace(/\D/g, '');
+
+  let user = null;
+  if (cleanInput.includes('@')) {
+    user = await prisma.user.findUnique({
+      where: { email: cleanInput.toLowerCase() }
+    });
+  } else if (cleanDigits.length >= 10) {
+    const last10 = cleanDigits.slice(-10);
+    user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { phone: cleanInput },
+          { phone: cleanDigits },
+          { phone: { endsWith: last10 } }
+        ]
+      }
+    });
+  } else {
+    user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: cleanInput.toLowerCase() },
+          { phone: cleanInput }
+        ]
+      }
+    });
+  }
 
   if (!user) {
-    throw new ApiError(401, 'Invalid email or password');
+    throw new ApiError(401, 'Invalid email/mobile or password');
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
+    if (user.role === 'USER') {
+      throw new ApiError(
+        401,
+        'Incorrect password. If your account was auto-created during checkout, your default password is ReviewXpress@123, or you can use "Sign in with OTP".'
+      );
+    }
     throw new ApiError(401, 'Invalid email or password');
   }
 

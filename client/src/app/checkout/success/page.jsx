@@ -81,13 +81,13 @@ function CheckoutSuccessContent() {
           )}
 
           <div className="pt-2 border-t border-slate-100 space-y-3">
-            <div className="p-3 rounded-xl bg-purple-50/80 border border-purple-200/80 text-[11px] text-purple-950 flex flex-col gap-1 text-left">
+            <div className="p-3.5 rounded-xl bg-purple-50/90 border border-purple-200 text-[11px] text-purple-950 flex flex-col gap-1.5 text-left">
               <div className="flex items-center gap-1.5 font-bold text-purple-900">
-                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                <span>Customer Console Account Ready</span>
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                <span>Customer Account Activated</span>
               </div>
               <p className="text-purple-800 leading-relaxed">
-                Your account is active for <strong>{order.customerEmail}</strong>. You are automatically signed in and can track courier status, laser programming, and GST invoices anytime in your dashboard!
+                Your account is ready for <strong>{order.customerEmail}</strong>. You can sign in anytime using your email/mobile and default password <code className="bg-purple-100 px-1.5 py-0.5 rounded text-purple-950 font-bold font-mono">ReviewXpress@123</code> or via one-click <strong>OTP Login</strong>!
               </p>
             </div>
 

@@ -161,26 +161,29 @@ export default function TaxInvoiceModal({ order, settings, onClose }) {
         <div id="invoice-printable" className="p-8 space-y-6 text-xs text-gray-800">
           {/* Header */}
           <div className="flex justify-between items-start border-b pb-6">
-            <div>
+            <div className="max-w-md">
               <div className="mb-2">
                 <ReviewXpressLogo size="default" />
               </div>
-              <p className="text-gray-600 font-medium">Smart NFC &amp; QR Review Systems</p>
-              <p className="text-gray-500 mt-1 max-w-xs">{settings?.address || 'Tech Hub Towers, Pune, Maharashtra'}</p>
-              <p className="text-gray-700 mt-1">
-                <strong>GSTIN:</strong> {settings?.gstNumber || '27AABCR1234F1Z8'}
+              <p className="text-gray-900 font-bold text-sm">Veagle Space Technology Pvt. Ltd.</p>
+              <p className="text-gray-600 font-medium text-[11px]">Brand: ReviewXpress (Smart NFC &amp; QR Systems)</p>
+              <p className="text-gray-600 mt-1 leading-relaxed">
+                'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra - 411041
               </p>
-              <p className="text-gray-700">
-                <strong>Email:</strong> {settings?.supportEmail || 'support@reviewexpress.in'}
-              </p>
+              <div className="mt-1.5 space-y-0.5 text-gray-700">
+                <p><strong>GSTIN:</strong> {settings?.gstNumber || '27AAECV8237P1Z5'}</p>
+                <p><strong>Phone:</strong> +91 8237999101</p>
+                <p><strong>Email:</strong> info@veaglespace.com</p>
+                <p><strong>State:</strong> Maharashtra (State Code: 27)</p>
+              </div>
             </div>
 
-            <div className="text-right space-y-1">
-              <span className="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded border">
-                TAX INVOICE
+            <div className="text-right space-y-1 shrink-0">
+              <span className="inline-block bg-purple-50 text-purple-900 border border-purple-200 text-[10px] font-bold px-2.5 py-0.5 rounded">
+                ORIGINAL TAX INVOICE
               </span>
               <p className="font-mono text-sm font-bold text-gray-900 pt-1">
-                Inv No: {order.orderNumber}
+                Invoice No: {order.orderNumber}
               </p>
               <p className="text-gray-500">Date: {new Date(order.createdAt).toLocaleDateString('en-IN')}</p>
               <p className="text-gray-500">Place of Supply: Maharashtra (27)</p>
@@ -281,12 +284,15 @@ export default function TaxInvoiceModal({ order, settings, onClose }) {
           {/* Signoff */}
           <div className="pt-6 border-t flex justify-between items-end text-center">
             <div className="text-left text-[10px] text-gray-500">
-              <p>This is a computer-generated tax invoice.</p>
+              <p>This is a computer-generated tax invoice issued under GST law.</p>
+              <p className="mt-0.5">Veagle Space Technology Pvt. Ltd. • All rights reserved</p>
             </div>
             <div className="space-y-2 text-right">
-              <p className="text-[10px] text-gray-500">For Review Express</p>
-              <div className="h-8" />
-              <p className="font-bold text-gray-900 border-t pt-1">Authorized Signatory</p>
+              <p className="text-[10px] text-gray-600 font-bold">For Veagle Space Technology Pvt. Ltd.</p>
+              <div className="h-8 flex items-center justify-end">
+                <span className="font-serif italic text-xs text-gray-400">Authorized Signatory</span>
+              </div>
+              <p className="font-bold text-gray-900 border-t pt-1">Authorised Signatory</p>
             </div>
           </div>
         </div>

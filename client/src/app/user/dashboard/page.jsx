@@ -259,7 +259,7 @@ export default function UserDashboardPage() {
 
   const navItems = [
     { id: 'orders', label: 'My Orders & Tracking', icon: Package, badge: totalOrders > 0 ? totalOrders : null },
-    { id: 'hardware', label: 'Smart Stands & QR Codes', icon: QrCode },
+    { id: 'hardware', label: 'My Stands & QR Codes', icon: QrCode },
     { id: 'invoices', label: 'GST Tax Invoices', icon: FileText, badge: totalOrders > 0 ? totalOrders : null },
   ];
 
@@ -303,7 +303,7 @@ export default function UserDashboardPage() {
                   Client
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">Customer Portal</p>
+              <p className="text-[11px] text-slate-400 font-medium">Customer Dashboard</p>
             </div>
           </div>
           <button
@@ -318,7 +318,7 @@ export default function UserDashboardPage() {
         <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
           <div>
             <span className="px-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-              Customer Hub
+              Quick Menu
             </span>
             <nav className="mt-2 space-y-1">
               {navItems.map(item => {
@@ -361,17 +361,17 @@ export default function UserDashboardPage() {
           {/* Quick Hardware Store Order Box */}
           <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Smart Review Hardware
+              Need More Stands?
             </span>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Equip more counters, checkout registers, or tables with 1-tap Google NFC review stands.
+              Order extra Google Review NFC stands for your other counters, tables, or new branches.
             </p>
             <Link
               href="/contact"
               className="w-full py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/20 transition-all"
             >
               <Phone className="w-3.5 h-3.5" />
-              <span>Contact Partner / Support</span>
+              <span>Contact Support / Order</span>
             </Link>
           </div>
         </div>
@@ -435,10 +435,10 @@ export default function UserDashboardPage() {
             </button>
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight capitalize">
-                {activeTab === 'orders' && 'My Orders & Real-time Courier Tracking'}
-                {activeTab === 'hardware' && 'Smart Review Stands & Laser QR Codes'}
-                {activeTab === 'invoices' && 'Official 18% GST Tax Invoices'}
-                {activeTab === 'profile' && 'Customer Profile & Security Settings'}
+                {activeTab === 'orders' && 'My Orders & Delivery Tracking'}
+                {activeTab === 'hardware' && 'My Smart Stands & QR Codes'}
+                {activeTab === 'invoices' && 'GST Tax Invoices'}
+                {activeTab === 'profile' && 'My Profile & Account Settings'}
               </h2>
             </div>
           </div>
@@ -499,40 +499,40 @@ export default function UserDashboardPage() {
                     </div>
                   </div>
                   <div className="text-3xl font-black text-slate-900">{totalOrders}</div>
-                  <p className="text-[11px] text-slate-500">All hardware packages ordered</p>
+                  <p className="text-[11px] text-slate-500">Total packages ordered</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">In Production / Transit</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">In Progress</span>
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center">
                       <Truck className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-indigo-600">{inProgressOrders}</div>
-                  <p className="text-[11px] text-slate-500">NFC encoding &amp; courier delivery</p>
+                  <p className="text-[11px] text-slate-500">Being customized or shipped</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Delivered &amp; Active</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">Delivered</span>
                     <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-emerald-600">{deliveredOrders}</div>
-                  <p className="text-[11px] text-slate-500">Collecting live 5-star reviews</p>
+                  <p className="text-[11px] text-slate-500">Delivered to your business</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
                   <div className="flex items-center justify-between text-slate-400">
-                    <span className="text-xs font-bold uppercase tracking-wider">Total Investment</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">Total Paid</span>
                     <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
                       <IndianRupee className="w-4 h-4" />
                     </div>
                   </div>
                   <div className="text-3xl font-black text-slate-900">₹{totalSpent.toLocaleString('en-IN')}</div>
-                  <p className="text-[11px] text-slate-500">Includes 18% GST tax &amp; courier</p>
+                  <p className="text-[11px] text-slate-500">Includes 18% GST tax &amp; delivery</p>
                 </div>
               </div>
 
@@ -544,7 +544,7 @@ export default function UserDashboardPage() {
                     type="text"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search by Order #, Business Name, City or Tracking AWB..."
+                    placeholder="Search by Order #, Business Name, City or Tracking Number..."
                     className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-purple-500 focus:bg-white transition-all"
                   />
                   {searchQuery && (
@@ -560,7 +560,7 @@ export default function UserDashboardPage() {
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
                   {[
                     { id: 'ALL', label: 'All Orders' },
-                    { id: 'IN_PROGRESS', label: 'In Production / Transit' },
+                    { id: 'IN_PROGRESS', label: 'In Progress' },
                     { id: 'SHIPPED', label: 'Shipped' },
                     { id: 'DELIVERED', label: 'Delivered' }
                   ].map(tab => (
@@ -654,22 +654,22 @@ export default function UserDashboardPage() {
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         <div className="lg:col-span-7 space-y-3">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                            Custom Hardware Details
+                            Custom Stand Details
                           </h4>
                           <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
                             <div className="flex items-start justify-between">
                               <div>
                                 <p className="font-bold text-slate-900 text-xs">
-                                  Laser Engraved Business: <span className="text-purple-700">{order.businessName || 'ReviewXpress Stand'}</span>
+                                  Business Name on Stand: <span className="text-purple-700">{order.businessName || 'ReviewXpress Stand'}</span>
                                 </p>
                                 <p className="text-[11px] text-slate-500 mt-0.5">
-                                  Review URL: <span className="font-mono text-slate-600">{order.googleReviewLink || 'Programmed on delivery'}</span>
+                                  Google Review Link: <span className="font-mono text-slate-600">{order.googleReviewLink || 'Configured by ReviewXpress'}</span>
                                 </p>
                               </div>
                               {order.googleReviewLink && (
                                 <button
                                   onClick={() => copyToClipboard(order.googleReviewLink, order.id)}
-                                  className="text-[11px] text-purple-600 hover:text-purple-700 font-bold flex items-center gap-1 ml-2"
+                                  className="text-[11px] text-purple-600 hover:text-purple-700 font-bold flex items-center gap-1 ml-2 cursor-pointer"
                                 >
                                   {copiedLink === order.id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                                   <span>{copiedLink === order.id ? 'Copied' : 'Copy Link'}</span>
@@ -681,7 +681,7 @@ export default function UserDashboardPage() {
 
                         <div className="lg:col-span-5 space-y-3">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                            Shipping Destination &amp; Tracking
+                            Delivery Address &amp; Courier Tracking
                           </h4>
                           <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2 text-xs">
                             <p className="text-slate-800 font-semibold">{order.customerName}</p>
@@ -724,14 +724,14 @@ export default function UserDashboardPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                     <QrCode className="w-5 h-5 text-purple-600" />
-                    <span>Your Laser-Engraved Smart Stands &amp; High-Res QR Assets</span>
+                    <span>My Stands &amp; Digital QR Codes</span>
                   </h3>
                   <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                    Dual NFC + QR Hardware
+                    Dual NFC + QR
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Download digital QR code assets for your ordered ReviewXpress stands. You can print them on menus, counter posters, bills, or marketing flyers.
+                  Download the QR code image for your ReviewXpress stands. You can print it on your bills, menus, counter posters, or marketing cards.
                 </p>
               </div>
 
@@ -811,14 +811,14 @@ export default function UserDashboardPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-purple-600" />
-                    <span>Official Tax Invoices &amp; Accounting Receipts</span>
+                    <span>GST Tax Invoices</span>
                   </h3>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                    18% Input Tax Credit Eligible
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    18% Input Tax Credit
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  All ReviewXpress orders are issued by Veagle Space Technology Pvt. Ltd. with valid GST registration numbers, HSN code 852352 (NFC Smart Cards / Stands), and complete digital audit trails.
+                  Download official GST Tax Invoices for your accounting and tax input credit claims. Issued by Veagle Space Technology Pvt. Ltd. (HSN: 852352).
                 </p>
               </div>
 
@@ -836,9 +836,9 @@ export default function UserDashboardPage() {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
                         <tr>
-                          <th className="px-6 py-4">Invoice #</th>
+                          <th className="px-6 py-4">Invoice No</th>
                           <th className="px-6 py-4">Date</th>
-                          <th className="px-6 py-4">Billed Business</th>
+                          <th className="px-6 py-4">Business Name</th>
                           <th className="px-6 py-4">Tax Breakdown</th>
                           <th className="px-6 py-4">Total Paid</th>
                           <th className="px-6 py-4">Status</th>
@@ -854,7 +854,7 @@ export default function UserDashboardPage() {
                           return (
                             <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
                               <td className="px-6 py-4 font-mono font-bold text-slate-900">
-                                INV-{order.orderNumber}
+                                {order.orderNumber}
                               </td>
                               <td className="px-6 py-4 text-slate-600 whitespace-nowrap">
                                 {new Date(order.createdAt).toLocaleDateString('en-IN', {

@@ -170,7 +170,7 @@ export default function HomePage() {
               10X<span className="text-rxblue-600"> Faster</span>
             </div>
             <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
-              Google Review Velocity
+              Review Growth for Shops
             </p>
           </div>
 
@@ -185,10 +185,10 @@ export default function HomePage() {
 
           <div className="space-y-1.5 pt-4 lg:pt-0">
             <div className="text-3xl sm:text-4xl font-black text-slate-900 font-heading">
-              0.28<span className="text-[#00E575]">s</span>
+              1-Tap<span className="text-[#00E575]"> NFC</span>
             </div>
             <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
-              Instant NFC Tap Response
+              Instant Phone Touch Response
             </p>
           </div>
         </div>
@@ -303,18 +303,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. LIVE ROI & REVENUE CALCULATOR */}
+      {/* 5. LIVE REVIEWS & GROWTH CALCULATOR */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="glass-panel rounded-3xl p-8 lg:p-12 border border-slate-200/90 shadow-xl relative overflow-hidden">
           <div className="max-w-3xl mb-8 space-y-2">
             <span className="text-xs font-bold uppercase tracking-widest text-rxgreen-700">
-              Interactive ROI Forecaster
+              Review Growth Calculator
             </span>
             <h2 className="text-3xl sm:text-4xl font-black text-slate-900 font-heading tracking-tight">
-              Calculate Your 90-Day Revenue Uplift
+              See How Many Reviews Your Business Can Get
             </h2>
             <p className="text-sm text-slate-600">
-              Businesses with 100+ 5-star Google reviews rank on the #1 Local Google 3-Pack, driving 35% more footfall.
+              Businesses with more 5-star Google reviews rank higher on Google Maps and attract more walk-in customers.
             </p>
           </div>
 
@@ -356,7 +356,7 @@ export default function HomePage() {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center gap-3">
                 <TrendingUp className="w-5 h-5 text-rxgreen-600 flex-shrink-0" />
                 <span>
-                  Calculation based on verified 14% NFC tap conversion benchmark across 1,200+ partner outlets in India.
+                  Estimated based on an average 14% customer tap rate observed across retail stores, cafes, and clinics.
                 </span>
               </div>
             </div>
@@ -365,7 +365,7 @@ export default function HomePage() {
             <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-850 text-white rounded-3xl p-8 space-y-6 shadow-2xl">
               <div className="space-y-1">
                 <span className="text-xs uppercase font-extrabold tracking-wider text-rxgreen-400">
-                  Estimated Monthly Impact
+                  Estimated Monthly Growth
                 </span>
                 <div className="text-4xl font-black text-white font-heading">
                   +{monthlyReviews} <span className="text-amber-400 text-3xl font-bold">Reviews/mo</span>
@@ -374,11 +374,11 @@ export default function HomePage() {
 
               <div className="pt-4 border-t border-slate-800 space-y-3">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">New Google Search Visitors:</span>
+                  <span className="text-slate-400">Estimated New Customers:</span>
                   <span className="font-bold text-white">~{estimatedNewCustomers} customers</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Est. Additional Monthly Revenue:</span>
+                  <span className="text-slate-400">Estimated Monthly Sales Growth:</span>
                   <span className="text-lg font-black text-rxgreen-400 font-heading">
                     +₹{estimatedRevenueUplift.toLocaleString('en-IN')}
                   </span>
@@ -398,18 +398,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. ENTERPRISE HARDWARE TECHNOLOGY SHOWCASE */}
+      {/* 6. SMART HARDWARE LINEUP */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-900 text-xs font-bold">
-            <Award className="w-3.5 h-3.5 text-purple-600" /> High-Performance Smart Hardware
+            <Award className="w-3.5 h-3.5 text-purple-600" /> Smart Hardware Lineup
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-slate-900 font-heading tracking-tight">
-            ReviewXpress Smart Hardware Lineup
+            ReviewXpress Smart Stands &amp; Cards
           </h2>
           <p className="text-sm sm:text-base text-slate-600">
-            Engineered with high-frequency NTAG213 chips, UV laser precision print, and zero recurring fees.
-            Exclusively distributed across India through our Certified Partner Network.
+            Durable acrylic stands and cards with instant 1-tap NFC and laser-printed QR codes. No monthly fees or renewals.
           </p>
         </div>
 
@@ -425,12 +424,12 @@ export default function HomePage() {
                 <p className="text-xs text-purple-700 font-bold mt-0.5">Most Popular for Billing Counters</p>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Premium 3mm cast acrylic counter stand. Built-in instant tap NFC chip + high-resolution laser-printed QR code personalized with your business logo.
+                Sturdy 3mm acrylic counter stand. Built-in instant 1-tap NFC chip and clear QR code with your business name.
               </p>
               <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>NTAG213 High-Sensitivity NFC</span>
+                  <span>Works with all iPhone &amp; Android phones</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -438,7 +437,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Zero Batteries / Lifetime Validity</span>
+                  <span>No batteries or charging needed</span>
                 </li>
               </ul>
             </div>
@@ -460,20 +459,20 @@ export default function HomePage() {
                 <p className="text-xs text-blue-700 font-bold mt-0.5">Best for Managers &amp; Field Staff</p>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Matte PVC smart review card designed for sales executives, service managers, real estate consultants, and on-field team members.
+                Wallet-size smart review card for sales managers, field executives, and on-site service teams.
               </p>
               <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Compact Wallet-Fit PVC Design</span>
+                  <span>Fits in any pocket or wallet</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Instant Tap on iPhone &amp; Android</span>
+                  <span>Instant 1-Tap on iPhone &amp; Android</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Direct 5-Star Review Box Trigger</span>
+                  <span>Directly opens your Google Review page</span>
                 </li>
               </ul>
             </div>
@@ -492,23 +491,23 @@ export default function HomePage() {
               </div>
               <div>
                 <h3 className="text-xl font-black text-slate-900">Metal-Touch Luxury Plate</h3>
-                <p className="text-xs text-amber-700 font-bold mt-0.5">For Boutique Hotels &amp; Fine Dining</p>
+                <p className="text-xs text-amber-700 font-bold mt-0.5">For Clinics, Hotels &amp; Showrooms</p>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Brushed metallic finish luxury counter plate for high-end boutique hotels, luxury showrooms, dental studios, and fine dining.
+                Brushed metallic finish luxury counter plate for doctors, clinics, luxury showrooms, and premium hotels.
               </p>
               <ul className="space-y-2 text-xs text-slate-700 pt-3 border-t border-slate-100">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Brushed Metal Luxury Aesthetic</span>
+                  <span>Premium Brushed Metal Look</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Anti-Interference Metal Shielding</span>
+                  <span>Special metal-compatible NFC technology</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Heavy-Duty Permanent Counter Grip</span>
+                  <span>Heavy-Duty anti-slip counter grip</span>
                 </li>
               </ul>
             </div>
@@ -574,7 +573,7 @@ export default function HomePage() {
                   Traditional Process
                 </span>
                 <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                  95% Drop-off Friction
+                  Most Customers Drop Off
                 </span>
               </div>
               <h3 className="text-xl font-black text-slate-900 font-heading">

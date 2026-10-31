@@ -50,54 +50,62 @@ export default function HowItWorksPage() {
         </div>
       </div>
 
-      {/* Customer Review Workflow Comparison (From PDF Page 3) */}
+      {/* Customer Review Comparison */}
       <div className="space-y-6">
         <div className="text-center space-y-2">
-          <span className="text-xs font-black uppercase tracking-widest text-slate-500">Workflow Analysis</span>
+          <span className="text-xs font-black uppercase tracking-widest text-slate-500">Why It Works</span>
           <h2 className="text-3xl font-black text-slate-900 font-heading">
             Traditional Process vs ReviewXpress
           </h2>
-          <p className="text-sm font-bold text-slate-700">One scan. Direct access. Less effort.</p>
+          <p className="text-sm font-bold text-slate-700">One scan. Direct access. No wasted time.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="glass-card bg-white rounded-3xl p-8 border border-red-200 space-y-4 shadow-sm">
             <span className="text-xs font-bold text-red-600 uppercase tracking-wider block pb-2 border-b border-red-100">
-              ❌ Traditional Process (High Drop-off Rate)
+              ❌ Traditional Way (Most Customers Give Up)
             </span>
             <ul className="space-y-3 text-sm text-slate-600">
               <li className="flex items-start gap-2">
                 <span className="text-red-500 font-bold">•</span>
-                <span><strong>1. Search Business:</strong> Customer must manually type business name</span>
+                <span><strong>1. Search:</strong> Customer has to manually search your shop name on Google</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-red-500 font-bold">•</span>
-                <span><strong>2. Filter Search Results:</strong> Scroll past competitor ads &amp; wrong listings</span>
+                <span><strong>2. Scroll:</strong> Scroll through ads and similar-sounding businesses</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-red-500 font-bold">•</span>
-                <span><strong>3. Open Reviews:</strong> Hunt down the Reviews tab on the profile</span>
+                <span><strong>3. Find Reviews:</strong> Search for the reviews section on your profile</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-red-500 font-bold">•</span>
-                <span><strong>4. Write Review:</strong> Too tedious — 95% abandon without posting</span>
+                <span><strong>4. Leave Review:</strong> Too many steps — most customers close the phone</span>
               </li>
             </ul>
           </div>
 
           <div className="glass-panel bg-gradient-to-br from-emerald-50/70 to-blue-50/50 rounded-3xl p-8 border-2 border-emerald-300 space-y-4 shadow-sm">
             <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider block pb-2 border-b border-emerald-200">
-              ✅ With ReviewXpress (100% Frictionless)
+              ✅ With ReviewXpress (Fast &amp; Simple)
             </span>
             <ul className="space-y-3 text-sm text-slate-800 font-medium">
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                <span><strong>1. SCAN:</strong> Touch smartphone to counter stand or scan QR</span>
+                <span><strong>1. TAP or SCAN:</strong> Customer taps their phone or scans the QR code</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                <span><strong>2. OPEN:</strong> Google 5-star review dialog pops up automatically in 0.3s</span>
+                <span><strong>2. OPENS INSTANTLY:</strong> Your official Google review page opens directly</span>
               </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                <span><strong>3. REVIEW SUBMITTED:</strong> Customer gives 5 stars and submits in 5 seconds</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                 <span><strong>3. REVIEW:</strong> Tap 5 stars and submit rating effortlessly</span>

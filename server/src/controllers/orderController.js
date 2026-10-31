@@ -87,8 +87,16 @@ exports.createOrder = asyncHandler(async (req, res) => {
   }
 
   const finalAmount = parseFloat((subtotal + gstAmount + shippingFee - discountAmount).toFixed(2));
-  const orderNumber = `RE-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-  const txnid = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+  // Generate clean sequential order & invoice number (e.g. RX-2026-0001, RX-2026-0002)
+  const currentYear = new Date().getFullYear();
+  const lastOrder = await prisma.order.findFirst({
+    orderBy: { id: 'desc' },
+    select: { id: true, orderNumber: true }
+  });
+  const nextSeq = lastOrder ? lastOrder.id + 1 : 1;
+  const orderNumber = `RX-${currentYear}-${String(nextSeq).padStart(4, '0')}`;
+  const txnid = `TXN_${currentYear}_${String(nextSeq).padStart(4, '0')}_${Date.now().toString().slice(-4)}`;
   const isCOD = req.body.paymentMethod === 'cod' || req.body.paymentMethod === 'Cash on Delivery';
   const selectedPaymentMethod = isCOD ? 'Cash on Delivery (COD)' : 'PayU Gateway (UPI / Cards / NetBanking)';
 
@@ -198,7 +206,11 @@ exports.createOrder = asyncHandler(async (req, res) => {
     return false;
   };
 
-  const isLive = settings && settings.payuMode === 'live';
+  // Determine PayU Mode: Environment variable PAYU_MODE takes highest priority, then database setting
+  const envMode = (process.env.PAYU_MODE || '').trim().toLowerCase();
+  const dbMode = (settings?.payuMode || '').trim().toLowerCase();
+  const isLive = envMode === 'live' || envMode === 'production' || (envMode !== 'test' && dbMode === 'live');
+
   const defaultTestKey = 'GKJE3Z';
   const defaultTestSalt = '0zqiCnB4GslxAanSxjEAutWkWuggFiGs';
 
@@ -206,24 +218,39 @@ exports.createOrder = asyncHandler(async (req, res) => {
   let payuSalt;
 
   if (isLive) {
-    payuKey = (!isDummyOrInvalid(settings?.payuMerchantKey) ? settings.payuMerchantKey.trim() : null)
-      || process.env.PAYU_MERCHANT_KEY
+    // In live mode, check LIVE variables first, then generic merchant variables, then DB setting
+    payuKey = (!isDummyOrInvalid(process.env.PAYU_LIVE_KEY) ? process.env.PAYU_LIVE_KEY.trim() : null)
+      || (!isDummyOrInvalid(process.env.PAYU_MERCHANT_KEY) ? process.env.PAYU_MERCHANT_KEY.trim() : null)
+      || (!isDummyOrInvalid(process.env.PAYU_KEY) ? process.env.PAYU_KEY.trim() : null)
+      || (!isDummyOrInvalid(settings?.payuMerchantKey) ? settings.payuMerchantKey.trim() : null)
       || defaultTestKey;
-    payuSalt = (!isDummyOrInvalid(settings?.payuMerchantSalt) ? settings.payuMerchantSalt.trim() : null)
-      || process.env.PAYU_MERCHANT_SALT
+
+    payuSalt = (!isDummyOrInvalid(process.env.PAYU_LIVE_SALT) ? process.env.PAYU_LIVE_SALT.trim() : null)
+      || (!isDummyOrInvalid(process.env.PAYU_MERCHANT_SALT) ? process.env.PAYU_MERCHANT_SALT.trim() : null)
+      || (!isDummyOrInvalid(process.env.PAYU_SALT) ? process.env.PAYU_SALT.trim() : null)
+      || (!isDummyOrInvalid(settings?.payuMerchantSalt) ? settings.payuMerchantSalt.trim() : null)
       || defaultTestSalt;
   } else {
-    payuKey = (!isDummyOrInvalid(settings?.payuMerchantKey) ? settings.payuMerchantKey.trim() : null)
-      || process.env.PAYU_TEST_KEY
+    // In test mode, check TEST variables first, then DB setting, then generic merchant variables
+    payuKey = (!isDummyOrInvalid(process.env.PAYU_TEST_KEY) ? process.env.PAYU_TEST_KEY.trim() : null)
+      || (!isDummyOrInvalid(settings?.payuMerchantKey) ? settings.payuMerchantKey.trim() : null)
+      || (!isDummyOrInvalid(process.env.PAYU_MERCHANT_KEY) ? process.env.PAYU_MERCHANT_KEY.trim() : null)
+      || (!isDummyOrInvalid(process.env.PAYU_KEY) ? process.env.PAYU_KEY.trim() : null)
       || defaultTestKey;
-    payuSalt = (!isDummyOrInvalid(settings?.payuMerchantSalt) ? settings.payuMerchantSalt.trim() : null)
-      || process.env.PAYU_TEST_SALT
+
+    payuSalt = (!isDummyOrInvalid(process.env.PAYU_TEST_SALT) ? process.env.PAYU_TEST_SALT.trim() : null)
+      || (!isDummyOrInvalid(settings?.payuMerchantSalt) ? settings.payuMerchantSalt.trim() : null)
+      || (!isDummyOrInvalid(process.env.PAYU_MERCHANT_SALT) ? process.env.PAYU_MERCHANT_SALT.trim() : null)
+      || (!isDummyOrInvalid(process.env.PAYU_SALT) ? process.env.PAYU_SALT.trim() : null)
       || defaultTestSalt;
   }
 
-  // Emergency safety check: never allow dummy or masked credentials
-  if (isDummyOrInvalid(payuKey)) payuKey = defaultTestKey;
-  if (isDummyOrInvalid(payuSalt)) payuSalt = defaultTestSalt;
+  // Determine gateway action URL based on active mode
+  const payuActionUrl = isLive
+    ? 'https://secure.payu.in/_payment'
+    : (process.env.PAYU_BASE_URL || 'https://test.payu.in/_payment');
+
+  console.log(`[PayU Checkout] Mode: ${isLive ? 'LIVE' : 'TEST'}, Endpoint: ${payuActionUrl}, Key: ${payuKey.slice(0, 4)}***`);
 
   const payuHash = generatePayUHash({
     key: payuKey,
@@ -249,9 +276,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
       trackingHistory: JSON.parse(newOrder.trackingHistory || '[]')
     },
     payuPayload: isCOD ? null : {
-      actionUrl: (settings && settings.payuMode === 'live')
-        ? 'https://secure.payu.in/_payment'
-        : 'https://test.payu.in/_payment',
+      actionUrl: payuActionUrl,
       key: payuKey,
       txnid,
       amount: finalAmount.toFixed(2),

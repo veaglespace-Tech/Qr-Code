@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useSelector } from 'react-redux';
 import Link from 'next/link';
 import { useGetOrderByIdQuery } from '@/redux/api/apiSlice';
 import confetti from 'canvas-confetti';
@@ -12,6 +13,7 @@ function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
   const { data: orderData } = useGetOrderByIdQuery(orderId, { skip: !orderId });
+  const { data: settings } = useSelector(state => state.settings);
   const order = orderData?.order || null;
   const [showInvoice, setShowInvoice] = useState(false);
 
@@ -36,7 +38,10 @@ function CheckoutSuccessContent() {
 
       <div className="space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-600" /> Payment Confirmed via PayU
+          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+          {order?.paymentMethod?.includes('Cash') || order?.paymentMethod?.includes('COD')
+            ? 'Cash on Delivery (COD) Registered'
+            : 'Payment Confirmed via PayU'}
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
           Congratulations! Your Review Express Order is Confirmed
@@ -75,7 +80,17 @@ function CheckoutSuccessContent() {
             </div>
           )}
 
-          <div className="pt-2 border-t border-slate-100">
+          <div className="pt-2 border-t border-slate-100 space-y-3">
+            <div className="p-3 rounded-xl bg-purple-50/80 border border-purple-200/80 text-[11px] text-purple-950 flex flex-col gap-1 text-left">
+              <div className="flex items-center gap-1.5 font-bold text-purple-900">
+                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                <span>Customer Console Account Ready</span>
+              </div>
+              <p className="text-purple-800 leading-relaxed">
+                Your account is active for <strong>{order.customerEmail}</strong>. You are automatically signed in and can track courier status, laser programming, and GST invoices anytime in your dashboard!
+              </p>
+            </div>
+
             <button
               onClick={() => setShowInvoice(true)}
               className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center gap-2 border border-slate-200 transition-colors shadow-xs"
@@ -109,7 +124,7 @@ function CheckoutSuccessContent() {
       {showInvoice && order && (
         <TaxInvoiceModal
           order={order}
-          settings={null}
+          settings={settings}
           onClose={() => setShowInvoice(false)}
         />
       )}

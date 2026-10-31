@@ -25,6 +25,17 @@ export default function CheckoutPage() {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        email: prev.email || user.email || '',
+        phone: prev.phone || user.phone || ''
+      }));
+    }
+  }, [user]);
+
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
 
   const { items, referralCode, partnerInfo } = useSelector(state => state.cart);

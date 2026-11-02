@@ -2,6 +2,11 @@ const prisma = require('../lib/prisma');
 const { generatePayUHash } = require('../lib/payu');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const {
+  sendOrderConfirmationEmail,
+  sendNewOrderAdminAlert,
+  sendPartnerCommissionAlert
+} = require('../utils/mailer');
 
 exports.createOrder = asyncHandler(async (req, res) => {
   const { items, customerDetails, referralCode, partnerLinkCode, isSimulation = false } = req.body;
@@ -196,6 +201,16 @@ exports.createOrder = asyncHandler(async (req, res) => {
     }
   });
 
+  // If order is COD (confirmed immediately upon placement), trigger emails
+  if (isCOD) {
+    sendOrderConfirmationEmail(newOrder, parsedItems).catch(err => console.error('[COD Order Confirmation Email Error]', err));
+    sendNewOrderAdminAlert(newOrder, parsedItems).catch(err => console.error('[COD New Order Admin Alert Error]', err));
+    if (adminReferralId && adminCommissionAmount > 0) {
+      prisma.user.findUnique({ where: { id: adminReferralId } }).then(partner => {
+        if (partner) sendPartnerCommissionAlert(partner, newOrder, adminCommissionAmount);
+      }).catch(err => console.error('[COD Partner Commission Alert Error]', err));
+    }
+  }
 
   const isDummyOrInvalid = (val) => {
     if (!val || typeof val !== 'string') return true;

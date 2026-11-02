@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
+const { sendPayoutStatusUpdateEmail } = require('../utils/mailer');
 
 exports.getAnalytics = asyncHandler(async (req, res) => {
   const orders = await prisma.order.findMany();
@@ -409,6 +410,17 @@ exports.updatePayoutStatus = asyncHandler(async (req, res) => {
       processedAt: new Date()
     }
   });
+
+  // Notify Partner about payout status update (paid / rejected)
+  prisma.user.findUnique({ where: { id: updated.adminId } }).then(partner => {
+    if (partner) {
+      sendPayoutStatusUpdateEmail(partner, {
+        ...updated,
+        transactionRef: updated.paymentRef,
+        remarks: updated.notes
+      }).catch(err => console.error('[Payout Status Email Error]', err));
+    }
+  }).catch(() => {});
 
   return res.json({ success: true, payout: updated, message: `Payout marked as ${status}` });
 });

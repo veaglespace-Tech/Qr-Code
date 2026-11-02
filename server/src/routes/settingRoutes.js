@@ -25,5 +25,6 @@ router.get('/', (req, res, next) => {
 }, settingController.getSettings);
 
 router.put('/', authenticate, authorize('SUPERADMIN'), settingController.updateSettings);
+router.post('/contact', settingController.submitContact);
 
 module.exports = router;

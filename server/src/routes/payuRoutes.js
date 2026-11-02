@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../lib/prisma');
 const asyncHandler = require('../utils/asyncHandler');
+const {
+  sendOrderConfirmationEmail,
+  sendNewOrderAdminAlert,
+  sendPartnerCommissionAlert
+} = require('../utils/mailer');
 
 router.post('/response', asyncHandler(async (req, res) => {
   const {
@@ -42,6 +47,16 @@ router.post('/response', asyncHandler(async (req, res) => {
       },
       include: { user: true }
     });
+
+    // Trigger online order confirmation emails
+    const items = updatedOrder.items ? (typeof updatedOrder.items === 'string' ? JSON.parse(updatedOrder.items) : updatedOrder.items) : [];
+    sendOrderConfirmationEmail(updatedOrder, items).catch(err => console.error('[PayU Order Confirmation Email Error]', err));
+    sendNewOrderAdminAlert(updatedOrder, items).catch(err => console.error('[PayU Admin Order Alert Error]', err));
+    if (updatedOrder.adminReferralId && updatedOrder.adminCommissionAmount > 0) {
+      prisma.user.findUnique({ where: { id: updatedOrder.adminReferralId } }).then(partner => {
+        if (partner) sendPartnerCommissionAlert(partner, updatedOrder, updatedOrder.adminCommissionAmount);
+      }).catch(err => console.error('[PayU Partner Commission Alert Error]', err));
+    }
 
     // Ensure session cookie is set so customer immediately sees their orders in customer portal
     if (updatedOrder.user) {

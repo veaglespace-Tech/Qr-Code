@@ -1,5 +1,7 @@
 const prisma = require('../lib/prisma');
 const asyncHandler = require('../utils/asyncHandler');
+const ApiError = require('../utils/ApiError');
+const { sendContactInquiryEmails } = require('../utils/mailer');
 
 exports.getSettings = asyncHandler(async (req, res) => {
   let settings = await prisma.setting.findFirst();
@@ -76,4 +78,32 @@ exports.updateSettings = asyncHandler(async (req, res) => {
   }
 
   return res.json({ success: true, settings, message: 'Settings saved successfully' });
+});
+
+exports.submitContact = asyncHandler(async (req, res) => {
+  const { name, email, phone, subject, message } = req.body;
+
+  if (!name || !email || !message) {
+    throw new ApiError(400, 'Name, email, and message are required.');
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    throw new ApiError(400, 'Please provide a valid email address.');
+  }
+
+  // Send inquiry emails (alert to Admin + auto-acknowledgement to User)
+  sendContactInquiryEmails({
+    name: name.trim(),
+    email: cleanEmail,
+    phone: (phone || '').trim(),
+    subject: (subject || 'General Inquiry').trim(),
+    message: message.trim()
+  }).catch(err => console.error('[Contact Inquiry Email Error]', err));
+
+  return res.json({
+    success: true,
+    message: 'Thank you! Your inquiry has been received. Our support team will get in touch shortly.'
+  });
 });

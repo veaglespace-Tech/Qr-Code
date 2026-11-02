@@ -2,10 +2,14 @@
 
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Clock, Building2, ShieldCheck } from 'lucide-react';
+import { useSubmitContactMutation } from '@/redux/api/apiSlice';
+import { useToast, formatUserFriendlyError } from '@/context/ToastContext';
+import { Mail, Phone, MapPin, Send, MessageSquare, CheckCircle2, Clock, Building2, ShieldCheck, Loader2 } from 'lucide-react';
 
 export default function ContactPage() {
   const { data: settings } = useSelector(state => state.settings);
+  const [submitContact, { isLoading: submitting }] = useSubmitContactMutation();
+  const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', subject: 'Inquiry about Smart NFC Stands', message: '' });
 
@@ -14,10 +18,21 @@ export default function ContactPage() {
   const whatsappNumber = settings?.whatsappNumber || '918237999101';
   const officeAddress = settings?.address || "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041";
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setForm({ name: '', phone: '', email: '', subject: 'Inquiry about Smart NFC Stands', message: '' });
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      toast.error('Please enter your name, email, and message.');
+      return;
+    }
+
+    try {
+      await submitContact(form).unwrap();
+      setSubmitted(true);
+      toast.success('Your inquiry has been sent successfully! Our team will reply shortly.');
+      setForm({ name: '', phone: '', email: '', subject: 'Inquiry about Smart NFC Stands', message: '' });
+    } catch (err) {
+      toast.error(formatUserFriendlyError(err));
+    }
   };
 
   const openWhatsApp = () => {
@@ -197,10 +212,20 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-[0.99] text-white font-bold text-xs shadow-md shadow-purple-600/25 flex items-center justify-center gap-2 transition-all"
+                  disabled={submitting}
+                  className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-[0.99] text-white font-bold text-xs shadow-md shadow-purple-600/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>Send Message to Support</span>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sending Your Message...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Send Message to Support</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}

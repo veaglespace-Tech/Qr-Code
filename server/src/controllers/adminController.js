@@ -2,6 +2,7 @@ const prisma = require('../lib/prisma');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const crypto = require('crypto');
+const { sendPayoutRequestEmails } = require('../utils/mailer');
 
 // Helper: generate unique link code
 function generateLinkCode(orgName, productSlug) {
@@ -156,6 +157,9 @@ exports.requestPayout = asyncHandler(async (req, res) => {
       status: 'pending'
     }
   });
+
+  // Send email alerts to Partner and Superadmin
+  sendPayoutRequestEmails(req.user, payout).catch(err => console.error('[Payout Request Email Error]', err));
 
   return res.status(201).json({
     success: true,

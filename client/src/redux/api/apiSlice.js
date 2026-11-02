@@ -147,6 +147,13 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Setting'],
     }),
+    submitContact: builder.mutation({
+      query: (data) => ({
+        url: '/settings/contact',
+        method: 'POST',
+        body: data,
+      }),
+    }),
 
     // ---------------- ORDER ENDPOINTS ----------------
     getOrders: builder.query({
@@ -317,6 +324,7 @@ export const {
   // Settings hooks
   useGetSettingsQuery,
   useUpdateSettingsMutation,
+  useSubmitContactMutation,
 
   // Order hooks
   useGetOrdersQuery,

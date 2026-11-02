@@ -15,7 +15,9 @@ const getInitialCart = () => {
 const getInitialReferral = () => {
   if (typeof window !== 'undefined') {
     try {
-      return localStorage.getItem('re_referral_code') || '';
+      // Clean up legacy persistent localStorage keys if present
+      localStorage.removeItem('re_referral_code');
+      return sessionStorage.getItem('re_referral_code') || '';
     } catch {
       return '';
     }
@@ -26,7 +28,10 @@ const getInitialReferral = () => {
 const getInitialPartnerInfo = () => {
   if (typeof window !== 'undefined') {
     try {
-      const stored = localStorage.getItem('re_partner_info');
+      // Clean up legacy persistent localStorage keys so direct visits are 100% clean
+      localStorage.removeItem('re_partner_info');
+      localStorage.removeItem('re_partner_link_code');
+      const stored = sessionStorage.getItem('re_partner_info');
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -90,7 +95,7 @@ const cartSlice = createSlice({
     setReferralCode: (state, action) => {
       state.referralCode = action.payload;
       if (typeof window !== 'undefined') {
-        localStorage.setItem('re_referral_code', action.payload);
+        sessionStorage.setItem('re_referral_code', action.payload || '');
       }
     },
     setPartnerInfo: (state, action) => {
@@ -101,24 +106,27 @@ const cartSlice = createSlice({
       if (typeof window !== 'undefined') {
         try {
           if (action.payload) {
-            localStorage.setItem('re_partner_info', JSON.stringify(action.payload));
-            if (action.payload.linkCode) localStorage.setItem('re_partner_link_code', action.payload.linkCode);
-            if (action.payload.referralCode) localStorage.setItem('re_referral_code', action.payload.referralCode);
-            // 30 day cookie
-            document.cookie = `rx_partner_link=${encodeURIComponent(action.payload.linkCode || '')}; max-age=2592000; path=/`;
-            document.cookie = `rx_partner_ref=${encodeURIComponent(action.payload.referralCode || '')}; max-age=2592000; path=/`;
+            sessionStorage.setItem('re_partner_info', JSON.stringify(action.payload));
+            if (action.payload.linkCode) sessionStorage.setItem('re_partner_link_code', action.payload.linkCode);
+            if (action.payload.referralCode) sessionStorage.setItem('re_referral_code', action.payload.referralCode);
           } else {
-            localStorage.removeItem('re_partner_info');
-            localStorage.removeItem('re_partner_link_code');
+            sessionStorage.removeItem('re_partner_info');
+            sessionStorage.removeItem('re_partner_link_code');
+            sessionStorage.removeItem('re_referral_code');
           }
         } catch {}
       }
     },
     clearPartnerInfo: (state) => {
       state.partnerInfo = null;
+      state.referralCode = '';
       if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('re_partner_info');
+        sessionStorage.removeItem('re_partner_link_code');
+        sessionStorage.removeItem('re_referral_code');
         localStorage.removeItem('re_partner_info');
         localStorage.removeItem('re_partner_link_code');
+        localStorage.removeItem('re_referral_code');
       }
     },
     setBusinessCustomization: (state, action) => {

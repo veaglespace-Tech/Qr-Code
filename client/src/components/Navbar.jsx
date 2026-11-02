@@ -42,31 +42,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Sticky Partner Referral Banner (Persistent site-wide) */}
-      {mounted && partnerInfo && !isBuyPage && (
-        <div className="bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 text-white text-xs px-4 py-2 border-b border-purple-800/60 shadow-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
-              <span suppressHydrationWarning>
-                Shopping with Authorized Partner: <strong className="text-amber-300 font-extrabold" suppressHydrationWarning>{partnerInfo.orgName || partnerInfo.name}</strong>
-              </span>
-              <span className="hidden md:inline text-purple-200 text-[11px] font-semibold bg-purple-800/80 px-2 py-0.5 rounded-full">
-                ✨ Verified Partner Store
-              </span>
-            </div>
-            {partnerInfo.linkCode && (
-              <Link
-                href={`/buy/${partnerInfo.linkCode}`}
-                className="text-[11px] font-bold text-purple-950 bg-amber-300 hover:bg-amber-200 px-3 py-1 rounded-lg transition-all flex items-center gap-1 shadow-xs"
-              >
-                <span>↩ Recommended Product</span>
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Main Navigation Bar */}
       <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -114,8 +89,8 @@ export default function Navbar() {
                 </a>
               )}
 
-              {/* Cart Button: ONLY visible when shopping through a partner link or on checkout flow */}
-              {(isBuyPage || pathname === '/cart' || pathname === '/checkout' || (mounted && partnerInfo)) && (
+              {/* Cart Button: Visible on checkout flow or when cart has items */}
+              {(isBuyPage || pathname === '/cart' || pathname === '/checkout' || (mounted && totalCartCount > 0)) && (
                 <Link
                   href="/cart"
                   className="relative p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 transition-colors border border-slate-200"

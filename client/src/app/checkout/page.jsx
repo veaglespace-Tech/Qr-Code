@@ -67,10 +67,10 @@ export default function CheckoutPage() {
   const freeShippingAbove = settings?.freeShippingAbove || 999;
   const shippingFee = subtotal >= freeShippingAbove || items.length === 0 ? 0 : (settings?.standardShippingFee || 60);
 
-  const activeRefCode = referralCode || partnerInfo?.referralCode || (typeof localStorage !== 'undefined' ? localStorage.getItem('re_referral_code') : '') || '';
+  const activeRefCode = referralCode || partnerInfo?.referralCode || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('re_referral_code') : '') || '';
   const activePartnerLink = partnerInfo?.linkCode ||
     (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('partnerLinkCode') : '') ||
-    (typeof localStorage !== 'undefined' ? localStorage.getItem('re_partner_link_code') : '') || '';
+    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('re_partner_link_code') : '') || '';
 
   const hasReferral = Boolean(activeRefCode && activeRefCode.trim()) || Boolean(activePartnerLink && activePartnerLink.trim());
   const discountAmount = 0;

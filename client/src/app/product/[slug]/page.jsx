@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '@/redux/slice/cartSlice';
 
 import { useGetProductBySlugQuery } from '@/redux/api/apiSlice';
-import QRCode from 'qrcode';
 import {
   Star,
   CheckCircle2,
@@ -18,6 +17,7 @@ import {
   Sparkles,
   ArrowRight,
   Wifi,
+  Smartphone,
   ExternalLink
 } from 'lucide-react';
 
@@ -42,20 +42,8 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [businessName, setBusinessName] = useState('');
   const [googleReviewLink, setGoogleReviewLink] = useState('');
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [added, setAdded] = useState(false);
   const [customError, setCustomError] = useState('');
-
-  // Update dynamic QR Code preview
-  useEffect(() => {
-    QRCode.toDataURL(googleReviewLink || 'https://google.com', {
-      width: 140,
-      margin: 1,
-      color: { dark: '#000000', light: '#ffffff' }
-    })
-      .then(url => setQrCodeUrl(url))
-      .catch(err => console.error(err));
-  }, [googleReviewLink]);
 
   if (loading) {
     return (
@@ -154,15 +142,14 @@ export default function ProductDetailPage() {
 
           {/* Stand Customizer Card Preview */}
           <div className="glass-card bg-white rounded-2xl p-5 border border-emerald-300 shadow-sm flex items-center gap-5">
-            <div className="w-24 h-24 bg-white rounded-xl p-1.5 flex-shrink-0 flex items-center justify-center border border-slate-300 shadow-inner">
-              {qrCodeUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={qrCodeUrl} alt="Live QR Preview" className="w-full h-full object-contain" />
-              )}
+            <div className="w-24 h-24 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-2.5 flex-shrink-0 flex flex-col items-center justify-center border border-slate-700 shadow-md text-white text-center">
+              <Wifi className="w-6 h-6 text-emerald-400 rotate-90 mb-1" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-200">Smart Stand</span>
+              <span className="text-[9px] text-emerald-400 font-bold">NFC Tap</span>
             </div>
             <div className="space-y-1 text-xs">
               <span className="text-[10px] uppercase font-bold text-emerald-700 tracking-wider flex items-center gap-1">
-                <Wifi className="w-3 h-3 rotate-90" /> NFC Encoded &amp; Laser QR
+                <Wifi className="w-3 h-3 rotate-90" /> NFC Encoded &amp; Laser Engraved
               </span>
               <p className="font-bold text-slate-900 text-sm">
                 {businessName || 'Your Business Name'}

@@ -7,7 +7,6 @@ import { useGetOrdersQuery, useUpdateProfileMutation } from '@/redux/api/apiSlic
 import { logoutUser } from '@/redux/slice/authSlice';
 import { useDebounce } from '@/hooks/useDebounce';
 import Link from 'next/link';
-import QRCode from 'qrcode';
 import {
   Package,
   Truck,
@@ -15,7 +14,6 @@ import {
   Clock,
   Printer,
   ExternalLink,
-  QrCode,
   ShoppingBag,
   Store,
   LogOut,
@@ -57,14 +55,13 @@ export default function UserDashboardPage() {
 
   const orders = useMemo(() => ordersData?.orders || [], [ordersData]);
 
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'hardware' | 'invoices' | 'profile'
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'invoices' | 'profile'
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [copiedLink, setCopiedLink] = useState('');
-  const [qrCodeUrls, setQrCodeUrls] = useState({});
 
   // Alerts
   const [notice, setNotice] = useState({ text: '', isError: false });
@@ -106,29 +103,6 @@ export default function UserDashboardPage() {
       }));
     }
   }, [user]);
-
-  // Generate QR code data URLs for ordered stands
-  useEffect(() => {
-    orders.forEach(order => {
-      const link = order.googleReviewLink;
-      if (link && !qrCodeUrls[order.id]) {
-        QRCode.toDataURL(link, {
-          width: 320,
-          margin: 1.5,
-          color: {
-            dark: '#090d16',
-            light: '#ffffff'
-          }
-        })
-          .then(url => {
-            setQrCodeUrls(prev => ({ ...prev, [order.id]: url }));
-          })
-          .catch(err => {
-            console.error('Failed to generate stand QR:', err);
-          });
-      }
-    });
-  }, [orders, qrCodeUrls]);
 
   const handleLogout = async () => {
     try {
@@ -259,8 +233,8 @@ export default function UserDashboardPage() {
 
   const navItems = [
     { id: 'orders', label: 'My Orders & Tracking', icon: Package, badge: totalOrders > 0 ? totalOrders : null },
-    { id: 'hardware', label: 'My Stands & QR Codes', icon: QrCode },
     { id: 'invoices', label: 'GST Tax Invoices', icon: FileText, badge: totalOrders > 0 ? totalOrders : null },
+    { id: 'profile', label: 'Profile & Address', icon: User },
   ];
 
   if (loading) {
@@ -436,7 +410,6 @@ export default function UserDashboardPage() {
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight capitalize">
                 {activeTab === 'orders' && 'My Orders & Delivery Tracking'}
-                {activeTab === 'hardware' && 'My Smart Stands & QR Codes'}
                 {activeTab === 'invoices' && 'GST Tax Invoices'}
                 {activeTab === 'profile' && 'My Profile & Account Settings'}
               </h2>
@@ -717,94 +690,7 @@ export default function UserDashboardPage() {
             </div>
           )}
 
-          {/* ================= TAB 2: SMART STANDS & QR CODES ================= */}
-          {activeTab === 'hardware' && (
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <QrCode className="w-5 h-5 text-purple-600" />
-                    <span>My Stands &amp; Digital QR Codes</span>
-                  </h3>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                    Dual NFC + QR
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Download the QR code image for your ReviewXpress stands. You can print it on your bills, menus, counter posters, or marketing cards.
-                </p>
-              </div>
-
-              {orders.length === 0 ? (
-                <div className="bg-white rounded-2xl p-12 text-center space-y-4 border border-slate-200 shadow-xs">
-                  <QrCode className="w-12 h-12 text-slate-400 mx-auto" />
-                  <h3 className="text-base font-bold text-slate-900">No Custom Stands Configured</h3>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Once you order custom acrylic stands with your Google Place link, your digital QR codes will appear here ready for one-click PNG download.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {orders.map(order => {
-                    const qrUrl = qrCodeUrls[order.id];
-                    const businessName = order.businessName || 'Review Stand';
-
-                    return (
-                      <div
-                        key={order.id}
-                        className="bg-white rounded-2xl p-6 border border-slate-200 space-y-4 shadow-xs text-center flex flex-col justify-between hover:border-purple-300 transition-all"
-                      >
-                        <div>
-                          <span className="text-[10px] font-mono font-bold text-slate-400 uppercase block">
-                            Order #{order.orderNumber}
-                          </span>
-                          <h4 className="text-base font-bold text-slate-900 mt-1">{businessName}</h4>
-                          <p className="text-xs text-slate-500">{order.city || 'India'}</p>
-                        </div>
-
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 inline-block mx-auto">
-                          {qrUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={qrUrl} alt={businessName} className="w-44 h-44 mx-auto rounded-xl bg-white p-2 shadow-xs" />
-                          ) : (
-                            <div className="w-44 h-44 bg-slate-200 rounded-xl mx-auto flex items-center justify-center text-xs text-slate-500">
-                              {order.googleReviewLink ? 'Generating QR...' : 'Link Pending'}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          {qrUrl && (
-                            <a
-                              href={qrUrl}
-                              download={`ReviewXpress-QR-${businessName.replace(/\s+/g, '-')}.png`}
-                              className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Download QR (PNG)</span>
-                            </a>
-                          )}
-                          {order.googleReviewLink && (
-                            <a
-                              href={order.googleReviewLink}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-                            >
-                              <span>Test Google Review Link</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ================= TAB 3: GST TAX INVOICES ================= */}
+          {/* ================= TAB 2: GST TAX INVOICES ================= */}
           {activeTab === 'invoices' && (
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-2">

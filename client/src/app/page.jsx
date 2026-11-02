@@ -7,7 +7,6 @@ import { useGetProductsQuery } from '@/redux/api/apiSlice';
 import {
   Sparkles,
   Smartphone,
-  QrCode,
   ShieldCheck,
   TrendingUp,
   Star,
@@ -28,7 +27,6 @@ import {
   DollarSign,
   HeartHandshake
 } from 'lucide-react';
-import LiveNfcStandDemo from '@/components/LiveNfcStandDemo';
 
 export default function HomePage() {
   const { data: settings } = useSelector(state => state.settings);
@@ -150,11 +148,6 @@ export default function HomePage() {
               <span>GST Input Credit Ready</span>
             </div>
           </div>
-        </div>
-
-        {/* Live Interactive Acrylic Stand Simulator */}
-        <div className="mt-16">
-          <LiveNfcStandDemo />
         </div>
       </section>
 

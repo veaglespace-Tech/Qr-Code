@@ -45,7 +45,7 @@ exports.sendPartnerOTP = asyncHandler(async (req, res) => {
   }
 
   // 4. Send verification email via Nodemailer
-  const sendRes = await sendVerificationEmail(cleanEmail, otpRes.otp, name || 'Partner');
+  const sendRes = await sendVerificationEmail(cleanEmail, otpRes.otp, name || 'Partner', 'Partner');
 
   return res.json({
     success: true,

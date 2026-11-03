@@ -388,7 +388,7 @@ export default function HomePage() {
                 className="w-full py-3.5 px-4 rounded-xl btn-primary-rx text-xs font-black flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Join Partner Program &amp; Earn 20%</span>
+                <span>Join Partner Program &amp; Earn {settings?.defaultCommissionPercent || 15}%</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -513,7 +513,7 @@ export default function HomePage() {
               Want to Distribute ReviewXpress to Businesses in Your City?
             </h4>
             <p className="text-xs sm:text-sm text-purple-200 max-w-xl">
-              Agencies, POS providers, digital marketers, and freelancers earn flat {settings?.defaultCommissionPercent || 20}% commission on every device sold, with dedicated branded storefront links.
+              Agencies, POS providers, digital marketers, and freelancers earn flat {settings?.defaultCommissionPercent || 15}% commission on every device sold, with dedicated branded storefront links.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
@@ -793,7 +793,7 @@ export default function HomePage() {
         <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-3xl p-8 lg:p-12 text-white shadow-xl flex flex-col lg:flex-row items-center justify-between gap-8">
           <div className="space-y-3 max-w-2xl">
             <span className="px-3 py-1 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-wider">
-              Earn 15% – 20% Passive Commission
+              Earn {settings?.defaultCommissionPercent || 15}% Passive Commission
             </span>
             <h3 className="text-3xl sm:text-4xl font-black font-heading tracking-tight">
               Join The ReviewXpress Partner Program

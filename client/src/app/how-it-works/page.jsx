@@ -142,7 +142,7 @@ export default function HowItWorksPage() {
             href="/partner"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-md shadow-amber-500/20"
           >
-            <span>Explore Partner Program (20% Commission)</span>
+            <span>Explore Partner Program ({settings?.defaultCommissionPercent || 15}% Commission)</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

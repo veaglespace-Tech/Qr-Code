@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setUser } from '@/redux/slice/authSlice';
 import {
   useRegisterMutation,
@@ -39,6 +39,7 @@ const DISPOSABLE_DOMAINS = new Set([
 export default function PartnerRegisterPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { data: settings } = useSelector(state => state.settings);
   const { toast } = useToast();
   const [register, { isLoading: loading }] = useRegisterMutation();
   const [sendPartnerOtp, { isLoading: sendingOtp }] = useSendPartnerOtpMutation();
@@ -291,7 +292,7 @@ export default function PartnerRegisterPage() {
         </div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Register Your Organization</h1>
         <p className="text-xs text-slate-500 max-w-md mx-auto">
-          Start earning guaranteed 20% commission on ReviewXpress smart stands with custom referral product links.
+          Start earning guaranteed {settings?.defaultCommissionPercent || 15}% commission on ReviewXpress smart stands with custom referral product links.
         </p>
       </div>
 

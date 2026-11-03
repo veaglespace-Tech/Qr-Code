@@ -61,7 +61,7 @@ export default function Footer() {
               <li><span className="text-slate-500">Executive Pocket NFC Card</span></li>
               <li><span className="text-slate-500">Metal Countertop Plate</span></li>
               <li><Link href="/how-it-works" className="hover:text-brand-600 transition-colors">How NFC &amp; QR Works</Link></li>
-              <li><Link href="/partner" className="text-amber-700 hover:text-amber-800 font-semibold transition-colors">Partner Storefronts (20%)</Link></li>
+              <li><Link href="/partner" className="text-amber-700 hover:text-amber-800 font-semibold transition-colors">Partner Storefronts ({settings?.defaultCommissionPercent || 15}%)</Link></li>
             </ul>
           </div>
 

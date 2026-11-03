@@ -23,7 +23,7 @@ export default function PartnerProgramPage() {
         </div>
         <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight font-heading">
           Partner with ReviewXpress &amp; Earn{' '}
-          <span className="text-gradient-gold">{commissionRate}% – 20% Commission</span>
+          <span className="text-gradient-gold">{commissionRate}% Commission</span>
         </h1>
         <p className="text-base text-slate-600 leading-relaxed font-normal">
           Recommend smart NFC + QR Google review stands to local cafes, restaurants, clinics, hotels, and retail stores. When they order through your link, you get paid directly to your bank account or UPI.

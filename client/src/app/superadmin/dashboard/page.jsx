@@ -1183,7 +1183,7 @@ export default function SuperadminDashboardPage() {
                 <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-900 shadow-2xs">
                   <Globe className="w-4 h-4 text-purple-700 shrink-0" />
                   <span>
-                    <strong>Public Store Display Order (पब्लिक व्ह्यू क्रमवारी):</strong> ग्राहकांना हार्डवेअर शॉप पेजवर कोणता प्रॉडक्ट कितव्या नंबरला दाखवायचा (No. 1, No. 2, No. 3...) ते खालील <strong>Public View Position</strong> ड्रॉपडाउन किंवा <strong>⬆️ ⬇️</strong> बटणाने लगेच बदलू शकता.
+                    <strong>Public Store Display Order:</strong> Choose the display ranking of hardware products on the storefront (Position 1, 2, 3...) using the <strong>Public View Position</strong> dropdown or <strong>⬆️ ⬇️</strong> reorder buttons below.
                   </span>
                 </div>
               )}
@@ -1293,7 +1293,7 @@ export default function SuperadminDashboardPage() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-600 font-semibold whitespace-nowrap">दिसणार:</span>
+                              <span className="text-xs text-slate-600 font-semibold whitespace-nowrap">Position:</span>
                               <select
                                 value={prod.displayOrder || (idx + 1)}
                                 onChange={(e) => handleSetProductPosition(prod.id, e.target.value)}
@@ -2377,8 +2377,8 @@ export default function SuperadminDashboardPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center justify-between">
-                    <span>Public View Position (कित्यव्या नंबरवर दिसेल?) *</span>
-                    <span className="text-[10px] text-purple-700 font-bold">1 = सर्वात वर</span>
+                    <span>Public View Position *</span>
+                    <span className="text-[10px] text-purple-700 font-bold">1 = Top of Catalog</span>
                   </label>
                   <input
                     type="number"
@@ -2388,7 +2388,7 @@ export default function SuperadminDashboardPage() {
                     onChange={(e) => setProductForm({ ...productForm, displayOrder: parseInt(e.target.value) || 1 })}
                     className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-black focus:bg-white focus:border-purple-500"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">पब्लिक शॉप पेज आणि होमपेजवर कितव्या नंबरला दिसेल ते नंबर टाका (उदा. 1, 2, 3...)</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Specify display ranking on public store catalog (e.g. 1, 2, 3...)</p>
                 </div>
 
                 <div>

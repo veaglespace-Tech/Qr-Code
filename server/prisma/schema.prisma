@@ -136,7 +136,7 @@ model Setting {
   supportEmail             String   @default("info@veaglespace.com")
   supportPhone             String   @default("+91 8237999101")
   whatsappNumber           String   @default("918237999101")
-  address                  String   @default("'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041") @db.Text
+  address                  String   @db.Text
   gstEnabled               Boolean  @default(true)
   gstPercent               Float    @default(18.0)
   gstNumber                String   @default("27AABCR1234F1Z8")

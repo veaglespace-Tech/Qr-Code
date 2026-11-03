@@ -4,6 +4,7 @@
   "description": "Review Express E-commerce Backend API with Node.js, Express, Prisma & MySQL",
   "main": "src/server.js",
   "scripts": {
+    "test": "node ../tests/run-all.js",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "prisma:generate": "prisma generate",

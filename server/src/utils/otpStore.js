@@ -8,7 +8,7 @@ const crypto = require('crypto');
 const otpStore = new Map();
 
 // Clean up expired entries every 15 minutes
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [email, record] of otpStore.entries()) {
     if (record.expiresAt < now) {
@@ -16,6 +16,7 @@ setInterval(() => {
     }
   }
 }, 15 * 60 * 1000);
+if (cleanupInterval.unref) cleanupInterval.unref();
 
 /**
  * Generate and store a secure 6-digit OTP for an email

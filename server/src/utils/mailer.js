@@ -105,8 +105,14 @@ function wrapHtml(title, badge, bodyContent) {
  * 1. Send 6-Digit Verification OTP (Partner Registration or Password Reset)
  */
 async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose = 'Password Reset') {
-  const isPartner = purpose.toLowerCase().includes('partner');
-  const isReset = purpose.toLowerCase().includes('reset');
+  if (typeof toEmail === 'object' && toEmail !== null) {
+    const opts = toEmail;
+    return sendVerificationEmail(opts.to || opts.email, opts.otp, opts.name || 'Valued User', opts.purpose || opts.type || 'Password Reset');
+  }
+
+  const purposeStr = (purpose || '').toString();
+  const isPartner = purposeStr.toLowerCase().includes('partner') || purposeStr.toLowerCase().includes('registration');
+  const isReset = purposeStr.toLowerCase().includes('reset') || purposeStr.toLowerCase().includes('forgot');
 
   let title = 'Security Verification';
   let badgeText = 'SECURITY VERIFICATION';
@@ -227,8 +233,9 @@ async function sendOrderConfirmationEmail(order, items = []) {
 /**
  * 3. Send New Order Alert to Superadmin / Operations Team
  */
-async function sendNewOrderAdminAlert(order, items = []) {
-  const adminEmail = process.env.ADMIN_ALERT_EMAIL || process.env.EMAIL || 'info@veaglespace.com';
+async function sendNewOrderAdminAlert(orderOrOptions, items = []) {
+  const order = (orderOrOptions && orderOrOptions.order) ? orderOrOptions.order : orderOrOptions;
+  const adminEmail = (orderOrOptions && orderOrOptions.adminEmail) || process.env.ADMIN_ALERT_EMAIL || process.env.EMAIL || 'info@veaglespace.com';
   if (!adminEmail || !order) return { delivered: false };
 
   const parsedItems = items.length ? items : (order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : []);

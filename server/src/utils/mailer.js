@@ -269,8 +269,28 @@ async function sendNewOrderAdminAlert(orderOrOptions, items = []) {
 /**
  * 4. Send Partner Commission Notification Email
  */
-async function sendPartnerCommissionAlert(partner, order, commissionAmount) {
-  if (!partner || !partner.email || !commissionAmount) return { delivered: false };
+async function sendPartnerCommissionAlert(partnerOrOptions, order, commissionAmount) {
+  let partner = partnerOrOptions;
+  let orderData = order;
+  let commAmt = commissionAmount;
+
+  if (partnerOrOptions && partnerOrOptions.partnerEmail) {
+    partner = {
+      email: partnerOrOptions.partnerEmail,
+      name: partnerOrOptions.partnerName || 'Partner',
+      commissionPercent: partnerOrOptions.commissionPercent || 15
+    };
+    orderData = {
+      orderNumber: partnerOrOptions.orderNumber || 'RX-ORDER',
+      businessName: partnerOrOptions.customerName || 'Customer',
+      customerName: partnerOrOptions.customerName || 'Customer',
+      finalAmount: partnerOrOptions.orderSubtotal || partnerOrOptions.amount || 0,
+      paymentMethod: 'Online'
+    };
+    commAmt = partnerOrOptions.commissionAmount;
+  }
+
+  if (!partner || !partner.email || !commAmt) return { delivered: false };
 
   const content = `
     <p>Hello <strong>${partner.name || 'Partner'}</strong>,</p>
@@ -278,15 +298,15 @@ async function sendPartnerCommissionAlert(partner, order, commissionAmount) {
 
     <div class="highlight-box" style="background: #ecfdf5; border-color: #6ee7b7;">
       <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase; margin-bottom: 4px;">Commission Earned</div>
-      <div style="font-size: 32px; font-weight: 900; color: #065f46;">+₹${commissionAmount}</div>
-      <div style="font-size: 12px; color: #047857; margin-top: 4px;">Linked with Order #${order.orderNumber}</div>
+      <div style="font-size: 32px; font-weight: 900; color: #065f46;">+₹${commAmt}</div>
+      <div style="font-size: 12px; color: #047857; margin-top: 4px;">Linked with Order #${orderData.orderNumber}</div>
     </div>
 
     <div class="info-box">
-      <p style="margin: 4px 0;"><strong>Customer / Business:</strong> ${order.businessName || order.customerName}</p>
-      <p style="margin: 4px 0;"><strong>Order Amount:</strong> ₹${order.finalAmount}</p>
+      <p style="margin: 4px 0;"><strong>Customer / Business:</strong> ${orderData.businessName || orderData.customerName}</p>
+      <p style="margin: 4px 0;"><strong>Order Amount:</strong> ₹${orderData.finalAmount}</p>
       <p style="margin: 4px 0;"><strong>Commission Share:</strong> ${partner.commissionPercent || 15}%</p>
-      <p style="margin: 4px 0;"><strong>Commission Status:</strong> ${order.paymentMethod === 'cod' ? 'Credited upon delivery' : 'Approved'}</p>
+      <p style="margin: 4px 0;"><strong>Commission Status:</strong> ${orderData.paymentMethod === 'cod' ? 'Credited upon delivery' : 'Approved'}</p>
     </div>
 
     <div style="text-align: center; margin-top: 24px;">
@@ -297,7 +317,7 @@ async function sendPartnerCommissionAlert(partner, order, commissionAmount) {
   const html = wrapHtml('Congratulations! New Commission Earned', { text: 'PARTNER COMMISSION', className: 'badge-emerald' }, content);
   return sendMailSafe({
     to: partner.email,
-    subject: `🎉 [Commission Earned] You earned ₹${commissionAmount} on Order #${order.orderNumber}`,
+    subject: `🎉 [Commission Earned] You earned ₹${commAmt} on Order #${orderData.orderNumber}`,
     html
   });
 }
@@ -305,17 +325,38 @@ async function sendPartnerCommissionAlert(partner, order, commissionAmount) {
 /**
  * 5. Send Partner Payout Request Submitted Emails
  */
-async function sendPayoutRequestEmails(partner, payout) {
-  if (!partner || !payout) return { delivered: false };
+async function sendPayoutRequestEmails(partnerOrOptions, payout) {
+  let partner = partnerOrOptions;
+  let payoutData = payout;
+
+  if (partnerOrOptions && partnerOrOptions.partnerEmail) {
+    partner = {
+      email: partnerOrOptions.partnerEmail,
+      name: partnerOrOptions.partnerName || 'Partner',
+      orgName: partnerOrOptions.orgName || 'Partner Store',
+      phone: partnerOrOptions.phone,
+      bankHolder: partnerOrOptions.bankHolder,
+      bankAccount: partnerOrOptions.bankAccount,
+      ifscCode: partnerOrOptions.ifscCode,
+      upiId: partnerOrOptions.upiId
+    };
+    payoutData = {
+      id: partnerOrOptions.payoutId || 1,
+      amount: partnerOrOptions.amount,
+      method: partnerOrOptions.method || 'UPI / Bank'
+    };
+  }
+
+  if (!partner || !payoutData) return { delivered: false };
 
   // 1. Partner acknowledgement
   const partnerContent = `
     <p>Hello <strong>${partner.name || 'Partner'}</strong>,</p>
-    <p>Your payout withdrawal request for <strong>₹${payout.amount}</strong> has been received by ReviewXpress Accounts Team.</p>
+    <p>Your payout withdrawal request for <strong>₹${payoutData.amount}</strong> has been received by ReviewXpress Accounts Team.</p>
     <div class="info-box">
-      <p style="margin: 4px 0;"><strong>Payout ID:</strong> #${payout.id}</p>
-      <p style="margin: 4px 0;"><strong>Requested Amount:</strong> ₹${payout.amount}</p>
-      <p style="margin: 4px 0;"><strong>Transfer Method:</strong> ${payout.method || 'Bank Transfer / UPI'}</p>
+      <p style="margin: 4px 0;"><strong>Payout ID:</strong> #${payoutData.id}</p>
+      <p style="margin: 4px 0;"><strong>Requested Amount:</strong> ₹${payoutData.amount}</p>
+      <p style="margin: 4px 0;"><strong>Transfer Method:</strong> ${payoutData.method || 'Bank Transfer / UPI'}</p>
       <p style="margin: 4px 0;"><strong>Status:</strong> Under Review (Usually processed within 24-48 hours)</p>
     </div>
     <p style="font-size: 13px; color: #64748b;">We will notify you immediately once the funds are transferred to your registered account.</p>
@@ -323,7 +364,7 @@ async function sendPayoutRequestEmails(partner, payout) {
   const partnerHtml = wrapHtml('Payout Request Submitted', { text: 'PAYOUT REQUESTED', className: 'badge-blue' }, partnerContent);
   await sendMailSafe({
     to: partner.email,
-    subject: `[Payout Request Submitted: #${payout.id}] ₹${payout.amount} Under Review`,
+    subject: `[Payout Request Submitted: #${payoutData.id}] ₹${payoutData.amount} Under Review`,
     html: partnerHtml
   });
 
@@ -333,7 +374,7 @@ async function sendPayoutRequestEmails(partner, payout) {
     const adminContent = `
       <p>Partner <strong>${partner.name}</strong> (${partner.orgName || 'Partner'}) has submitted a payout request.</p>
       <div class="info-box">
-        <p style="margin: 4px 0;"><strong>Amount:</strong> ₹${payout.amount}</p>
+        <p style="margin: 4px 0;"><strong>Amount:</strong> ₹${payoutData.amount}</p>
         <p style="margin: 4px 0;"><strong>Partner:</strong> ${partner.name} (${partner.email})</p>
         <p style="margin: 4px 0;"><strong>Phone:</strong> ${partner.phone || 'N/A'}</p>
         <p style="margin: 4px 0;"><strong>Bank Holder:</strong> ${partner.bankHolder || 'N/A'}</p>
@@ -348,7 +389,7 @@ async function sendPayoutRequestEmails(partner, payout) {
     const adminHtml = wrapHtml('New Partner Payout Request', { text: 'ACTION REQUIRED', className: 'badge-amber' }, adminContent);
     await sendMailSafe({
       to: adminEmail,
-      subject: `🔔 [Payout Request] ₹${payout.amount} requested by ${partner.name}`,
+      subject: `🔔 [Payout Request] ₹${payoutData.amount} requested by ${partner.name}`,
       html: adminHtml
     });
   }
@@ -359,10 +400,26 @@ async function sendPayoutRequestEmails(partner, payout) {
 /**
  * 6. Send Payout Status Update Email (Approved / Paid vs Rejected)
  */
-async function sendPayoutStatusUpdateEmail(partner, payout) {
-  if (!partner || !partner.email || !payout) return { delivered: false };
+async function sendPayoutStatusUpdateEmail(partnerOrOptions, payout) {
+  let partner = partnerOrOptions;
+  let payoutData = payout;
 
-  const isPaid = (payout.status || '').toLowerCase() === 'paid';
+  if (partnerOrOptions && partnerOrOptions.partnerEmail) {
+    partner = {
+      email: partnerOrOptions.partnerEmail,
+      name: partnerOrOptions.partnerName || 'Partner'
+    };
+    payoutData = {
+      amount: partnerOrOptions.amount,
+      status: partnerOrOptions.status || 'PAID',
+      transactionRef: partnerOrOptions.transactionRef,
+      remarks: partnerOrOptions.remarks
+    };
+  }
+
+  if (!partner || !partner.email || !payoutData) return { delivered: false };
+
+  const isPaid = (payoutData.status || '').toLowerCase() === 'paid';
 
   let title = isPaid ? 'Payout Processed Successfully' : 'Payout Request Update';
   let badgeText = isPaid ? 'PAYOUT PROCESSED' : 'PAYOUT REJECTED';
@@ -371,17 +428,17 @@ async function sendPayoutStatusUpdateEmail(partner, payout) {
   const content = `
     <p>Hello <strong>${partner.name || 'Partner'}</strong>,</p>
     ${isPaid ? `
-      <p>Your payout request for <strong>₹${payout.amount}</strong> has been approved and processed successfully by ReviewXpress Accounts Team!</p>
+      <p>Your payout request for <strong>₹${payoutData.amount}</strong> has been approved and processed successfully by ReviewXpress Accounts Team!</p>
       <div class="highlight-box" style="background: #ecfdf5; border-color: #6ee7b7;">
         <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase;">Amount Transferred</div>
-        <div style="font-size: 32px; font-weight: 900; color: #065f46;">₹${payout.amount}</div>
-        ${payout.transactionRef ? `<div style="font-size: 12px; color: #047857; margin-top: 4px; font-family: monospace;">Ref: ${payout.transactionRef}</div>` : ''}
+        <div style="font-size: 32px; font-weight: 900; color: #065f46;">₹${payoutData.amount}</div>
+        ${payoutData.transactionRef ? `<div style="font-size: 12px; color: #047857; margin-top: 4px; font-family: monospace;">Ref: ${payoutData.transactionRef}</div>` : ''}
       </div>
       <p style="font-size: 13px; color: #475569;">The funds should reflect in your registered bank/UPI account according to bank clearance timelines.</p>
     ` : `
-      <p>We are writing to inform you that your payout request for <strong>₹${payout.amount}</strong> could not be processed at this time.</p>
+      <p>We are writing to inform you that your payout request for <strong>₹${payoutData.amount}</strong> could not be processed at this time.</p>
       <div class="info-box" style="border-left: 4px solid #f59e0b;">
-        <p style="margin: 0; color: #92400e;"><strong>Remarks / Reason:</strong> ${payout.remarks || 'Please check your bank/UPI details or contact support.'}</p>
+        <p style="margin: 0; color: #92400e;"><strong>Remarks / Reason:</strong> ${payoutData.remarks || 'Please check your bank/UPI details or contact support.'}</p>
       </div>
       <p style="font-size: 13px; color: #475569;">The requested funds remain in your partner balance. You may update your bank details in your dashboard and submit a new request.</p>
     `}
@@ -394,7 +451,9 @@ async function sendPayoutStatusUpdateEmail(partner, payout) {
   const html = wrapHtml(title, { text: badgeText, className: badgeClass }, content);
   return sendMailSafe({
     to: partner.email,
-    subject: isPaid ? `✅ [Payout Processed] ₹${payout.amount} Transferred Successfully` : `⚠️ [Payout Update] Request for ₹${payout.amount}`,
+    subject: isPaid
+      ? `✅ [Payout Processed] ₹${payoutData.amount} sent to your account`
+      : `⚠️ [Payout Update] Notice regarding your ₹${payoutData.amount} withdrawal request`,
     html
   });
 }

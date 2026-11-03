@@ -134,3 +134,4 @@ describe('Mailer Templates & Notification Pipelines Unit Tests', () => {
     assert.strictEqual(typeof res.delivered, 'boolean');
   });
 });
+

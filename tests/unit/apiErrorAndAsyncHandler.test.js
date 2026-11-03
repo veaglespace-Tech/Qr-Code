@@ -72,3 +72,4 @@ describe('ApiError & asyncHandler Unit Tests', () => {
     assert.strictEqual(errorCaught, syncError);
   });
 });
+

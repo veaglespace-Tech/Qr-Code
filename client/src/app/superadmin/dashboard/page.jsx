@@ -504,7 +504,7 @@ export default function SuperadminDashboardPage() {
       await deleteProduct(id).unwrap();
       triggerNotice('Product removed from catalog');
     } catch (err) {
-      triggerNotice('Failed to delete product', true);
+      triggerNotice(err?.data?.error || err?.data?.message || err?.message || 'Failed to delete product', true);
     }
   };
 

@@ -142,10 +142,46 @@ exports.reorderProducts = asyncHandler(async (req, res) => {
 });
 
 exports.deleteProduct = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  await prisma.product.delete({
-    where: { id: parseInt(id) }
+  const productId = parseInt(req.params.id);
+
+  if (isNaN(productId)) {
+    throw new ApiError(400, 'Invalid product ID');
+  }
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      partnerLinks: true
+    }
   });
+
+  if (!product) {
+    throw new ApiError(404, 'Product not found');
+  }
+
+  const partnerLinkIds = (product.partnerLinks || []).map(l => l.id);
+
+  // Perform clean cascade in a database transaction
+  await prisma.$transaction(async (tx) => {
+    if (partnerLinkIds.length > 0) {
+      // 1. Detach orders referencing these partner links to preserve customer order history
+      await tx.order.updateMany({
+        where: { partnerLinkId: { in: partnerLinkIds } },
+        data: { partnerLinkId: null }
+      });
+
+      // 2. Delete the associated partner product links
+      await tx.partnerProductLink.deleteMany({
+        where: { productId }
+      });
+    }
+
+    // 3. Delete the product itself
+    await tx.product.delete({
+      where: { id: productId }
+    });
+  });
+
   return res.json({ success: true, message: 'Product deleted successfully' });
 });
 

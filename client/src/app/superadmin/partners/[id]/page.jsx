@@ -107,7 +107,7 @@ export default function PartnerDetailPage() {
       if (partner.referralCode) {
         const link = typeof window !== 'undefined'
           ? `${window.location.origin}/?ref=${partner.referralCode}`
-          : `https://reviewexpress.in/?ref=${partner.referralCode}`;
+          : `https://reviewxpress.veaglespace.com/?ref=${partner.referralCode}`;
 
         QRCode.toDataURL(link, {
           width: 320,
@@ -222,7 +222,7 @@ export default function PartnerDetailPage() {
   };
 
   const referralLink = partner?.referralCode
-    ? (typeof window !== 'undefined' ? `${window.location.origin}/?ref=${partner.referralCode}` : `https://reviewexpress.in/?ref=${partner.referralCode}`)
+    ? (typeof window !== 'undefined' ? `${window.location.origin}/?ref=${partner.referralCode}` : `https://reviewxpress.veaglespace.com/?ref=${partner.referralCode}`)
     : '';
 
   if (isLoading) {

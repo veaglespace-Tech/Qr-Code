@@ -680,7 +680,7 @@ export default function SuperadminDashboardPage() {
               </div>
               <div className="overflow-hidden">
                 <p className="text-xs font-bold text-white truncate group-hover:text-purple-300 transition-colors">{user?.name || 'Superadmin'}</p>
-                <p className="text-[10px] text-slate-400 truncate">{user?.email || 'admin@reviewexpress.in'}</p>
+                <p className="text-[10px] text-slate-400 truncate">{user?.email || 'info@veaglespace.com'}</p>
               </div>
             </button>
             <button
@@ -1964,7 +1964,7 @@ export default function SuperadminDashboardPage() {
                         Administrator
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{user?.email || 'admin@reviewexpress.in'}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{user?.email || 'info@veaglespace.com'}</p>
                     <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400 font-medium">
                       <span>Role: <strong className="text-slate-700">SUPERADMIN</strong></span>
                       <span>•</span>

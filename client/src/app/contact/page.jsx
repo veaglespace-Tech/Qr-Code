@@ -13,10 +13,14 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', subject: 'Inquiry about Smart NFC Stands', message: '' });
 
-  const supportEmail = settings?.supportEmail || 'info@veaglespace.com';
-  const supportPhone = settings?.supportPhone || '+91 8237999101';
-  const whatsappNumber = settings?.whatsappNumber || '918237999101';
-  const officeAddress = settings?.address || "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041";
+  const isDummyAddress = !settings?.address || settings.address.includes('Tech Hub') || settings.address.includes('411045') || settings.address.trim() === 'Pune, Maharashtra';
+  const isDummyEmail = !settings?.supportEmail || settings.supportEmail === 'support@reviewexpress.in' || settings.supportEmail.includes('example.com');
+  const isDummyPhone = !settings?.supportPhone || settings.supportPhone.includes('98765 43210') || settings.supportPhone.includes('9876543210');
+
+  const supportEmail = !isDummyEmail ? settings.supportEmail : 'info@veaglespace.com';
+  const supportPhone = !isDummyPhone ? settings.supportPhone : '+91 8237999101';
+  const whatsappNumber = (!isDummyPhone && settings?.whatsappNumber && !settings.whatsappNumber.includes('9876543210')) ? settings.whatsappNumber : '918237999101';
+  const officeAddress = !isDummyAddress ? settings.address : "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -5,16 +5,46 @@ const { sendContactInquiryEmails } = require('../utils/mailer');
 
 exports.getSettings = asyncHandler(async (req, res) => {
   let settings = await prisma.setting.findFirst();
+
+  const accurateAddress = "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041";
+  const accurateEmail = "info@veaglespace.com";
+  const accuratePhone = "+91 8237999101";
+  const accurateWhatsapp = "918237999101";
+
   if (!settings) {
     settings = await prisma.setting.create({
       data: {
         id: 1,
-        siteName: "Review Express",
-        address: "Pune, Maharashtra",
+        siteName: "ReviewXpress",
+        tagline: "India's #1 Smart NFC & QR Google Review Hardware Platform",
+        supportEmail: accurateEmail,
+        supportPhone: accuratePhone,
+        whatsappNumber: accurateWhatsapp,
+        address: accurateAddress,
         payuMerchantKey: "GKJE3Z",
         payuMerchantSalt: "0zqiCnB4GslxAanSxjEAutWkWuggFiGs"
       }
     });
+  } else {
+    // Auto-migrate old dummy or placeholder data stored in live database
+    const isDummyAddress = !settings.address || settings.address.includes('Tech Hub') || settings.address.includes('411045') || settings.address.trim() === 'Pune, Maharashtra';
+    const isDummyEmail = !settings.supportEmail || settings.supportEmail === 'support@reviewexpress.in' || settings.supportEmail.includes('example.com');
+    const isDummyPhone = !settings.supportPhone || settings.supportPhone.includes('98765 43210') || settings.supportPhone.includes('9876543210');
+    const isDummyWhatsapp = !settings.whatsappNumber || settings.whatsappNumber === '919876543210';
+    const isOldSiteName = settings.siteName === 'Review Express';
+
+    if (isDummyAddress || isDummyEmail || isDummyPhone || isDummyWhatsapp || isOldSiteName) {
+      settings = await prisma.setting.update({
+        where: { id: settings.id },
+        data: {
+          ...(isOldSiteName ? { siteName: 'ReviewXpress' } : {}),
+          ...(isDummyAddress ? { address: accurateAddress } : {}),
+          ...(isDummyEmail ? { supportEmail: accurateEmail } : {}),
+          ...(isDummyPhone ? { supportPhone: accuratePhone } : {}),
+          ...(isDummyWhatsapp ? { whatsappNumber: accurateWhatsapp } : {})
+        }
+      });
+    }
   }
 
   // Mask secret salt unless superadmin

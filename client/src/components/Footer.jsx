@@ -11,6 +11,15 @@ export default function Footer() {
   const pathname = usePathname();
   const { data: settings } = useSelector(state => state.settings);
 
+  // Sanitize address, phone, and email against old live DB placeholder artifacts
+  const isDummyAddress = !settings?.address || settings.address.includes('Tech Hub') || settings.address.includes('411045') || settings.address.trim() === 'Pune, Maharashtra';
+  const isDummyPhone = !settings?.supportPhone || settings.supportPhone.includes('98765 43210') || settings.supportPhone.includes('9876543210');
+  const isDummyEmail = !settings?.supportEmail || settings.supportEmail === 'support@reviewexpress.in' || settings.supportEmail.includes('example.com');
+
+  const displayAddress = !isDummyAddress ? settings.address : "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041";
+  const displayPhone = !isDummyPhone ? settings.supportPhone : '+91 8237999101';
+  const displayEmail = !isDummyEmail ? settings.supportEmail : 'info@veaglespace.com';
+
   // Do not render marketing footer on dashboards (superadmin, admin, user)
   if (pathname?.startsWith('/superadmin') || pathname?.startsWith('/admin') || pathname?.startsWith('/user')) {
     return null;
@@ -39,7 +48,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
-                <span className="line-clamp-2">{settings?.address || "'Kudale Patil Tower', Office No. 207, Vadgaon Budruk, Pune, Maharashtra 411041"}</span>
+                <span className="line-clamp-2">{displayAddress}</span>
               </div>
             </div>
           </div>
@@ -75,11 +84,11 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-brand-600 shrink-0" />
-                <a href={`tel:${settings?.supportPhone || '+918237999101'}`} className="hover:text-brand-600">{settings?.supportPhone || '+91 8237999101'}</a>
+                <a href={`tel:${displayPhone}`} className="hover:text-brand-600">{displayPhone}</a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-brand-600 shrink-0" />
-                <a href={`mailto:${settings?.supportEmail || 'info@veaglespace.com'}`} className="hover:text-brand-600">{settings?.supportEmail || 'info@veaglespace.com'}</a>
+                <a href={`mailto:${displayEmail}`} className="hover:text-brand-600">{displayEmail}</a>
               </li>
               <li className="pt-2"><Link href="/policies/terms" className="hover:text-brand-600 text-xs">Terms &amp; Conditions</Link></li>
               <li><Link href="/policies/privacy" className="hover:text-brand-600 text-xs">Privacy Policy</Link></li>

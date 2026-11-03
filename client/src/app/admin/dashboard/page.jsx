@@ -125,7 +125,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (viewingProduct?.link?.linkCode) {
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewexpress.in';
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewxpress.veaglespace.com';
       const linkUrl = `${baseUrl}/buy/${viewingProduct.link.linkCode}`;
       QRCode.toDataURL(linkUrl, { width: 300, margin: 1.5, color: { dark: '#090d16', light: '#ffffff' } })
         .then(setProductQrModalUrl)
@@ -731,7 +731,7 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {(linksData?.items || []).map(({ product, link }) => {
-                    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewexpress.in';
+                    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewxpress.veaglespace.com';
                     const linkUrl = link ? `${baseUrl}/buy/${link.linkCode}` : null;
                     const commissionAmount = (((product.price || 0) * (stats?.partner?.commissionPercent || 15)) / 100).toFixed(0);
 

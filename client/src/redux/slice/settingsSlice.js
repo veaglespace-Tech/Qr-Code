@@ -8,10 +8,11 @@ const settingsSlice = createSlice({
   initialState: {
     data: {
       siteName: 'ReviewXpress',
-      tagline: "India's #1 NFC & QR Smart Google Review Stand & Card",
-      supportEmail: 'support@reviewexpress.in',
-      supportPhone: '+91 98765 43210',
-      whatsappNumber: '919876543210',
+      tagline: "India's #1 Smart NFC & QR Google Review Hardware Platform",
+      supportEmail: 'info@veaglespace.com',
+      supportPhone: '+91 8237999101',
+      whatsappNumber: '918237999101',
+      address: "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041",
       gstEnabled: true,
       gstPercent: 18,
       defaultCommissionPercent: 15,

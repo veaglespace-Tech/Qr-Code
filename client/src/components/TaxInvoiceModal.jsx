@@ -8,6 +8,14 @@ export default function TaxInvoiceModal({ order, settings, onClose }) {
   const [downloading, setDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
+  const isDummyAddress = !settings?.address || settings.address.includes('Tech Hub') || settings.address.includes('411045') || settings.address.trim() === 'Pune, Maharashtra';
+  const isDummyPhone = !settings?.supportPhone || settings.supportPhone.includes('98765 43210') || settings.supportPhone.includes('9876543210');
+  const isDummyEmail = !settings?.supportEmail || settings.supportEmail === 'support@reviewexpress.in' || settings.supportEmail.includes('example.com');
+
+  const invoiceAddress = !isDummyAddress ? settings.address : "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra - 411041";
+  const invoicePhone = !isDummyPhone ? settings.supportPhone : '+91 8237999101';
+  const invoiceEmail = !isDummyEmail ? settings.supportEmail : 'info@veaglespace.com';
+
   if (!order) return null;
 
   const handleDownloadPdf = async () => {
@@ -168,12 +176,12 @@ export default function TaxInvoiceModal({ order, settings, onClose }) {
               <p className="text-gray-900 font-bold text-sm">{settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'}</p>
               <p className="text-gray-600 font-medium text-[11px]">Brand: ReviewXpress (Smart NFC &amp; QR Systems)</p>
               <p className="text-gray-600 mt-1 leading-relaxed">
-                {settings?.address || "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra - 411041"}
+                {invoiceAddress}
               </p>
               <div className="mt-1.5 space-y-0.5 text-gray-700">
                 <p><strong>GSTIN:</strong> {settings?.gstNumber || '27AAECV8237P1Z5'}</p>
-                <p><strong>Phone:</strong> {settings?.supportPhone || '+91 8237999101'}</p>
-                <p><strong>Email:</strong> {settings?.supportEmail || 'info@veaglespace.com'}</p>
+                <p><strong>Phone:</strong> {invoicePhone}</p>
+                <p><strong>Email:</strong> {invoiceEmail}</p>
                 <p><strong>State:</strong> Maharashtra (State Code: 27)</p>
               </div>
             </div>

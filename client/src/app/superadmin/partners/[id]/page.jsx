@@ -260,6 +260,10 @@ export default function PartnerDetailPage() {
       {/* Top Breadcrumb & Actions Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs px-4 sm:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
+          <Link href="/" title="Home" className="shrink-0 mr-1">
+            <ReviewXpressLogo size="sm" />
+          </Link>
+          <div className="h-5 w-px bg-slate-200" />
           <Link
             href="/superadmin/dashboard"
             className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center gap-1.5 text-xs font-bold"

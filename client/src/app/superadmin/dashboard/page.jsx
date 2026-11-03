@@ -579,22 +579,21 @@ export default function SuperadminDashboardPage() {
       >
         {/* Sidebar Brand Header */}
         <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-emerald-500 p-0.5 shadow-lg shadow-purple-600/30 flex items-center justify-center">
-              <div className="w-full h-full bg-[#090d16] rounded-[10px] flex items-center justify-center">
-                <Shield className="w-5 h-5 text-purple-400" />
-              </div>
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 p-1 flex items-center justify-center shadow-lg shadow-purple-600/10 transition-transform group-hover:scale-105">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-icon.png" alt="ReviewXpress Logo" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-white text-base tracking-tight">ReviewXpress</span>
+                <span className="font-black text-white text-base tracking-tight">Review<span className="text-[#00E575]">Xpress</span></span>
                 <span className="text-[9px] uppercase font-extrabold tracking-widest bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">
                   Admin
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-medium">Super Admin</p>
             </div>
-          </div>
+          </Link>
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"

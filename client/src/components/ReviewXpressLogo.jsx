@@ -1,23 +1,23 @@
 'use client';
 
 export default function ReviewXpressLogo({ size = 'default', showText = true, className = '' }) {
-  // Size presets
+  // Size presets - generous, prominent, high-visibility sizing
   const sizeMap = {
     sm: {
-      full: 'h-7',
-      icon: 'h-7 w-7'
+      full: 'h-8 sm:h-9',
+      icon: 'h-8 w-8 sm:h-9 sm:w-9'
     },
     default: {
-      full: 'h-9 sm:h-10',
-      icon: 'h-9 w-9 sm:h-10 sm:w-10'
+      full: 'h-11 sm:h-12 md:h-13 lg:h-[54px]',
+      icon: 'h-11 w-11 sm:h-12 sm:w-12 lg:h-[54px] lg:w-[54px]'
     },
     lg: {
-      full: 'h-11 sm:h-12',
-      icon: 'h-11 w-11 sm:h-12 sm:w-12'
+      full: 'h-14 sm:h-16 md:h-20',
+      icon: 'h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20'
     },
     xl: {
-      full: 'h-14 sm:h-16',
-      icon: 'h-14 w-14 sm:h-16 sm:w-16'
+      full: 'h-20 sm:h-24 md:h-28',
+      icon: 'h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28'
     }
   };
 
@@ -29,7 +29,7 @@ export default function ReviewXpressLogo({ size = 'default', showText = true, cl
       <img
         src={showText ? '/logo.png' : '/logo-icon.png'}
         alt="ReviewXpress Official Brand Logo"
-        className={`${showText ? currentSize.full : currentSize.icon} w-auto object-contain transition-transform duration-200 group-hover:scale-105`}
+        className={`${showText ? currentSize.full : currentSize.icon} w-auto max-w-none object-contain transition-transform duration-200 group-hover:scale-105`}
         loading="eager"
       />
     </div>

@@ -27,8 +27,8 @@ export default function CartPage() {
     partnerInfo?.orgName
       ? `Partner offer active (${partnerInfo.orgName})!`
       : activeRefCode
-      ? 'Partner code active!'
-      : ''
+        ? 'Partner code active!'
+        : ''
   );
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);

@@ -57,6 +57,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import Link from 'next/link';
+import Pagination from '@/components/Pagination';
 
 // Safe parsers for specifications & features
 function parseSpecs(raw) {
@@ -118,6 +119,14 @@ export default function AdminDashboardPage() {
   const debouncedOrderSearch = useDebounce(orderSearch, 300);
   const [customerSearch, setCustomerSearch] = useState('');
   const debouncedCustomerSearch = useDebounce(customerSearch, 300);
+
+  // Pagination states
+  const [productsPage, setProductsPage] = useState(1);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [customersPage, setCustomersPage] = useState(1);
+
+  useEffect(() => { setOrdersPage(1); }, [debouncedOrderSearch]);
+  useEffect(() => { setCustomersPage(1); }, [debouncedCustomerSearch]);
 
   // Product detail view modal (Read-only)
   const [viewingProduct, setViewingProduct] = useState(null);
@@ -346,6 +355,28 @@ export default function AdminDashboardPage() {
       c.phone?.toLowerCase().includes(q)
     );
   }, [referredCustomers, debouncedCustomerSearch]);
+
+  // Paginated data slices
+  const PRODUCTS_PER_PAGE = 9;
+  const ORDERS_PER_PAGE = 10;
+  const CUSTOMERS_PER_PAGE = 10;
+
+  const productItems = useMemo(() => linksData?.items || [], [linksData]);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (productsPage - 1) * PRODUCTS_PER_PAGE;
+    return productItems.slice(start, start + PRODUCTS_PER_PAGE);
+  }, [productItems, productsPage]);
+
+  const paginatedOrders = useMemo(() => {
+    const start = (ordersPage - 1) * ORDERS_PER_PAGE;
+    return filteredOrders.slice(start, start + ORDERS_PER_PAGE);
+  }, [filteredOrders, ordersPage]);
+
+  const paginatedCustomers = useMemo(() => {
+    const start = (customersPage - 1) * CUSTOMERS_PER_PAGE;
+    return filteredCustomers.slice(start, start + CUSTOMERS_PER_PAGE);
+  }, [filteredCustomers, customersPage]);
 
   const navItems = [
     { id: 'overview', label: 'Overview & Earnings', icon: LayoutDashboard },
@@ -728,13 +759,14 @@ export default function AdminDashboardPage() {
                   <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {(linksData?.items || []).map(({ product, link }) => {
-                    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewxpress.veaglespace.com';
-                    const linkUrl = link ? `${baseUrl}/buy/${link.linkCode}` : null;
-                    const commissionAmount = (((product.price || 0) * (stats?.partner?.commissionPercent || 15)) / 100).toFixed(0);
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {paginatedProducts.map(({ product, link }) => {
+                      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewxpress.veaglespace.com';
+                      const linkUrl = link ? `${baseUrl}/buy/${link.linkCode}` : null;
+                      const commissionAmount = (((product.price || 0) * (stats?.partner?.commissionPercent || 15)) / 100).toFixed(0);
 
-                    return (
+                      return (
                       <div
                         key={product.id}
                         className="bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md hover:border-purple-200 transition-all overflow-hidden flex flex-col justify-between"
@@ -924,11 +956,19 @@ export default function AdminDashboardPage() {
                       </div>
                     );
                   })}
-                  {(linksData?.items || []).length === 0 && (
-                    <div className="col-span-3 text-center py-20 text-slate-400 text-sm">
-                      No products available in catalog.
-                    </div>
-                  )}
+                    {(linksData?.items || []).length === 0 && (
+                      <div className="col-span-3 text-center py-20 text-slate-400 text-sm">
+                        No products available in catalog.
+                      </div>
+                    )}
+                  </div>
+                  <Pagination
+                    currentPage={productsPage}
+                    totalItems={productItems.length}
+                    pageSize={PRODUCTS_PER_PAGE}
+                    onPageChange={setProductsPage}
+                    itemName="products"
+                  />
                 </div>
               )}
             </div>
@@ -976,7 +1016,7 @@ export default function AdminDashboardPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredOrders.map(order => (
+                      paginatedOrders.map(order => (
                         <tr key={order.id} className="hover:bg-slate-50 transition-colors">
                           <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{order.orderNumber}</td>
                           <td className="py-3.5 px-4">
@@ -1008,6 +1048,13 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={ordersPage}
+                totalItems={filteredOrders.length}
+                pageSize={ORDERS_PER_PAGE}
+                onPageChange={setOrdersPage}
+                itemName="orders"
+              />
             </div>
           )}
 
@@ -1060,7 +1107,7 @@ export default function AdminDashboardPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredCustomers.map(cust => (
+                      paginatedCustomers.map(cust => (
                         <tr key={cust.id} className="hover:bg-purple-50/40 transition-colors">
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2.5">
@@ -1092,6 +1139,13 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={customersPage}
+                totalItems={filteredCustomers.length}
+                pageSize={CUSTOMERS_PER_PAGE}
+                onPageChange={setCustomersPage}
+                itemName="customers"
+              />
             </div>
           )}
 

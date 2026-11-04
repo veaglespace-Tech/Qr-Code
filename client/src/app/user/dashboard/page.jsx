@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
 import TaxInvoiceModal from '@/components/TaxInvoiceModal';
+import Pagination from '@/components/Pagination';
 
 export default function UserDashboardPage() {
   const router = useRouter();
@@ -62,6 +63,12 @@ export default function UserDashboardPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [copiedLink, setCopiedLink] = useState('');
+
+  // Pagination states
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [invoicesPage, setInvoicesPage] = useState(1);
+
+  useEffect(() => { setOrdersPage(1); }, [debouncedSearchQuery, statusFilter]);
 
   // Alerts
   const [notice, setNotice] = useState({ text: '', isError: false });
@@ -206,6 +213,20 @@ export default function UserDashboardPage() {
       return matchesSearch && matchesStatus;
     });
   }, [orders, debouncedSearchQuery, statusFilter]);
+
+  // Paginated slices
+  const ORDERS_PER_PAGE = 5;
+  const INVOICES_PER_PAGE = 10;
+
+  const paginatedOrders = useMemo(() => {
+    const start = (ordersPage - 1) * ORDERS_PER_PAGE;
+    return filteredOrders.slice(start, start + ORDERS_PER_PAGE);
+  }, [filteredOrders, ordersPage]);
+
+  const paginatedInvoices = useMemo(() => {
+    const start = (invoicesPage - 1) * INVOICES_PER_PAGE;
+    return orders.slice(start, start + INVOICES_PER_PAGE);
+  }, [orders, invoicesPage]);
 
   // Unique delivery addresses extracted from orders
   const uniqueAddresses = useMemo(() => {
@@ -571,7 +592,7 @@ export default function UserDashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {filteredOrders.map(order => (
+                  {paginatedOrders.map(order => (
                     <div
                       key={order.id}
                       className="bg-white rounded-2xl p-6 border border-slate-200 space-y-6 shadow-xs hover:border-purple-300 transition-all"
@@ -686,6 +707,13 @@ export default function UserDashboardPage() {
                   ))}
                 </div>
               )}
+              <Pagination
+                currentPage={ordersPage}
+                totalItems={filteredOrders.length}
+                pageSize={ORDERS_PER_PAGE}
+                onPageChange={setOrdersPage}
+                itemName="orders"
+              />
             </div>
           )}
 
@@ -731,7 +759,7 @@ export default function UserDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {orders.map(order => {
+                        {paginatedInvoices.map(order => {
                           const gross = Number(order.finalAmount) || 0;
                           const net = Math.round(gross / 1.18);
                           const gstAmount = gross - net;
@@ -778,6 +806,13 @@ export default function UserDashboardPage() {
                       </tbody>
                     </table>
                   </div>
+                  <Pagination
+                    currentPage={invoicesPage}
+                    totalItems={orders.length}
+                    pageSize={INVOICES_PER_PAGE}
+                    onPageChange={setInvoicesPage}
+                    itemName="invoices"
+                  />
                 </div>
               )}
             </div>

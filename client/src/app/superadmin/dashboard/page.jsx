@@ -86,6 +86,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
+import Pagination from '@/components/Pagination';
 
 export default function SuperadminDashboardPage() {
   const router = useRouter();
@@ -112,6 +113,19 @@ export default function SuperadminDashboardPage() {
 
   const [userSearch, setUserSearch] = useState('');
   const debouncedUserSearch = useDebounce(userSearch, 300);
+
+  // Pagination states
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [productsPage, setProductsPage] = useState(1);
+  const [adminsPage, setAdminsPage] = useState(1);
+  const [usersPage, setUsersPage] = useState(1);
+  const [payoutsPage, setPayoutsPage] = useState(1);
+
+  // Reset pagination on filter or search changes
+  useEffect(() => { setOrdersPage(1); }, [searchTerm, orderFilter]);
+  useEffect(() => { setProductsPage(1); }, [productSearch, productStatusFilter, productSortBy]);
+  useEffect(() => { setAdminsPage(1); }, [debouncedAdminSearch]);
+  useEffect(() => { setUsersPage(1); }, [debouncedUserSearch]);
 
   // RTK Query endpoints
   const { data: anaData, isLoading: anaLoading, refetch: refetchAna } = useGetAnalyticsQuery();
@@ -351,6 +365,38 @@ export default function SuperadminDashboardPage() {
       u.businessName?.toLowerCase().includes(q)
     );
   }, [users, debouncedUserSearch]);
+
+  // Paginated data slices
+  const ORDERS_PER_PAGE = 10;
+  const PRODUCTS_PER_PAGE = 9;
+  const ADMINS_PER_PAGE = 10;
+  const USERS_PER_PAGE = 10;
+  const PAYOUTS_PER_PAGE = 10;
+
+  const paginatedOrders = useMemo(() => {
+    const start = (ordersPage - 1) * ORDERS_PER_PAGE;
+    return filteredOrders.slice(start, start + ORDERS_PER_PAGE);
+  }, [filteredOrders, ordersPage]);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (productsPage - 1) * PRODUCTS_PER_PAGE;
+    return filteredProducts.slice(start, start + PRODUCTS_PER_PAGE);
+  }, [filteredProducts, productsPage]);
+
+  const paginatedAdmins = useMemo(() => {
+    const start = (adminsPage - 1) * ADMINS_PER_PAGE;
+    return filteredAdmins.slice(start, start + ADMINS_PER_PAGE);
+  }, [filteredAdmins, adminsPage]);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (usersPage - 1) * USERS_PER_PAGE;
+    return filteredUsers.slice(start, start + USERS_PER_PAGE);
+  }, [filteredUsers, usersPage]);
+
+  const paginatedPayouts = useMemo(() => {
+    const start = (payoutsPage - 1) * PAYOUTS_PER_PAGE;
+    return payouts.slice(start, start + PAYOUTS_PER_PAGE);
+  }, [payouts, payoutsPage]);
 
   // Product Reordering: Move Up / Down
   const handleMoveProductOrder = async (prodId, direction) => {
@@ -1013,7 +1059,7 @@ export default function SuperadminDashboardPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredOrders.map(order => (
+                      paginatedOrders.map(order => (
                         <tr key={order.id} className="hover:bg-slate-50 transition-colors">
                           <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{order.orderNumber}</td>
                           <td className="py-3.5 px-4">
@@ -1073,6 +1119,13 @@ export default function SuperadminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={ordersPage}
+                totalItems={filteredOrders.length}
+                pageSize={ORDERS_PER_PAGE}
+                onPageChange={setOrdersPage}
+                itemName="orders"
+              />
             </div>
           )}
 
@@ -1203,8 +1256,9 @@ export default function SuperadminDashboardPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredProducts.map((prod, idx) => {
+                  {paginatedProducts.map((prod, idx) => {
                     const isPaused = prod.isActive === false;
+                    const globalIdx = (productsPage - 1) * PRODUCTS_PER_PAGE + idx;
                     return (
                       <div
                         key={prod.id}
@@ -1311,7 +1365,7 @@ export default function SuperadminDashboardPage() {
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleMoveProductOrder(prod.id, 'up')}
-                                  disabled={idx === 0 || isReorderingProducts}
+                                  disabled={globalIdx === 0 || isReorderingProducts}
                                   className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-purple-100 text-slate-700 hover:text-purple-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
                                   title="Move up 1 position in public view"
                                 >
@@ -1319,7 +1373,7 @@ export default function SuperadminDashboardPage() {
                                 </button>
                                 <button
                                   onClick={() => handleMoveProductOrder(prod.id, 'down')}
-                                  disabled={idx === filteredProducts.length - 1 || isReorderingProducts}
+                                  disabled={globalIdx === filteredProducts.length - 1 || isReorderingProducts}
                                   className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-purple-100 text-slate-700 hover:text-purple-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
                                   title="Move down 1 position in public view"
                                 >
@@ -1388,6 +1442,13 @@ export default function SuperadminDashboardPage() {
                   })}
                 </div>
               )}
+              <Pagination
+                currentPage={productsPage}
+                totalItems={filteredProducts.length}
+                pageSize={PRODUCTS_PER_PAGE}
+                onPageChange={setProductsPage}
+                itemName="products"
+              />
             </div>
           )}
 
@@ -1453,7 +1514,7 @@ export default function SuperadminDashboardPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredAdmins.map(adm => (
+                      paginatedAdmins.map(adm => (
                         <tr
                           key={adm.id}
                           onClick={() => router.push(`/superadmin/partners/${adm.id}`)}
@@ -1510,6 +1571,13 @@ export default function SuperadminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={adminsPage}
+                totalItems={filteredAdmins.length}
+                pageSize={ADMINS_PER_PAGE}
+                onPageChange={setAdminsPage}
+                itemName="partners"
+              />
             </div>
           )}
 
@@ -1577,7 +1645,7 @@ export default function SuperadminDashboardPage() {
                         </td>
                       </tr>
                     ) : (
-                      filteredUsers.map(usr => (
+                      paginatedUsers.map(usr => (
                         <tr
                           key={usr.id}
                           onClick={() => router.push(`/superadmin/customers/${usr.id}`)}
@@ -1630,6 +1698,13 @@ export default function SuperadminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={usersPage}
+                totalItems={filteredUsers.length}
+                pageSize={USERS_PER_PAGE}
+                onPageChange={setUsersPage}
+                itemName="customers"
+              />
             </div>
           )}
 
@@ -1662,7 +1737,7 @@ export default function SuperadminDashboardPage() {
                         </td>
                       </tr>
                     ) : (
-                      payouts.map(pay => (
+                      paginatedPayouts.map(pay => (
                         <tr key={pay.id} className="hover:bg-slate-50 transition-colors">
                           <td className="py-3.5 px-4">
                             <p className="font-bold text-slate-900">{pay.admin?.orgName || pay.admin?.name}</p>
@@ -1712,6 +1787,13 @@ export default function SuperadminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={payoutsPage}
+                totalItems={payouts.length}
+                pageSize={PAYOUTS_PER_PAGE}
+                onPageChange={setPayoutsPage}
+                itemName="payout requests"
+              />
             </div>
           )}
 

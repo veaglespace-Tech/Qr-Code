@@ -5,7 +5,23 @@ const imagekit = require('../lib/imagekit');
 const fs = require('fs');
 const path = require('path');
 
+// In-memory cache for product catalog
+let cachedProducts = null;
+let lastProductsFetch = 0;
+const PRODUCTS_CACHE_TTL = 60 * 1000;
+
+function clearProductsCache() {
+  cachedProducts = null;
+  lastProductsFetch = 0;
+}
+exports.clearProductsCache = clearProductsCache;
+
 exports.getProducts = asyncHandler(async (req, res) => {
+  const now = Date.now();
+  if (cachedProducts && (now - lastProductsFetch < PRODUCTS_CACHE_TTL)) {
+    return res.json({ success: true, products: cachedProducts });
+  }
+
   const products = await prisma.product.findMany({
     orderBy: [
       { displayOrder: 'asc' },
@@ -18,6 +34,9 @@ exports.getProducts = asyncHandler(async (req, res) => {
     features: p.features ? JSON.parse(p.features) : [],
     specs: p.specs ? JSON.parse(p.specs) : {}
   }));
+
+  cachedProducts = parsed;
+  lastProductsFetch = Date.now();
 
   return res.json({ success: true, products: parsed });
 });
@@ -74,6 +93,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
     }
   });
 
+  clearProductsCache();
   return res.status(201).json({
     success: true,
     product: {
@@ -115,6 +135,7 @@ exports.updateProduct = asyncHandler(async (req, res) => {
     }
   });
 
+  clearProductsCache();
   return res.json({
     success: true,
     product: {
@@ -138,6 +159,7 @@ exports.reorderProducts = asyncHandler(async (req, res) => {
       )
     );
   }
+  clearProductsCache();
   return res.json({ success: true, message: 'Products display ordering updated' });
 });
 
@@ -182,6 +204,7 @@ exports.deleteProduct = asyncHandler(async (req, res) => {
     });
   });
 
+  clearProductsCache();
   return res.json({ success: true, message: 'Product deleted successfully' });
 });
 

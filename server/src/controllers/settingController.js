@@ -3,7 +3,28 @@ const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { sendContactInquiryEmails } = require('../utils/mailer');
 
+// In-memory cache for ultra-fast response
+let cachedSettings = null;
+let lastSettingsFetch = 0;
+const SETTINGS_CACHE_TTL = 60 * 1000;
+
+function clearSettingsCache() {
+  cachedSettings = null;
+  lastSettingsFetch = 0;
+}
+
+exports.clearSettingsCache = clearSettingsCache;
+
 exports.getSettings = asyncHandler(async (req, res) => {
+  const now = Date.now();
+  if (cachedSettings && (now - lastSettingsFetch < SETTINGS_CACHE_TTL)) {
+    const safeSettings = { ...cachedSettings };
+    if (!req.user || req.user.role !== 'SUPERADMIN') {
+      delete safeSettings.payuMerchantSalt;
+    }
+    return res.json({ success: true, settings: safeSettings });
+  }
+
   let settings = await prisma.setting.findFirst();
 
   const accurateAddress = "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041";
@@ -46,6 +67,10 @@ exports.getSettings = asyncHandler(async (req, res) => {
       });
     }
   }
+
+  // Update in-memory cache
+  cachedSettings = { ...settings };
+  lastSettingsFetch = Date.now();
 
   // Mask secret salt unless superadmin
   const safeSettings = { ...settings };
@@ -107,6 +132,7 @@ exports.updateSettings = asyncHandler(async (req, res) => {
     });
   }
 
+  clearSettingsCache();
   return res.json({ success: true, settings, message: 'Settings saved successfully' });
 });
 

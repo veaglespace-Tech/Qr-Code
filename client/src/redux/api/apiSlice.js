@@ -15,6 +15,7 @@ export const apiSlice = createApi({
     // ---------------- AUTH ENDPOINTS ----------------
     getMe: builder.query({
       query: () => '/auth/me',
+      keepUnusedDataFor: 180,
       providesTags: ['Auth'],
     }),
     login: builder.mutation({
@@ -80,6 +81,7 @@ export const apiSlice = createApi({
     // ---------------- PRODUCT ENDPOINTS ----------------
     getProducts: builder.query({
       query: () => '/products',
+      keepUnusedDataFor: 300,
       providesTags: (result) =>
         result?.products
           ? [
@@ -137,6 +139,7 @@ export const apiSlice = createApi({
     // ---------------- SETTINGS ENDPOINTS ----------------
     getSettings: builder.query({
       query: () => '/settings',
+      keepUnusedDataFor: 300,
       providesTags: ['Setting'],
     }),
     updateSettings: builder.mutation({
@@ -275,6 +278,7 @@ export const apiSlice = createApi({
     // ---------------- PARTNER PRODUCT LINKS ----------------
     getMyProductLinks: builder.query({
       query: () => '/admin/product-links',
+      keepUnusedDataFor: 120,
       providesTags: ['PartnerLink'],
     }),
     generateProductLink: builder.mutation({

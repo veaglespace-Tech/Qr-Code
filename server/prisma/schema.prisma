@@ -73,6 +73,9 @@ model Product {
 
   // Partner product links
   partnerLinks  PartnerProductLink[]
+
+  @@index([displayOrder])
+  @@index([isActive])
 }
 
 model Order {
@@ -127,6 +130,9 @@ model Order {
 
   @@index([userId])
   @@index([adminReferralId])
+  @@index([paymentStatus])
+  @@index([orderStatus])
+  @@index([createdAt])
 }
 
 model Setting {

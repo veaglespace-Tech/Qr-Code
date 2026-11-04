@@ -204,12 +204,49 @@ export default function SuperadminDashboardPage() {
     }
   };
 
-  const analytics = anaData?.analytics || null;
   const orders = ordData?.orders || [];
   const products = prodData?.products || [];
   const admins = admData?.admins || [];
   const users = usrData?.users || [];
   const payouts = payData?.payouts || [];
+
+  // Guaranteed resilient analytics with instant fallback computation from loaded entities
+  const analytics = useMemo(() => {
+    if (anaData?.analytics) {
+      return {
+        totalRevenue: anaData.analytics.totalRevenue ?? 0,
+        totalGstCollected: anaData.analytics.totalGstCollected ?? 0,
+        totalAdminCommissions: anaData.analytics.totalAdminCommissions ?? 0,
+        netPlatformProfit: anaData.analytics.netPlatformProfit ?? 0,
+        totalOrdersCount: anaData.analytics.totalOrdersCount ?? orders.length,
+        paidOrdersCount: anaData.analytics.paidOrdersCount ?? 0,
+        partnersCount: anaData.analytics.partnersCount ?? admins.length,
+        customersCount: anaData.analytics.customersCount ?? users.length,
+        productsCount: anaData.analytics.productsCount ?? products.length,
+        totalPaidOut: anaData.analytics.totalPaidOut ?? 0,
+        pendingPayoutsCount: anaData.analytics.pendingPayoutsCount ?? 0
+      };
+    }
+
+    const paidOrders = orders.filter(o => o.paymentStatus === 'paid');
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + (o.finalAmount || 0), 0);
+    const totalGstCollected = paidOrders.reduce((sum, o) => sum + (o.gstAmount || 0), 0);
+    const totalAdminCommissions = paidOrders.reduce((sum, o) => sum + (o.adminCommissionAmount || 0), 0);
+
+    return {
+      totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+      totalGstCollected: parseFloat(totalGstCollected.toFixed(2)),
+      totalAdminCommissions: parseFloat(totalAdminCommissions.toFixed(2)),
+      netPlatformProfit: parseFloat((totalRevenue - totalGstCollected - totalAdminCommissions).toFixed(2)),
+      totalOrdersCount: orders.length,
+      paidOrdersCount: paidOrders.length,
+      partnersCount: admins.length,
+      customersCount: users.length,
+      productsCount: products.length,
+      totalPaidOut: 0,
+      pendingPayoutsCount: payouts.filter(p => p.status === 'pending').length
+    };
+  }, [anaData, orders, admins, users, products, payouts]);
 
   const [siteSettings, setSiteSettings] = useState({});
 
@@ -849,7 +886,7 @@ export default function SuperadminDashboardPage() {
         {/* Scrollable View Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
           {/* ================= TAB 1: ANALYTICS & OVERVIEW ================= */}
-          {activeTab === 'analytics' && analytics && (
+          {activeTab === 'analytics' && (
             <div className="space-y-6">
               {/* Top 4 KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -968,28 +1005,36 @@ export default function SuperadminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {orders.slice(0, 5).map(o => (
-                        <tr key={o.id} className="hover:bg-slate-50">
-                          <td className="py-3 px-3 font-mono font-bold text-slate-900">{o.orderNumber}</td>
-                          <td className="py-3 px-3">
-                            <span className="font-semibold text-slate-900 block">{o.customerName}</span>
-                            <span className="text-[11px] text-slate-400">{o.businessName || o.customerPhone}</span>
-                          </td>
-                          <td className="py-3 px-3 font-black text-slate-900">₹{o.finalAmount}</td>
-                          <td className="py-3 px-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              o.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {o.paymentStatus}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3">
-                            <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-bold uppercase">
-                              {o.orderStatus}
-                            </span>
+                      {orders.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
+                            No customer orders placed yet. Orders will appear here as they are placed.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        orders.slice(0, 5).map(o => (
+                          <tr key={o.id} className="hover:bg-slate-50">
+                            <td className="py-3 px-3 font-mono font-bold text-slate-900">{o.orderNumber}</td>
+                            <td className="py-3 px-3">
+                              <span className="font-semibold text-slate-900 block">{o.customerName}</span>
+                              <span className="text-[11px] text-slate-400">{o.businessName || o.customerPhone}</span>
+                            </td>
+                            <td className="py-3 px-3 font-black text-slate-900">₹{o.finalAmount}</td>
+                            <td className="py-3 px-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                o.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {o.paymentStatus}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-bold uppercase">
+                                {o.orderStatus}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

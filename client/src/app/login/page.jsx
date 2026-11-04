@@ -39,13 +39,10 @@ export default function LoginPage() {
   const [sendSuperadminOtp, { isLoading: sendingSuperOtp }] = useSendSuperadminOtpMutation();
   const [verifySuperadminOtp, { isLoading: verifyingSuperOtp }] = useVerifySuperadminOtpMutation();
 
-  // Mode state: 'password' (standard for all users/partners/superadmin) | 'superadmin_otp' (OTP only for superadmin)
-  const [loginMode, setLoginMode] = useState('password');
-
-  // Superadmin OTP state
+  // OTP Verification state (automatically active when Superadmin signs in or requests OTP)
+  const [isOtpStep, setIsOtpStep] = useState(false);
   const [superadminEmail, setSuperadminEmail] = useState('');
   const [superadminOtp, setSuperadminOtp] = useState('');
-  const [superadminStep, setSuperadminStep] = useState(1); // 1 = email, 2 = otp
   const [superadminCooldown, setSuperadminCooldown] = useState(0);
 
   // Login form states
@@ -112,33 +109,23 @@ export default function LoginPage() {
     }
   };
 
-  // Superadmin OTP: Send Code
-  const handleSuperadminSendOtp = async (e) => {
-    e.preventDefault();
+  // Superadmin OTP: Direct request without password
+  const handleRequestOtpOnly = async () => {
     setFormError('');
     setFormSuccess('');
 
-    const cleanEmail = superadminEmail.trim().toLowerCase();
+    const cleanEmail = identifier.trim().toLowerCase();
     if (!cleanEmail) {
-      const msg = 'Please enter your Superadmin email address.';
+      const msg = 'Please enter your Superadmin email address in the field above.';
       setFormError(msg);
       toast.error(msg);
-      return;
-    }
-
-    // Verify calculation captcha
-    const expected = captcha.num1 + captcha.num2;
-    if (parseInt(captchaInput.trim(), 10) !== expected) {
-      const msg = `Security verification was incorrect. Please solve ${captcha.num1} + ${captcha.num2}.`;
-      setFormError(msg);
-      toast.error(msg);
-      generateCaptcha();
       return;
     }
 
     try {
       const res = await sendSuperadminOtp({ email: cleanEmail }).unwrap();
-      setSuperadminStep(2);
+      setIsOtpStep(true);
+      setSuperadminEmail(cleanEmail);
       setSuperadminCooldown(60);
       setFormSuccess(res.message || `Security OTP sent to ${cleanEmail}`);
       toast.success(res.message || `Security OTP sent to ${cleanEmail}`);
@@ -146,7 +133,6 @@ export default function LoginPage() {
       const friendly = formatUserFriendlyError(err);
       setFormError(friendly);
       toast.error(friendly);
-      generateCaptcha();
     }
   };
 
@@ -227,6 +213,15 @@ export default function LoginPage() {
 
     try {
       const res = await login({ email: cleanInput, password }).unwrap();
+      // If Superadmin, direct password login is intercepted and OTP verification is required
+      if (res.requiresOtp) {
+        setIsOtpStep(true);
+        setSuperadminEmail(res.email || cleanInput);
+        setSuperadminCooldown(60);
+        setFormSuccess(res.message || `Security OTP sent to ${res.email}`);
+        toast.success(res.message || `Security OTP sent to ${res.email}`);
+        return;
+      }
       toast.success(`Welcome back, ${res.user?.name || 'User'}!`);
       handleRedirect(res.user);
     } catch (err) {
@@ -355,37 +350,8 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* Login Mode Switcher */}
-      <div className="flex p-1 bg-slate-100 rounded-2xl border border-slate-200">
-        <button
-          type="button"
-          onClick={() => { setLoginMode('password'); setFormError(''); setFormSuccess(''); }}
-          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            loginMode === 'password'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <Lock className="w-3.5 h-3.5" />
-          <span>Password Login</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => { setLoginMode('superadmin_otp'); setFormError(''); setFormSuccess(''); }}
-          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-            loginMode === 'superadmin_otp'
-              ? 'bg-purple-600 text-white shadow-sm shadow-purple-600/25'
-              : 'text-slate-500 hover:text-purple-600'
-          }`}
-        >
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Superadmin OTP</span>
-          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${loginMode === 'superadmin_otp' ? 'bg-purple-700 text-white' : 'bg-purple-100 text-purple-700'}`}>2FA</span>
-        </button>
-      </div>
-
-      {/* Main Login Form (Standard for Customer, Partner, Admin, Superadmin) */}
-      {loginMode === 'password' && (
+      {/* Single Login Form (Customer, Partner, Superadmin) */}
+      {!isOtpStep && (
       <form onSubmit={handleLoginSubmit} className="glass-panel bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 space-y-4 shadow-sm">
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -407,13 +373,22 @@ export default function LoginPage() {
         <div>
           <div className="flex justify-between items-center mb-1">
             <label className="block text-xs font-bold text-slate-700">Password</label>
-            <button
-              type="button"
-              onClick={openForgotPassword}
-              className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
-            >
-              Forgot Password?
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleRequestOtpOnly}
+                className="text-[11px] font-semibold text-purple-600 hover:text-purple-700 hover:underline cursor-pointer"
+              >
+                Login via OTP
+              </button>
+              <button
+                type="button"
+                onClick={openForgotPassword}
+                className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
+              >
+                Forgot Password?
+              </button>
+            </div>
           </div>
           <div className="relative">
             <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -497,159 +472,90 @@ export default function LoginPage() {
       </form>
       )}
 
-      {/* Superadmin OTP Login Form */}
-      {loginMode === 'superadmin_otp' && (
+      {/* Superadmin OTP Verification Card */}
+      {isOtpStep && (
         <div className="glass-panel bg-white rounded-3xl p-6 sm:p-8 border border-purple-200 space-y-5 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600" />
 
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50 border border-purple-100 text-purple-700 text-[11px] font-bold">
               <Shield className="w-3.5 h-3.5 text-purple-600" />
-              <span>Restricted Superadmin Access</span>
+              <span>Superadmin Security Verification</span>
             </div>
             <h2 className="text-base font-black text-slate-900 tracking-tight pt-1">
-              One-Time Password (OTP) Sign In
+              Enter 6-Digit Access Code
             </h2>
             <p className="text-xs text-slate-500 leading-relaxed">
-              {superadminStep === 1
-                ? 'Enter your registered Superadmin email address. We will send a secure 6-digit access code.'
-                : `Enter the 6-digit security OTP code sent to ${superadminEmail}`}
+              We have sent a 6-digit security code to{' '}
+              <strong className="text-slate-900">{superadminEmail}</strong>.
             </p>
           </div>
 
-          {superadminStep === 1 ? (
-            <form onSubmit={handleSuperadminSendOtp} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Superadmin Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="email"
-                    required
-                    value={superadminEmail}
-                    onChange={(e) => setSuperadminEmail(e.target.value)}
-                    placeholder="veaglespace@gmail.com"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-purple-50/20 border border-purple-200 text-slate-900 text-xs focus:outline-none focus:border-purple-500 focus:bg-white transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Security Verification (Math Captcha) */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xs font-bold text-slate-700">Security Verification</label>
-                  <button
-                    type="button"
-                    onClick={generateCaptcha}
-                    className="text-[11px] font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>New</span>
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 flex items-center justify-center py-2.5 px-3 rounded-xl bg-purple-50/50 border border-purple-100 select-none font-mono font-bold text-xs text-slate-800 tracking-wider">
-                    <ShieldCheck className="w-4 h-4 text-purple-600 mr-2 shrink-0" />
-                    <span>{captcha.num1} + {captcha.num2} = ?</span>
-                  </div>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    required
-                    value={captchaInput}
-                    onChange={(e) => setCaptchaInput(e.target.value)}
-                    placeholder="Answer"
-                    className="w-28 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold text-center focus:outline-none focus:border-purple-500 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={sendingSuperOtp}
-                className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50 cursor-pointer"
-              >
-                {sendingSuperOtp ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Sending Security Code...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Send Security OTP</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleSuperadminVerifyOtp} className="space-y-4">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xs font-bold text-slate-700">Enter 6-Digit OTP</label>
-                  <button
-                    type="button"
-                    onClick={() => { setSuperadminStep(1); setSuperadminOtp(''); }}
-                    className="text-[11px] text-purple-600 hover:underline font-semibold cursor-pointer"
-                  >
-                    Change Email
-                  </button>
-                </div>
-                <div className="relative">
-                  <KeyRound className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    maxLength={6}
-                    required
-                    value={superadminOtp}
-                    onChange={(e) => setSuperadminOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="••••••"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-purple-50/30 border border-purple-200 text-slate-900 text-center font-mono font-black text-xl tracking-[0.5em] focus:outline-none focus:border-purple-500 focus:bg-white transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-xs pt-1">
-                <span className="text-slate-500">Didn&apos;t receive code?</span>
+          <form onSubmit={handleSuperadminVerifyOtp} className="space-y-4">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-bold text-slate-700">Security OTP Code</label>
                 <button
                   type="button"
-                  disabled={superadminCooldown > 0 || sendingSuperOtp}
-                  onClick={handleSuperadminResendOtp}
-                  className="font-bold text-purple-600 hover:text-purple-700 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer"
+                  onClick={() => { setIsOtpStep(false); setSuperadminOtp(''); }}
+                  className="text-[11px] text-purple-600 hover:underline font-semibold cursor-pointer"
                 >
-                  {superadminCooldown > 0 ? `Resend OTP in ${superadminCooldown}s` : 'Resend Security Code'}
+                  Change Email / Re-login
                 </button>
               </div>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  value={superadminOtp}
+                  onChange={(e) => setSuperadminOtp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="••••••"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-purple-50/30 border border-purple-200 text-slate-900 text-center font-mono font-black text-xl tracking-[0.5em] focus:outline-none focus:border-purple-500 focus:bg-white transition-colors"
+                />
+              </div>
+            </div>
 
+            <div className="flex items-center justify-between text-xs pt-1">
+              <span className="text-slate-500">Didn&apos;t receive code?</span>
               <button
-                type="submit"
-                disabled={verifyingSuperOtp || superadminOtp.length !== 6}
-                className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50 cursor-pointer"
+                type="button"
+                disabled={superadminCooldown > 0 || sendingSuperOtp}
+                onClick={handleSuperadminResendOtp}
+                className="font-bold text-purple-600 hover:text-purple-700 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer"
               >
-                {verifyingSuperOtp ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Verifying & Entering Console...</span>
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Verify & Enter Superadmin Console</span>
-                  </>
-                )}
+                {superadminCooldown > 0 ? `Resend OTP in ${superadminCooldown}s` : 'Resend Security Code'}
               </button>
-            </form>
-          )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={verifyingSuperOtp || superadminOtp.length !== 6}
+              className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50 cursor-pointer"
+            >
+              {verifyingSuperOtp ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Verifying & Entering Console...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Verify & Enter Superadmin Console</span>
+                </>
+              )}
+            </button>
+          </form>
 
           <div className="pt-2 text-center text-xs border-t border-slate-100">
             <button
               type="button"
-              onClick={() => { setLoginMode('password'); setFormError(''); setFormSuccess(''); }}
+              onClick={() => { setIsOtpStep(false); setSuperadminOtp(''); setFormError(''); }}
               className="text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
             >
-              &larr; Return to Standard Password Login
+              &larr; Back to Login
             </button>
           </div>
         </div>

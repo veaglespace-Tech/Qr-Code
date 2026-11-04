@@ -470,6 +470,32 @@ exports.login = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Your account is deactivated. Please contact support.');
   }
 
+  // Strictly enforce 2FA OTP for SUPERADMIN: Direct password login is completely blocked!
+  if (user.role === 'SUPERADMIN') {
+    const otpRes = createOTP(user.email);
+    if (!otpRes.success) {
+      throw new ApiError(429, otpRes.error || 'Please wait before requesting another OTP.');
+    }
+
+    const sendRes = await sendVerificationEmail(
+      user.email,
+      otpRes.otp,
+      user.name || 'Master Superadmin',
+      'Superadmin Login'
+    );
+
+    return res.json({
+      success: true,
+      requiresOtp: true,
+      role: 'SUPERADMIN',
+      email: user.email,
+      message: sendRes.delivered
+        ? `Security OTP sent to ${user.email}. Please enter the 6-digit code to access Superadmin Console.`
+        : `Security code generated for ${user.email}.`,
+      devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
+    });
+  }
+
   const token = generateToken(user);
   const { password: _, ...safeUser } = user;
 

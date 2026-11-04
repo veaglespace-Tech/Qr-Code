@@ -42,8 +42,8 @@ exports.getSettings = asyncHandler(async (req, res) => {
         supportPhone: accuratePhone,
         whatsappNumber: accurateWhatsapp,
         address: accurateAddress,
-        payuMerchantKey: "GKJE3Z",
-        payuMerchantSalt: "0zqiCnB4GslxAanSxjEAutWkWuggFiGs"
+        payuMerchantKey: process.env.PAYU_MERCHANT_KEY || "sV29rC",
+        payuMerchantSalt: process.env.PAYU_MERCHANT_SALT || "tkhRPTPLZtQRHlnuruaKzB9OSbvdS2sA"
       }
     });
   } else {
@@ -113,8 +113,8 @@ exports.updateSettings = asyncHandler(async (req, res) => {
     settings = await prisma.setting.create({
       data: {
         id: 1,
-        payuMerchantKey: 'GKJE3Z',
-        payuMerchantSalt: '0zqiCnB4GslxAanSxjEAutWkWuggFiGs',
+        payuMerchantKey: process.env.PAYU_MERCHANT_KEY || 'sV29rC',
+        payuMerchantSalt: process.env.PAYU_MERCHANT_SALT || 'tkhRPTPLZtQRHlnuruaKzB9OSbvdS2sA',
         ...updates
       }
     });

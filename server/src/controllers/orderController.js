@@ -212,60 +212,27 @@ exports.createOrder = asyncHandler(async (req, res) => {
     }
   }
 
-  const isDummyOrInvalid = (val) => {
-    if (!val || typeof val !== 'string') return true;
-    const s = val.trim();
-    if (s.length < 5) return true;
-    if (s.toUpperCase().includes('DEMO')) return true;
-    if (s.includes('••••')) return true;
-    return false;
-  };
+  // PayU Gateway credentials directly from env, with fallback to settings
+  const payuKey = (
+    process.env.PAYU_MERCHANT_KEY ||
+    process.env.PAYU_KEY ||
+    settings?.payuMerchantKey ||
+    'sV29rC'
+  ).trim();
 
-  // Determine PayU Mode: Environment variable PAYU_MODE takes highest priority, then database setting
-  const envMode = (process.env.PAYU_MODE || '').trim().toLowerCase();
-  const dbMode = (settings?.payuMode || '').trim().toLowerCase();
-  const isLive = envMode === 'live' || envMode === 'production' || (envMode !== 'test' && dbMode === 'live');
+  const payuSalt = (
+    process.env.PAYU_MERCHANT_SALT ||
+    process.env.PAYU_SALT ||
+    settings?.payuMerchantSalt ||
+    'tkhRPTPLZtQRHlnuruaKzB9OSbvdS2sA'
+  ).trim();
 
-  const defaultTestKey = 'GKJE3Z';
-  const defaultTestSalt = '0zqiCnB4GslxAanSxjEAutWkWuggFiGs';
+  const payuActionUrl = (
+    process.env.PAYU_BASE_URL ||
+    'https://secure.payu.in/_payment'
+  ).trim();
 
-  let payuKey;
-  let payuSalt;
-
-  if (isLive) {
-    // In live mode, check LIVE variables first, then generic merchant variables, then DB setting
-    payuKey = (!isDummyOrInvalid(process.env.PAYU_LIVE_KEY) ? process.env.PAYU_LIVE_KEY.trim() : null)
-      || (!isDummyOrInvalid(process.env.PAYU_MERCHANT_KEY) ? process.env.PAYU_MERCHANT_KEY.trim() : null)
-      || (!isDummyOrInvalid(process.env.PAYU_KEY) ? process.env.PAYU_KEY.trim() : null)
-      || (!isDummyOrInvalid(settings?.payuMerchantKey) ? settings.payuMerchantKey.trim() : null)
-      || defaultTestKey;
-
-    payuSalt = (!isDummyOrInvalid(process.env.PAYU_LIVE_SALT) ? process.env.PAYU_LIVE_SALT.trim() : null)
-      || (!isDummyOrInvalid(process.env.PAYU_MERCHANT_SALT) ? process.env.PAYU_MERCHANT_SALT.trim() : null)
-      || (!isDummyOrInvalid(process.env.PAYU_SALT) ? process.env.PAYU_SALT.trim() : null)
-      || (!isDummyOrInvalid(settings?.payuMerchantSalt) ? settings.payuMerchantSalt.trim() : null)
-      || defaultTestSalt;
-  } else {
-    // In test mode, check TEST variables first, then DB setting, then generic merchant variables
-    payuKey = (!isDummyOrInvalid(process.env.PAYU_TEST_KEY) ? process.env.PAYU_TEST_KEY.trim() : null)
-      || (!isDummyOrInvalid(settings?.payuMerchantKey) ? settings.payuMerchantKey.trim() : null)
-      || (!isDummyOrInvalid(process.env.PAYU_MERCHANT_KEY) ? process.env.PAYU_MERCHANT_KEY.trim() : null)
-      || (!isDummyOrInvalid(process.env.PAYU_KEY) ? process.env.PAYU_KEY.trim() : null)
-      || defaultTestKey;
-
-    payuSalt = (!isDummyOrInvalid(process.env.PAYU_TEST_SALT) ? process.env.PAYU_TEST_SALT.trim() : null)
-      || (!isDummyOrInvalid(settings?.payuMerchantSalt) ? settings.payuMerchantSalt.trim() : null)
-      || (!isDummyOrInvalid(process.env.PAYU_MERCHANT_SALT) ? process.env.PAYU_MERCHANT_SALT.trim() : null)
-      || (!isDummyOrInvalid(process.env.PAYU_SALT) ? process.env.PAYU_SALT.trim() : null)
-      || defaultTestSalt;
-  }
-
-  // Determine gateway action URL based on active mode
-  const payuActionUrl = isLive
-    ? 'https://secure.payu.in/_payment'
-    : (process.env.PAYU_BASE_URL || 'https://test.payu.in/_payment');
-
-  console.log(`[PayU Checkout] Mode: ${isLive ? 'LIVE' : 'TEST'}, Endpoint: ${payuActionUrl}, Key: ${payuKey.slice(0, 4)}***`);
+  console.log(`[PayU Checkout] Action URL: ${payuActionUrl}, Key: ${payuKey.slice(0, 4)}***`);
 
   const payuHash = generatePayUHash({
     key: payuKey,

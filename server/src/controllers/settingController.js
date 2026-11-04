@@ -54,7 +54,11 @@ exports.getSettings = asyncHandler(async (req, res) => {
     const isDummyWhatsapp = !settings.whatsappNumber || settings.whatsappNumber === '919876543210';
     const isOldSiteName = settings.siteName === 'Review Express';
 
-    if (isDummyAddress || isDummyEmail || isDummyPhone || isDummyWhatsapp || isOldSiteName) {
+    const activePayuKey = (process.env.PAYU_MERCHANT_KEY || "sV29rC").trim();
+    const activePayuSalt = (process.env.PAYU_MERCHANT_SALT || "tkhRPTPLZtQRHlnuruaKzB9OSbvdS2sA").trim();
+    const isOldPayu = !settings.payuMerchantKey || settings.payuMerchantKey === 'GKJE3Z' || settings.payuMode === 'test';
+
+    if (isDummyAddress || isDummyEmail || isDummyPhone || isDummyWhatsapp || isOldSiteName || isOldPayu) {
       settings = await prisma.setting.update({
         where: { id: settings.id },
         data: {
@@ -62,7 +66,8 @@ exports.getSettings = asyncHandler(async (req, res) => {
           ...(isDummyAddress ? { address: accurateAddress } : {}),
           ...(isDummyEmail ? { supportEmail: accurateEmail } : {}),
           ...(isDummyPhone ? { supportPhone: accuratePhone } : {}),
-          ...(isDummyWhatsapp ? { whatsappNumber: accurateWhatsapp } : {})
+          ...(isDummyWhatsapp ? { whatsappNumber: accurateWhatsapp } : {}),
+          ...(isOldPayu ? { payuMerchantKey: activePayuKey, payuMerchantSalt: activePayuSalt, payuMode: 'live' } : {})
         }
       });
     }

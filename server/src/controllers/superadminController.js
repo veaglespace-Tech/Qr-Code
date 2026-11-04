@@ -127,19 +127,49 @@ exports.getAdminById = asyncHandler(async (req, res) => {
 
 exports.deleteAdmin = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const adminIdInt = parseInt(id, 10);
 
-  // First nullify references in orders so FK constraint doesn't break
+  // 1. Nullify references in orders where admin was the referrer
   await prisma.order.updateMany({
-    where: { adminReferralId: parseInt(id) },
+    where: { adminReferralId: adminIdInt },
     data: { adminReferralId: null }
   });
 
-  // Delete payouts first
+  // 2. Handle partner product links: unlink orders first, then delete links
+  const partnerLinks = await prisma.partnerProductLink.findMany({
+    where: { adminId: adminIdInt },
+    select: { id: true }
+  });
+  if (partnerLinks.length > 0) {
+    const linkIds = partnerLinks.map(l => l.id);
+    await prisma.order.updateMany({
+      where: { partnerLinkId: { in: linkIds } },
+      data: { partnerLinkId: null }
+    });
+    await prisma.partnerProductLink.deleteMany({
+      where: { adminId: adminIdInt }
+    });
+  }
+
+  // 3. Delete all payouts associated with this partner
   await prisma.payout.deleteMany({
-    where: { adminId: parseInt(id) }
+    where: { adminId: adminIdInt }
   });
 
-  await prisma.user.delete({ where: { id: parseInt(id) } });
+  // 4. Nullify referral tree references for users referred by this partner
+  await prisma.user.updateMany({
+    where: { referredById: adminIdInt },
+    data: { referredById: null }
+  });
+
+  // 5. Unlink any personal orders placed by this user account
+  await prisma.order.updateMany({
+    where: { userId: adminIdInt },
+    data: { userId: null }
+  });
+
+  // 6. Delete the partner user account
+  await prisma.user.delete({ where: { id: adminIdInt } });
 
   return res.json({ success: true, message: 'Partner account permanently deleted' });
 });
@@ -359,15 +389,48 @@ exports.updateUser = asyncHandler(async (req, res) => {
 
 exports.deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  const userIdInt = parseInt(id, 10);
 
-  // Preserve order history by unlinking user
+  // 1. Preserve order history by unlinking user
   await prisma.order.updateMany({
-    where: { userId: parseInt(id) },
+    where: { userId: userIdInt },
     data: { userId: null }
   });
 
+  // 2. Unlink any referral relationships
+  await prisma.order.updateMany({
+    where: { adminReferralId: userIdInt },
+    data: { adminReferralId: null }
+  });
+
+  await prisma.user.updateMany({
+    where: { referredById: userIdInt },
+    data: { referredById: null }
+  });
+
+  // 3. Clean up any partner product links and payouts if present
+  const partnerLinks = await prisma.partnerProductLink.findMany({
+    where: { adminId: userIdInt },
+    select: { id: true }
+  });
+  if (partnerLinks.length > 0) {
+    const linkIds = partnerLinks.map(l => l.id);
+    await prisma.order.updateMany({
+      where: { partnerLinkId: { in: linkIds } },
+      data: { partnerLinkId: null }
+    });
+    await prisma.partnerProductLink.deleteMany({
+      where: { adminId: userIdInt }
+    });
+  }
+
+  await prisma.payout.deleteMany({
+    where: { adminId: userIdInt }
+  });
+
+  // 4. Delete user account
   await prisma.user.delete({
-    where: { id: parseInt(id) }
+    where: { id: userIdInt }
   });
 
   return res.json({ success: true, message: 'Customer account deleted successfully' });

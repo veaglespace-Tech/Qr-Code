@@ -113,6 +113,7 @@ async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose
   const purposeStr = (purpose || '').toString();
   const isPartner = purposeStr.toLowerCase().includes('partner') || purposeStr.toLowerCase().includes('registration');
   const isReset = purposeStr.toLowerCase().includes('reset') || purposeStr.toLowerCase().includes('forgot');
+  const isSuperadmin = purposeStr.toLowerCase().includes('superadmin');
 
   let title = 'Security Verification';
   let badgeText = 'SECURITY VERIFICATION';
@@ -120,7 +121,13 @@ async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose
   let introMessage = 'Please enter the following 6-digit verification code:';
   let emailSubject = `[${otp}] Your ReviewXpress Security Verification Code`;
 
-  if (isPartner) {
+  if (isSuperadmin) {
+    title = 'Superadmin Console Access OTP';
+    badgeText = 'SUPERADMIN 2FA';
+    badgeClass = '';
+    introMessage = 'A Superadmin login session was requested for your ReviewXpress Master Administrative Console. Enter the high-security verification code below to authorize your session:';
+    emailSubject = `[${otp}] Superadmin Login OTP - ReviewXpress`;
+  } else if (isPartner) {
     title = 'Verify Your Partner Email Address';
     badgeText = 'PARTNER VERIFICATION';
     introMessage = 'Thank you for registering as an Official Organization Partner with ReviewXpress. To ensure account security and activate your commission dashboard, enter the code below:';

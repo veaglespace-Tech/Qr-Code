@@ -54,6 +54,21 @@ export const apiSlice = createApi({
         body: data,
       }),
     }),
+    sendSuperadminOtp: builder.mutation({
+      query: (data) => ({
+        url: '/auth/superadmin/send-otp',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    verifySuperadminOtp: builder.mutation({
+      query: (data) => ({
+        url: '/auth/superadmin/verify-otp',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Auth', 'Order', 'Admin', 'Superadmin'],
+    }),
     register: builder.mutation({
       query: (userData) => ({
         url: '/auth/register',
@@ -312,6 +327,8 @@ export const {
   useResetPasswordMutation,
   useSendPartnerOtpMutation,
   useVerifyPartnerOtpMutation,
+  useSendSuperadminOtpMutation,
+  useVerifySuperadminOtpMutation,
   useRegisterMutation,
   useLogoutMutation,
   useUpdateProfileMutation,

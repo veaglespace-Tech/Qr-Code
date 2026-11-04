@@ -77,6 +77,102 @@ exports.verifyPartnerOTP = asyncHandler(async (req, res) => {
   });
 });
 
+exports.sendSuperadminOTP = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !email.trim()) {
+    throw new ApiError(400, 'Superadmin email address is required.');
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  // Find user and ensure role is SUPERADMIN
+  const user = await prisma.user.findUnique({
+    where: { email: cleanEmail }
+  });
+
+  if (!user || user.role !== 'SUPERADMIN') {
+    throw new ApiError(403, 'Access denied. Only authorized Superadmin accounts can use this login method.');
+  }
+
+  if (user.status === 'inactive') {
+    throw new ApiError(403, 'Your Superadmin account is currently deactivated.');
+  }
+
+  // Generate 6-digit OTP
+  const otpRes = createOTP(cleanEmail);
+  if (!otpRes.success) {
+    throw new ApiError(429, otpRes.error || 'Please wait before requesting another OTP.');
+  }
+
+  // Send security OTP email
+  const sendRes = await sendVerificationEmail(
+    cleanEmail,
+    otpRes.otp,
+    user.name || 'Master Superadmin',
+    'Superadmin Login'
+  );
+
+  return res.json({
+    success: true,
+    message: sendRes.delivered
+      ? `A 6-digit security code has been sent to ${cleanEmail}.`
+      : `Security code generated for ${cleanEmail}.`,
+    devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
+  });
+});
+
+exports.verifySuperadminOTP = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    throw new ApiError(400, 'Email address and 6-digit security code are required.');
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanOtp = otp.toString().trim();
+
+  // Find user and ensure role is SUPERADMIN
+  const user = await prisma.user.findUnique({
+    where: { email: cleanEmail }
+  });
+
+  if (!user || user.role !== 'SUPERADMIN') {
+    throw new ApiError(403, 'Access denied. Only authorized Superadmin accounts can use this login method.');
+  }
+
+  if (user.status === 'inactive') {
+    throw new ApiError(403, 'Your Superadmin account is currently deactivated.');
+  }
+
+  // Verify OTP
+  const verifyRes = verifyOTP(cleanEmail, cleanOtp);
+  if (!verifyRes.success) {
+    throw new ApiError(400, verifyRes.error || 'Invalid or expired security code.');
+  }
+
+  // Invalidate OTP
+  consumeEmailVerification(cleanEmail);
+
+  // Issue token & set cookie
+  const token = generateToken(user);
+  const { password: _, ...safeUser } = user;
+
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+
+  return res.json({
+    success: true,
+    user: safeUser,
+    token,
+    message: `Superadmin authentication successful. Welcome, ${user.name}!`
+  });
+});
+
 exports.register = asyncHandler(async (req, res) => {
   const { name, email, password, phone, role = 'USER', orgName, bankDetails, referralCodeUsed } = req.body;
 

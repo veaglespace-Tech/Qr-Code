@@ -6,6 +6,8 @@ const { authenticate, optionalAuth } = require('../middleware/auth');
 router.post('/register', authController.register);
 router.post('/send-partner-otp', authController.sendPartnerOTP);
 router.post('/verify-partner-otp', authController.verifyPartnerOTP);
+router.post('/superadmin/send-otp', authController.sendSuperadminOTP);
+router.post('/superadmin/verify-otp', authController.verifySuperadminOTP);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
 router.post('/login', authController.login);

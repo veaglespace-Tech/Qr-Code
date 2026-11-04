@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
+import { formatUserFriendlyError } from '@/context/ToastContext';
 import {
   useGetUserByIdQuery,
   useUpdateUserMutation,
@@ -73,7 +74,8 @@ export default function CustomerDetailPage() {
   const [copiedKey, setCopiedKey] = useState('');
 
   const triggerNotice = (text, isError = false) => {
-    setNotice({ text, isError });
+    const formatted = isError ? formatUserFriendlyError(text) : text;
+    setNotice({ text: formatted, isError });
     setTimeout(() => setNotice({ text: '', isError: false }), 4000);
   };
 

@@ -75,10 +75,43 @@ app.use('/api/buy', publicRoutes);
 // Centralized Error Handler (Receives all errors forwarded by asyncHandler)
 app.use((err, req, res, next) => {
   console.error('API Error:', err);
-  const status = err.statusCode || err.status || 500;
+
+  let status = err.statusCode || err.status || 500;
+  let userMessage = 'An unexpected server error occurred. Please try again.';
+
+  // 1. Explicit ApiError thrown deliberately with custom user message
+  if (err.statusCode && err.message && !err.message.includes('prisma') && !err.message.includes('invocation')) {
+    userMessage = err.message;
+  }
+  // 2. Prisma Known Request Errors
+  else if (err.code === 'P2002') {
+    status = 400;
+    userMessage = 'A record with this information already exists in the system.';
+  } else if (err.code === 'P2003') {
+    status = 400;
+    userMessage = 'Cannot perform this action because related records (orders, links, or referrals) are connected to this account.';
+  } else if (err.code === 'P2025') {
+    status = 404;
+    userMessage = 'The requested record could not be found or has already been deleted.';
+  } else if (err.name === 'PrismaClientValidationError') {
+    status = 400;
+    userMessage = 'Invalid data provided. Please check all fields and try again.';
+  } else if (typeof err.message === 'string') {
+    const lower = err.message.toLowerCase();
+    if (lower.includes('foreign key constraint')) {
+      status = 400;
+      userMessage = 'Cannot delete or update this record because related data is linked to it.';
+    } else if (lower.includes('duplicate entry')) {
+      status = 400;
+      userMessage = 'A record with this information already exists.';
+    } else if (status < 500 && !lower.includes('prisma') && !lower.includes('c:\\') && !lower.includes('node_modules')) {
+      userMessage = err.message;
+    }
+  }
+
   res.status(status).json({
     success: false,
-    error: err.message || 'Internal Server Error'
+    error: userMessage
   });
 });
 

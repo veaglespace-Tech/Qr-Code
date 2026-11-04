@@ -9,6 +9,7 @@ import {
   useUpdateAdminMutation,
   useDeleteAdminMutation
 } from '@/redux/api/apiSlice';
+import { formatUserFriendlyError } from '@/context/ToastContext';
 import {
   ArrowLeft,
   Building,
@@ -82,8 +83,9 @@ export default function PartnerDetailPage() {
   const [notice, setNotice] = useState({ text: '', isError: false });
 
   const triggerNotice = (text, isError = false) => {
-    setNotice({ text, isError });
-    setTimeout(() => setNotice({ text: '', isError: false }), 4000);
+    const formatted = isError ? formatUserFriendlyError(text) : text;
+    setNotice({ text: formatted, isError });
+    setTimeout(() => setNotice({ text: '', isError: false }), 4500);
   };
 
   useEffect(() => {

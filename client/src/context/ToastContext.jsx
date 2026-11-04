@@ -26,6 +26,7 @@ export function formatUserFriendlyError(error) {
 
   const lower = raw.toLowerCase();
 
+  // Authentication & Login errors
   if (lower.includes('invalid email or password') || lower.includes('invalid credentials') || lower.includes('incorrect password')) {
     return 'Incorrect email/mobile or password. Please verify your details or click "Forgot Password?" to reset.';
   }
@@ -42,20 +43,52 @@ export function formatUserFriendlyError(error) {
     return 'The 6-digit code entered is incorrect or has expired. Please check your latest email and try again.';
   }
 
-  if (lower.includes('already exists')) {
-    return 'An account with this email address is already registered. Please sign in or reset your password.';
+  if (lower.includes('already exists') || lower.includes('duplicate entry')) {
+    return 'An account or record with this information already exists in the system.';
   }
 
   if (lower.includes('deactivated') || lower.includes('inactive')) {
     return 'Your account is currently inactive. Please contact ReviewXpress support.';
   }
 
-  if (lower.includes('network') || lower.includes('failed to fetch') || lower.includes('connection refused')) {
-    return 'Unable to reach the server. Please check your internet connection.';
+  if (lower.includes('access denied') || lower.includes('restricted to superadmin')) {
+    return 'Access denied. You do not have permission to perform this administrative action.';
+  }
+
+  // Database Foreign Key & Deletion constraints
+  if (lower.includes('foreign key') || lower.includes('constraint') || lower.includes('adminid') || lower.includes('userid')) {
+    return 'Cannot delete or modify this item because other active records (such as orders, links, or payouts) are connected to it.';
+  }
+
+  // Internal Prisma / Database stack traces
+  if (lower.includes('prisma') || lower.includes('invocation') || lower.includes('where:') || lower.includes('stack') || lower.includes('c:\\') || lower.includes('node_modules')) {
+    return 'A database operation could not be completed. Please refresh the page and try again.';
+  }
+
+  // Network / Connection errors
+  if (lower.includes('network') || lower.includes('failed to fetch') || lower.includes('connection refused') || lower.includes('econnrefused')) {
+    return 'Unable to connect to the server. Please check your internet connection and verify the server is running.';
+  }
+
+  if (lower.includes('cannot find module')) {
+    return 'A temporary system resource error occurred. Please refresh the page.';
   }
 
   if (lower.includes('at least 6 characters') || lower.includes('password must')) {
     return 'Password must be at least 6 characters long.';
+  }
+
+  if (lower.includes('jwt') || lower.includes('token') || lower.includes('unauthorized') || lower.includes('forbidden')) {
+    return 'Your session has expired. Please sign in again to continue.';
+  }
+
+  if (lower.includes('entity too large') || lower.includes('payload too large')) {
+    return 'The uploaded file is too large. Please select an image smaller than 5MB.';
+  }
+
+  // If the message is long and looks like an internal technical trace, replace it with a clean message
+  if (raw.length > 150 && (raw.includes('{') || raw.includes('(') || raw.includes('/') || raw.includes('\\'))) {
+    return 'An unexpected issue occurred while processing your request. Please try again.';
   }
 
   return raw;

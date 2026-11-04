@@ -27,6 +27,7 @@ import {
   useUpdateProfileMutation
 } from '@/redux/api/apiSlice';
 import { useDebounce } from '@/hooks/useDebounce';
+import { formatUserFriendlyError } from '@/context/ToastContext';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -226,8 +227,9 @@ export default function SuperadminDashboardPage() {
 
   const triggerNotice = (msg, isError = false) => {
     if (isError) {
-      setErrorMsg(msg);
-      setTimeout(() => setErrorMsg(''), 4000);
+      const friendly = formatUserFriendlyError(msg);
+      setErrorMsg(friendly);
+      setTimeout(() => setErrorMsg(''), 4500);
     } else {
       setStatusMsg(msg);
       setTimeout(() => setStatusMsg(''), 4000);

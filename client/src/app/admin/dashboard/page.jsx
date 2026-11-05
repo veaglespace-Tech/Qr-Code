@@ -29,6 +29,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  XCircle,
   Menu,
   X,
   ExternalLink,
@@ -53,7 +54,10 @@ import {
   ToggleRight,
   Zap,
   Star,
-  Info
+  Info,
+  Filter,
+  SlidersHorizontal,
+  ArrowUpDown
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import Link from 'next/link';
@@ -115,18 +119,40 @@ export default function AdminDashboardPage() {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // 1. Products Tab Search, Filter & Sort
+  const [productSearch, setProductSearch] = useState('');
+  const debouncedProductSearch = useDebounce(productSearch, 300);
+  const [productFilter, setProductFilter] = useState('all');
+  const [productSort, setProductSort] = useState('newest');
+  const [productsPage, setProductsPage] = useState(1);
+
+  // 2. Orders Tab Search, Filter & Sort
   const [orderSearch, setOrderSearch] = useState('');
   const debouncedOrderSearch = useDebounce(orderSearch, 300);
+  const [orderPaymentFilter, setOrderPaymentFilter] = useState('all');
+  const [orderDeliveryFilter, setOrderDeliveryFilter] = useState('all');
+  const [orderSort, setOrderSort] = useState('newest');
+  const [ordersPage, setOrdersPage] = useState(1);
+
+  // 3. Customers Tab Search, Filter & Sort
   const [customerSearch, setCustomerSearch] = useState('');
   const debouncedCustomerSearch = useDebounce(customerSearch, 300);
-
-  // Pagination states
-  const [productsPage, setProductsPage] = useState(1);
-  const [ordersPage, setOrdersPage] = useState(1);
+  const [customerFilter, setCustomerFilter] = useState('all');
+  const [customerSort, setCustomerSort] = useState('newest');
   const [customersPage, setCustomersPage] = useState(1);
 
-  useEffect(() => { setOrdersPage(1); }, [debouncedOrderSearch]);
-  useEffect(() => { setCustomersPage(1); }, [debouncedCustomerSearch]);
+  // 4. Payouts Tab Search, Filter & Sort
+  const [payoutSearch, setPayoutSearch] = useState('');
+  const debouncedPayoutSearch = useDebounce(payoutSearch, 300);
+  const [payoutStatusFilter, setPayoutStatusFilter] = useState('all');
+  const [payoutSort, setPayoutSort] = useState('newest');
+  const [payoutsPage, setPayoutsPage] = useState(1);
+
+  // Auto-reset pagination
+  useEffect(() => { setProductsPage(1); }, [debouncedProductSearch, productFilter, productSort]);
+  useEffect(() => { setOrdersPage(1); }, [debouncedOrderSearch, orderPaymentFilter, orderDeliveryFilter, orderSort]);
+  useEffect(() => { setCustomersPage(1); }, [debouncedCustomerSearch, customerFilter, customerSort]);
+  useEffect(() => { setPayoutsPage(1); }, [debouncedPayoutSearch, payoutStatusFilter, payoutSort]);
 
   // Product detail view modal (Read-only)
   const [viewingProduct, setViewingProduct] = useState(null);
@@ -335,48 +361,163 @@ export default function AdminDashboardPage() {
 
   const recentOrders = stats?.recentOrders || [];
   const referredCustomers = stats?.referredCustomers || [];
+  const allPayouts = stats?.payoutHistory || [];
 
-  const filteredOrders = useMemo(() => {
-    if (!debouncedOrderSearch.trim()) return recentOrders;
-    const q = debouncedOrderSearch.toLowerCase();
-    return recentOrders.filter(o =>
-      o.orderNumber?.toLowerCase().includes(q) ||
-      o.customerName?.toLowerCase().includes(q) ||
-      o.businessName?.toLowerCase().includes(q)
-    );
-  }, [recentOrders, debouncedOrderSearch]);
-
-  const filteredCustomers = useMemo(() => {
-    if (!debouncedCustomerSearch.trim()) return referredCustomers;
-    const q = debouncedCustomerSearch.toLowerCase();
-    return referredCustomers.filter(c =>
-      c.name?.toLowerCase().includes(q) ||
-      c.email?.toLowerCase().includes(q) ||
-      c.phone?.toLowerCase().includes(q)
-    );
-  }, [referredCustomers, debouncedCustomerSearch]);
-
-  // Paginated data slices
+  // Page limits
   const PRODUCTS_PER_PAGE = 9;
   const ORDERS_PER_PAGE = 10;
   const CUSTOMERS_PER_PAGE = 10;
+  const PAYOUTS_PER_PAGE = 10;
 
   const productItems = useMemo(() => linksData?.items || [], [linksData]);
 
+  // 1. Filtered & Sorted Products
+  const filteredProducts = useMemo(() => {
+    let items = productItems.slice();
+
+    if (debouncedProductSearch.trim()) {
+      const q = debouncedProductSearch.toLowerCase();
+      items = items.filter(({ product, link }) =>
+        product.title?.toLowerCase().includes(q) ||
+        product.subtitle?.toLowerCase().includes(q) ||
+        link?.linkCode?.toLowerCase().includes(q)
+      );
+    }
+
+    if (productFilter === 'linked') {
+      items = items.filter(({ link }) => Boolean(link));
+    } else if (productFilter === 'unlinked') {
+      items = items.filter(({ link }) => !link);
+    } else if (productFilter === 'active') {
+      items = items.filter(({ link }) => link && link.isActive);
+    } else if (productFilter === 'paused') {
+      items = items.filter(({ link }) => link && !link.isActive);
+    }
+
+    items.sort((a, b) => {
+      if (productSort === 'price_asc') return (a.product.price || 0) - (b.product.price || 0);
+      if (productSort === 'price_desc') return (b.product.price || 0) - (a.product.price || 0);
+      if (productSort === 'commission_desc') {
+        const commA = a.commissionPercent || stats?.partner?.commissionPercent || 15;
+        const commB = b.commissionPercent || stats?.partner?.commissionPercent || 15;
+        return commB - commA;
+      }
+      if (productSort === 'name_asc') return (a.product.title || '').localeCompare(b.product.title || '');
+      return new Date(b.product.createdAt || 0) - new Date(a.product.createdAt || 0);
+    });
+
+    return items;
+  }, [productItems, debouncedProductSearch, productFilter, productSort, stats]);
+
   const paginatedProducts = useMemo(() => {
     const start = (productsPage - 1) * PRODUCTS_PER_PAGE;
-    return productItems.slice(start, start + PRODUCTS_PER_PAGE);
-  }, [productItems, productsPage]);
+    return filteredProducts.slice(start, start + PRODUCTS_PER_PAGE);
+  }, [filteredProducts, productsPage]);
+
+  // 2. Filtered & Sorted Orders
+  const filteredOrders = useMemo(() => {
+    let orders = recentOrders.slice();
+
+    if (debouncedOrderSearch.trim()) {
+      const q = debouncedOrderSearch.toLowerCase();
+      orders = orders.filter(o =>
+        o.orderNumber?.toLowerCase().includes(q) ||
+        o.customerName?.toLowerCase().includes(q) ||
+        o.businessName?.toLowerCase().includes(q)
+      );
+    }
+
+    if (orderPaymentFilter !== 'all') {
+      orders = orders.filter(o => (o.paymentStatus || '').toLowerCase() === orderPaymentFilter.toLowerCase());
+    }
+
+    if (orderDeliveryFilter !== 'all') {
+      orders = orders.filter(o => (o.orderStatus || '').toLowerCase() === orderDeliveryFilter.toLowerCase());
+    }
+
+    orders.sort((a, b) => {
+      if (orderSort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+      if (orderSort === 'amount_desc') return (b.subtotal || 0) - (a.subtotal || 0);
+      if (orderSort === 'amount_asc') return (a.subtotal || 0) - (b.subtotal || 0);
+      if (orderSort === 'commission_desc') return (b.adminCommissionAmount || 0) - (a.adminCommissionAmount || 0);
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    return orders;
+  }, [recentOrders, debouncedOrderSearch, orderPaymentFilter, orderDeliveryFilter, orderSort]);
 
   const paginatedOrders = useMemo(() => {
     const start = (ordersPage - 1) * ORDERS_PER_PAGE;
     return filteredOrders.slice(start, start + ORDERS_PER_PAGE);
   }, [filteredOrders, ordersPage]);
 
+  // 3. Filtered & Sorted Customers
+  const filteredCustomers = useMemo(() => {
+    let list = referredCustomers.slice();
+
+    if (debouncedCustomerSearch.trim()) {
+      const q = debouncedCustomerSearch.toLowerCase();
+      list = list.filter(c =>
+        c.name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.phone?.toLowerCase().includes(q)
+      );
+    }
+
+    if (customerFilter === 'with_orders') {
+      list = list.filter(c => (c.totalOrders || 0) > 0);
+    } else if (customerFilter === 'top_spenders') {
+      list = list.filter(c => (c.totalSpent || 0) > 0);
+    }
+
+    list.sort((a, b) => {
+      if (customerSort === 'oldest') return new Date(a.joinedAt) - new Date(b.joinedAt);
+      if (customerSort === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+      if (customerSort === 'orders_desc') return (b.totalOrders || 0) - (a.totalOrders || 0);
+      if (customerSort === 'spent_desc') return (b.totalSpent || 0) - (a.totalSpent || 0);
+      if (customerSort === 'comm_desc') return (b.commissionGenerated || 0) - (a.commissionGenerated || 0);
+      return new Date(b.joinedAt) - new Date(a.joinedAt);
+    });
+
+    return list;
+  }, [referredCustomers, debouncedCustomerSearch, customerFilter, customerSort]);
+
   const paginatedCustomers = useMemo(() => {
     const start = (customersPage - 1) * CUSTOMERS_PER_PAGE;
     return filteredCustomers.slice(start, start + CUSTOMERS_PER_PAGE);
   }, [filteredCustomers, customersPage]);
+
+  // 4. Filtered & Sorted Payouts
+  const filteredPayouts = useMemo(() => {
+    let list = allPayouts.slice();
+
+    if (debouncedPayoutSearch.trim()) {
+      const q = debouncedPayoutSearch.toLowerCase();
+      list = list.filter(p =>
+        String(p.id).includes(q) ||
+        p.notes?.toLowerCase().includes(q) ||
+        p.paymentRef?.toLowerCase().includes(q)
+      );
+    }
+
+    if (payoutStatusFilter !== 'all') {
+      list = list.filter(p => (p.status || '').toLowerCase() === payoutStatusFilter.toLowerCase());
+    }
+
+    list.sort((a, b) => {
+      if (payoutSort === 'oldest') return new Date(a.requestedAt) - new Date(b.requestedAt);
+      if (payoutSort === 'amount_desc') return (b.amount || 0) - (a.amount || 0);
+      if (payoutSort === 'amount_asc') return (a.amount || 0) - (b.amount || 0);
+      return new Date(b.requestedAt) - new Date(a.requestedAt);
+    });
+
+    return list;
+  }, [allPayouts, debouncedPayoutSearch, payoutStatusFilter, payoutSort]);
+
+  const paginatedPayouts = useMemo(() => {
+    const start = (payoutsPage - 1) * PAYOUTS_PER_PAGE;
+    return filteredPayouts.slice(start, start + PAYOUTS_PER_PAGE);
+  }, [filteredPayouts, payoutsPage]);
 
   const navItems = [
     { id: 'overview', label: 'Overview & Earnings', icon: LayoutDashboard },
@@ -618,7 +759,7 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <div className="text-3xl font-black text-indigo-600">₹{metrics.totalCommissionEarned}</div>
-                  <p className="text-[11px] text-slate-500">Your {stats?.partner?.commissionPercent || 15}% share from sales</p>
+                  <p className="text-[11px] text-slate-500">Calculated from product-wise sales</p>
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2 hover:border-purple-300 transition-all">
@@ -654,7 +795,7 @@ export default function AdminDashboardPage() {
                     Share Product Links &amp; Earn Commission
                   </h3>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Select any product from the catalog, copy your unique referral link, and share it on WhatsApp or with your business network. When someone buys through your link, your <strong>{stats?.partner?.commissionPercent || 15}%</strong> commission is automatically credited.
+                    Select any product from the catalog, copy your unique referral link, and share it on WhatsApp or with your business network. When someone buys through your link, your <strong>product-wise commission</strong> is automatically credited.
                   </p>
                 </div>
                 <button
@@ -749,8 +890,66 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Your Commission</span>
-                  <span className="text-sm font-black text-purple-700">{stats?.partner?.commissionPercent || 15}% per sale</span>
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Commission Structure</span>
+                  <span className="text-sm font-black text-purple-700">Product-Wise Rates Active</span>
+                </div>
+              </div>
+
+              {/* Search, Filter & Sort Toolbar */}
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="Search products by title, subtitle, or link code..."
+                    className="w-full pl-9 pr-9 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white"
+                  />
+                  {productSearch && (
+                    <button
+                      onClick={() => setProductSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Filters & Sorting */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Status Filter */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <Filter className="w-3.5 h-3.5 text-slate-400" />
+                    <select
+                      value={productFilter}
+                      onChange={(e) => setProductFilter(e.target.value)}
+                      className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="all">All Products ({productItems.length})</option>
+                      <option value="linked">With Referral Link</option>
+                      <option value="unlinked">No Link Yet</option>
+                      <option value="active">Active Links</option>
+                      <option value="paused">Paused Links</option>
+                    </select>
+                  </div>
+
+                  {/* Sort */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    <select
+                      value={productSort}
+                      onChange={(e) => setProductSort(e.target.value)}
+                      className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="price_asc">Price: Low to High</option>
+                      <option value="price_desc">Price: High to Low</option>
+                      <option value="commission_desc">Commission: High to Low</option>
+                      <option value="name_asc">Title: A to Z</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -795,11 +994,9 @@ export default function AdminDashboardPage() {
                                   {product.badge}
                                 </span>
                               )}
-                              {isCustomCommission && (
-                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
-                                  {commPercent}% Rate
-                                </span>
-                              )}
+                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
+                                {commPercent}% Commission
+                              </span>
                             </div>
 
                             {link && (
@@ -968,15 +1165,25 @@ export default function AdminDashboardPage() {
                       </div>
                     );
                   })}
-                    {(linksData?.items || []).length === 0 && (
-                      <div className="col-span-3 text-center py-20 text-slate-400 text-sm">
-                        No products available in catalog.
+                    {filteredProducts.length === 0 && (
+                      <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 p-8">
+                        <Package className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                        <p className="text-sm font-bold text-slate-700">No products found</p>
+                        <p className="text-xs text-slate-400 mt-1">Try clearing your search query or switching filters.</p>
+                        {(productSearch || productFilter !== 'all') && (
+                          <button
+                            onClick={() => { setProductSearch(''); setProductFilter('all'); }}
+                            className="mt-3 px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 text-xs font-semibold hover:bg-purple-100 transition-colors cursor-pointer"
+                          >
+                            Reset Filters
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
                   <Pagination
                     currentPage={productsPage}
-                    totalItems={productItems.length}
+                    totalItems={filteredProducts.length}
                     pageSize={PRODUCTS_PER_PAGE}
                     onPageChange={setProductsPage}
                     itemName="products"
@@ -989,21 +1196,79 @@ export default function AdminDashboardPage() {
           {/* ================= TAB 3: REFERRED ORDERS ================= */}
           {activeTab === 'orders' && (
             <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Orders via Your Referral Link</h3>
+                  <h3 className="font-bold text-slate-900 text-base">Orders via Your Referral Link ({recentOrders.length})</h3>
                   <p className="text-xs text-slate-400">All customer purchases placed using your affiliate links</p>
                 </div>
 
-                <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={orderSearch}
-                    onChange={(e) => setOrderSearch(e.target.value)}
-                    placeholder="Search by order number or customer name..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white"
-                  />
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Search */}
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={orderSearch}
+                      onChange={(e) => setOrderSearch(e.target.value)}
+                      placeholder="Search order #, customer, business..."
+                      className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white"
+                    />
+                    {orderSearch && (
+                      <button
+                        onClick={() => setOrderSearch('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Payment Filter */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <Filter className="w-3.5 h-3.5 text-slate-400" />
+                    <select
+                      value={orderPaymentFilter}
+                      onChange={(e) => setOrderPaymentFilter(e.target.value)}
+                      className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="all">All Payments</option>
+                      <option value="paid">Paid</option>
+                      <option value="pending">Pending</option>
+                    </select>
+                  </div>
+
+                  {/* Delivery Filter */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+                    <select
+                      value={orderDeliveryFilter}
+                      onChange={(e) => setOrderDeliveryFilter(e.target.value)}
+                      className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="all">All Delivery</option>
+                      <option value="placed">Placed</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="dispatched">Dispatched</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+
+                  {/* Sort */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    <select
+                      value={orderSort}
+                      onChange={(e) => setOrderSort(e.target.value)}
+                      className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="amount_desc">Amount: High to Low</option>
+                      <option value="amount_asc">Amount: Low to High</option>
+                      <option value="commission_desc">Commission: High to Low</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -1024,7 +1289,9 @@ export default function AdminDashboardPage() {
                     {filteredOrders.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="py-12 text-center text-slate-400">
-                          No orders matched your search.
+                          {debouncedOrderSearch || orderPaymentFilter !== 'all' || orderDeliveryFilter !== 'all'
+                            ? 'No orders matched your search or filters.'
+                            : 'No orders placed yet. Share your product links to start earning!'}
                         </td>
                       </tr>
                     ) : (
@@ -1073,29 +1340,62 @@ export default function AdminDashboardPage() {
           {/* ================= TAB 3.5: REFERRED CUSTOMERS ================= */}
           {activeTab === 'customers' && (
             <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">My Customers ({referredCustomers.length})</h3>
                   <p className="text-xs text-slate-400">Customers who ordered products using your referral links</p>
                 </div>
 
-                <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={customerSearch}
-                    onChange={(e) => setCustomerSearch(e.target.value)}
-                    placeholder="Search by customer name, email or phone..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white"
-                  />
-                  {customerSearch && (
-                    <button
-                      onClick={() => setCustomerSearch('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      placeholder="Search customer name, email or phone..."
+                      className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white"
+                    />
+                    {customerSearch && (
+                      <button
+                        onClick={() => setCustomerSearch('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Customer Activity Filter */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <Filter className="w-3.5 h-3.5 text-slate-400" />
+                    <select
+                      value={customerFilter}
+                      onChange={(e) => setCustomerFilter(e.target.value)}
+                      className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
                     >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                      <option value="all">All Customers</option>
+                      <option value="with_orders">With Orders</option>
+                      <option value="top_spenders">Top Spenders (&gt;₹1,000)</option>
+                    </select>
+                  </div>
+
+                  {/* Sort */}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    <select
+                      value={customerSort}
+                      onChange={(e) => setCustomerSort(e.target.value)}
+                      className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
+                    >
+                      <option value="newest">Newest Joined</option>
+                      <option value="oldest">Oldest Joined</option>
+                      <option value="name_asc">Name: A to Z</option>
+                      <option value="orders_desc">Most Orders</option>
+                      <option value="spent_desc">Highest Spend</option>
+                      <option value="comm_desc">Highest Commission</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -1115,7 +1415,9 @@ export default function AdminDashboardPage() {
                     {filteredCustomers.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-12 text-center text-slate-400">
-                          {debouncedCustomerSearch ? 'No customers matched your search query.' : 'No customers yet. Share your product links on WhatsApp or Instagram to get customers!'}
+                          {debouncedCustomerSearch || customerFilter !== 'all'
+                            ? 'No customers matched your search or filter.'
+                            : 'No customers yet. Share your product links on WhatsApp or Instagram to get customers!'}
                         </td>
                       </tr>
                     ) : (
@@ -1228,6 +1530,141 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Withdrawal Requests History Table */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base">Withdrawal History ({allPayouts.length})</h3>
+                    <p className="text-xs text-slate-400">Track all your payout requests and bank transfer status</p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Search */}
+                    <div className="relative w-full sm:w-64">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={payoutSearch}
+                        onChange={(e) => setPayoutSearch(e.target.value)}
+                        placeholder="Search ref #, notes, ID..."
+                        className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-purple-500 focus:bg-white"
+                      />
+                      {payoutSearch && (
+                        <button
+                          onClick={() => setPayoutSearch('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Status Filter */}
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                      <Filter className="w-3.5 h-3.5 text-slate-400" />
+                      <select
+                        value={payoutStatusFilter}
+                        onChange={(e) => setPayoutStatusFilter(e.target.value)}
+                        className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved / Paid</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </div>
+
+                    {/* Sort */}
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                      <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                      <select
+                        value={payoutSort}
+                        onChange={(e) => setPayoutSort(e.target.value)}
+                        className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-hidden cursor-pointer"
+                      >
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="amount_desc">Amount: High to Low</option>
+                        <option value="amount_asc">Amount: Low to High</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-left text-xs divide-y divide-slate-100">
+                    <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                      <tr>
+                        <th className="py-3 px-4">Request #</th>
+                        <th className="py-3 px-4">Date Requested</th>
+                        <th className="py-3 px-4">Amount</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">UTR / Reference</th>
+                        <th className="py-3 px-4">Processed Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {filteredPayouts.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400">
+                            {debouncedPayoutSearch || payoutStatusFilter !== 'all'
+                              ? 'No withdrawal requests match your search or filter.'
+                              : 'No withdrawal requests submitted yet.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedPayouts.map(p => (
+                          <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-900">#{p.id}</td>
+                            <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                              {new Date(p.requestedAt).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                            <td className="py-3.5 px-4 font-black text-emerald-600 whitespace-nowrap text-sm">
+                              ₹{p.amount?.toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide inline-flex items-center gap-1 ${
+                                p.status === 'approved'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : p.status === 'rejected'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {p.status === 'approved' && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                                {p.status === 'rejected' && <XCircle className="w-3 h-3 text-rose-600" />}
+                                {p.status === 'pending' && <Clock className="w-3 h-3 text-amber-600" />}
+                                {p.status === 'approved' ? 'Paid / Approved' : p.status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 font-mono text-slate-600">
+                              {p.paymentRef || <span className="text-slate-400 font-sans italic">Pending processing</span>}
+                              {p.notes && <p className="text-[11px] text-slate-400 font-sans mt-0.5">{p.notes}</p>}
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                              {p.processedAt ? new Date(p.processedAt).toLocaleDateString('en-IN') : '—'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <Pagination
+                  currentPage={payoutsPage}
+                  totalItems={filteredPayouts.length}
+                  pageSize={PAYOUTS_PER_PAGE}
+                  onPageChange={setPayoutsPage}
+                  itemName="withdrawals"
+                />
+              </div>
             </div>
           )}
 
@@ -1257,7 +1694,7 @@ export default function AdminDashboardPage() {
                     <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400 font-medium">
                       <span>Referral Code: <strong className="font-mono text-purple-700 font-bold">{referralCode}</strong></span>
                       <span>•</span>
-                      <span>Commission: <strong className="text-slate-700">{stats?.partner?.commissionPercent || 15}%</strong></span>
+                      <span>Commission: <strong className="text-emerald-700 font-bold">Product-Wise Rates Active</strong></span>
                       <span>•</span>
                       <span className="text-emerald-600 font-semibold flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Active &amp; Approved

@@ -109,33 +109,6 @@ export default function LoginPage() {
     }
   };
 
-  // Superadmin OTP: Direct request without password
-  const handleRequestOtpOnly = async () => {
-    setFormError('');
-    setFormSuccess('');
-
-    const cleanEmail = identifier.trim().toLowerCase();
-    if (!cleanEmail) {
-      const msg = 'Please enter your Superadmin email address in the field above.';
-      setFormError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    try {
-      const res = await sendSuperadminOtp({ email: cleanEmail }).unwrap();
-      setIsOtpStep(true);
-      setSuperadminEmail(cleanEmail);
-      setSuperadminCooldown(60);
-      setFormSuccess(res.message || `Security OTP sent to ${cleanEmail}`);
-      toast.success(res.message || `Security OTP sent to ${cleanEmail}`);
-    } catch (err) {
-      const friendly = formatUserFriendlyError(err);
-      setFormError(friendly);
-      toast.error(friendly);
-    }
-  };
-
   // Superadmin OTP: Verify Code & Login
   const handleSuperadminVerifyOtp = async (e) => {
     e.preventDefault();
@@ -373,22 +346,13 @@ export default function LoginPage() {
         <div>
           <div className="flex justify-between items-center mb-1">
             <label className="block text-xs font-bold text-slate-700">Password</label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleRequestOtpOnly}
-                className="text-[11px] font-semibold text-purple-600 hover:text-purple-700 hover:underline cursor-pointer"
-              >
-                Login via OTP
-              </button>
-              <button
-                type="button"
-                onClick={openForgotPassword}
-                className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
-              >
-                Forgot Password?
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={openForgotPassword}
+              className="text-[11px] font-semibold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer"
+            >
+              Forgot Password?
+            </button>
           </div>
           <div className="relative">
             <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />

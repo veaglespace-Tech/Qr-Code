@@ -12,6 +12,8 @@ function generateLinkCode(orgName, productSlug) {
   return `${orgPart}-${prodPart}-${rand}`;
 }
 
+exports.generateLinkCode = generateLinkCode;
+
 exports.getAdminStats = asyncHandler(async (req, res) => {
   const adminId = req.user.id;
   const settings = await prisma.setting.findFirst();
@@ -195,22 +197,51 @@ exports.updateBankDetails = asyncHandler(async (req, res) => {
 exports.getMyProductLinks = asyncHandler(async (req, res) => {
   const adminId = req.user.id;
 
-  // Get all products + existing links for this partner in one shot
-  const [products, links] = await Promise.all([
-    prisma.product.findMany({ orderBy: { createdAt: 'asc' } }),
+  // Get all active products + existing links for this partner + partner's base commission
+  const [products, links, partner] = await Promise.all([
+    prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { displayOrder: 'asc' }
+    }),
     prisma.partnerProductLink.findMany({
       where: { adminId },
       include: { product: true }
+    }),
+    prisma.user.findUnique({
+      where: { id: adminId },
+      select: { commissionPercent: true }
     })
   ]);
 
   const linksMap = {};
   links.forEach(l => { linksMap[l.productId] = l; });
 
-  const result = products.map(p => ({
-    product: p,
-    link: linksMap[p.id] || null
-  }));
+  const partnerDefaultComm = (partner && partner.commissionPercent !== null) ? partner.commissionPercent : 15.0;
+
+  // Filter out products hidden by Superadmin specifically for this partner
+  const visibleProducts = products.filter(p => {
+    const link = linksMap[p.id];
+    if (link && link.isVisible === false) {
+      return false; // Explicitly hidden for this partner
+    }
+    return true;
+  });
+
+  const result = visibleProducts.map(p => {
+    const link = linksMap[p.id] || null;
+    const hasCustomComm = link && link.customCommission !== null && link.customCommission !== undefined;
+    const effectiveCommission = hasCustomComm
+      ? link.customCommission
+      : (p.commissionPercent && p.commissionPercent > 0 ? p.commissionPercent : partnerDefaultComm);
+
+    return {
+      product: p,
+      link: linksMap[p.id] || null,
+      commissionPercent: effectiveCommission,
+      isCustomCommission: hasCustomComm,
+      partnerDefaultCommission: partnerDefaultComm
+    };
+  });
 
   return res.json({ success: true, items: result });
 });

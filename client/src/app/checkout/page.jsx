@@ -231,7 +231,6 @@ export default function CheckoutPage() {
     setErrorMsg('');
 
     try {
-      const isCOD = paymentMode === 'cod';
       const cleanPhone = formData.phone.replace(/\D/g, '').slice(-10);
 
       const payload = {
@@ -244,7 +243,7 @@ export default function CheckoutPage() {
         partnerLinkCode: activePartnerLink,
         couponCode: appliedCoupon ? appliedCoupon.code : null,
         discountAmount: discountAmount,
-        paymentMethod: isCOD ? 'cod' : 'payu'
+        paymentMethod: 'payu'
       };
 
       const res = await createOrder(payload).unwrap();
@@ -561,61 +560,19 @@ export default function CheckoutPage() {
               <CreditCard className="w-4 h-4 text-emerald-600" /> Select Payment Method
             </h3>
 
-            <div className="space-y-3">
-              {/* Option 1: PayU Payment Gateway */}
-              <label
-                className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
-                  paymentMode === 'payu'
-                    ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 text-slate-900 shadow-sm'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMode"
-                  value="payu"
-                  checked={paymentMode === 'payu'}
-                  onChange={() => setPaymentMode('payu')}
-                  className="mt-1 accent-emerald-600"
-                />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900">Online Payment via PayU</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                      Recommended
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Instant UPI (Google Pay, PhonePe, Paytm), Debit/Credit Cards (Visa, RuPay, Mastercard) &amp; NetBanking.
-                  </p>
+            <div className="p-4 rounded-xl border bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 text-slate-900 shadow-sm flex items-start gap-3">
+              <div className="w-4 h-4 rounded-full border-4 border-emerald-600 bg-white mt-1 shrink-0" />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-900">Online Payment via PayU</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                    Instant &amp; 100% Secure
+                  </span>
                 </div>
-              </label>
-
-              {/* Option 2: Cash on Delivery */}
-              <label
-                className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
-                  paymentMode === 'cod'
-                    ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 text-slate-900 shadow-sm'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMode"
-                  value="cod"
-                  checked={paymentMode === 'cod'}
-                  onChange={() => setPaymentMode('cod')}
-                  className="mt-1 accent-emerald-600"
-                />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900">Cash / Pay on Delivery (COD)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Pay securely in cash or via mobile UPI QR scan upon courier delivery at your shop.
-                  </p>
-                </div>
-              </label>
+                <p className="text-[11px] text-slate-500">
+                  Instant UPI (Google Pay, PhonePe, Paytm), Debit/Credit Cards (Visa, RuPay, Mastercard) &amp; NetBanking.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -756,7 +713,7 @@ export default function CheckoutPage() {
                 <span>Confirming Order...</span>
               ) : (
                 <>
-                  <span>{paymentMode === 'cod' ? 'Confirm Cash on Delivery Order' : `Pay ₹${finalAmount.toFixed(2)} Securely`}</span>
+                  <span>Pay ₹{finalAmount.toFixed(2)} Securely</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

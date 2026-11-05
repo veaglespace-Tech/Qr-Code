@@ -7,7 +7,9 @@ import QRCode from 'qrcode';
 import {
   useGetAdminByIdQuery,
   useUpdateAdminMutation,
-  useDeleteAdminMutation
+  useDeleteAdminMutation,
+  useGetPartnerProductsQuery,
+  useUpdatePartnerProductsMutation
 } from '@/redux/api/apiSlice';
 import { formatUserFriendlyError } from '@/context/ToastContext';
 import {
@@ -40,7 +42,12 @@ import {
   Users,
   Clock,
   Sparkles,
-  Loader2
+  Loader2,
+  Eye,
+  EyeOff,
+  Tag,
+  Percent,
+  SlidersHorizontal
 } from 'lucide-react';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
 
@@ -81,6 +88,89 @@ export default function PartnerDetailPage() {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copiedKey, setCopiedKey] = useState('');
   const [notice, setNotice] = useState({ text: '', isError: false });
+
+  // Partner Product-wise Commissions & Visibility
+  const {
+    data: partnerProductsData,
+    isLoading: loadingProducts,
+    refetch: refetchProducts
+  } = useGetPartnerProductsQuery(partnerId, {
+    skip: !partnerId
+  });
+  const [updatePartnerProducts, { isLoading: isUpdatingProducts }] = useUpdatePartnerProductsMutation();
+
+  const [productConfigs, setProductConfigs] = useState({});
+  const [savingProductId, setSavingProductId] = useState(null);
+
+  useEffect(() => {
+    if (partnerProductsData?.items) {
+      const map = {};
+      partnerProductsData.items.forEach(p => {
+        const hasCustom = p.customCommission !== null && p.customCommission !== undefined;
+        map[p.productId] = {
+          isVisible: p.isVisible !== false,
+          customCommission: hasCustom ? p.customCommission : '',
+          isCustom: hasCustom
+        };
+      });
+      setProductConfigs(map);
+    }
+  }, [partnerProductsData]);
+
+  const handleToggleProductVisibility = async (productId, currentVal) => {
+    const newVal = !currentVal;
+    setProductConfigs(prev => ({
+      ...prev,
+      [productId]: {
+        ...(prev[productId] || {}),
+        isVisible: newVal
+      }
+    }));
+
+    try {
+      setSavingProductId(productId);
+      const currentConfig = productConfigs[productId] || {};
+      const customCommValue = currentConfig.isCustom && currentConfig.customCommission !== ''
+        ? parseFloat(currentConfig.customCommission)
+        : null;
+
+      await updatePartnerProducts({
+        partnerId,
+        productId,
+        isVisible: newVal,
+        customCommission: customCommValue
+      }).unwrap();
+      triggerNotice(`Product visibility set to ${newVal ? 'Visible' : 'Hidden'} for this partner.`);
+      refetchProducts();
+    } catch (err) {
+      triggerNotice(err?.data?.error || err?.message || 'Failed to update visibility', true);
+    } finally {
+      setSavingProductId(null);
+    }
+  };
+
+  const handleSaveProductCommission = async (productId) => {
+    const config = productConfigs[productId] || {};
+    try {
+      setSavingProductId(productId);
+      const customCommValue = config.isCustom && config.customCommission !== ''
+        ? parseFloat(config.customCommission)
+        : null;
+
+      await updatePartnerProducts({
+        partnerId,
+        productId,
+        isVisible: config.isVisible !== false,
+        customCommission: customCommValue
+      }).unwrap();
+      triggerNotice(`Commission settings saved for this product!`);
+      refetchProducts();
+    } catch (err) {
+      triggerNotice(err?.data?.error || err?.message || 'Failed to save product commission', true);
+    } finally {
+      setSavingProductId(null);
+    }
+  };
 
   const triggerNotice = (text, isError = false) => {
     const formatted = isError ? formatUserFriendlyError(text) : text;
@@ -631,6 +721,248 @@ export default function PartnerDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Partner Product-Wise Commissions & Catalog Access */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <SlidersHorizontal className="w-4 h-4" />
+                </div>
+                <h3 className="font-black text-slate-900 text-base">
+                  Product-Wise Commissions &amp; Partner Catalog Visibility
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Customize commission percentage per product for {partner.orgName || partner.name}, or choose which products appear in their Partner Dashboard.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                Partner Base Rate: <strong className="text-purple-700">{partner.commissionPercent || 15}%</strong>
+              </span>
+            </div>
+          </div>
+
+          {loadingProducts ? (
+            <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+              <span className="text-xs font-semibold">Loading product rules...</span>
+            </div>
+          ) : !partnerProductsData?.items?.length ? (
+            <div className="py-8 text-center text-slate-400 text-xs">
+              No products found in the catalog.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {partnerProductsData.items.map((prod) => {
+                const config = productConfigs[prod.productId] || {
+                  isVisible: prod.isVisible !== false,
+                  customCommission: prod.customCommission ?? '',
+                  isCustom: prod.customCommission !== null && prod.customCommission !== undefined
+                };
+                const isVisible = config.isVisible;
+                const isCustom = config.isCustom;
+                const commValue = isCustom
+                  ? (config.customCommission !== '' ? Number(config.customCommission) : 0)
+                  : (prod.productCommission > 0 ? prod.productCommission : (partner.commissionPercent || 15));
+                const estimatedEarning = ((prod.price * commValue) / 100).toFixed(0);
+                const isSavingThis = savingProductId === prod.productId;
+
+                return (
+                  <div
+                    key={prod.productId}
+                    className={`rounded-2xl border p-5 transition-all flex flex-col justify-between space-y-4 ${
+                      isVisible
+                        ? 'bg-white border-slate-200 shadow-2xs hover:border-purple-200'
+                        : 'bg-slate-50/70 border-dashed border-slate-300 opacity-75'
+                    }`}
+                  >
+                    {/* Top Row: Product Info & Visibility Toggle */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
+                          {prod.image ? (
+                            <img src={prod.image} alt={prod.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">
+                              NFC
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-black text-slate-900 text-sm">{prod.title}</h4>
+                            {prod.badge && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                                {prod.badge}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs">
+                            <span className="font-extrabold text-slate-900">₹{prod.price.toLocaleString('en-IN')}</span>
+                            {prod.originalPrice > prod.price && (
+                              <span className="line-through text-slate-400 text-[11px]">
+                                ₹{prod.originalPrice.toLocaleString('en-IN')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Visibility Toggle Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProductVisibility(prod.productId, isVisible)}
+                        disabled={isSavingThis}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
+                          isVisible
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-slate-200 text-slate-600 border-slate-300 hover:bg-slate-300'
+                        }`}
+                        title={isVisible ? 'Click to hide product from partner' : 'Click to make visible to partner'}
+                      >
+                        {isVisible ? (
+                          <>
+                            <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Visible</span>
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Hidden</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Middle Row: Commission Setting */}
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                          <Percent className="w-3 h-3 text-purple-600" /> Commission Rate:
+                        </span>
+                        <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                          Partner earns ~₹{estimatedEarning} / sale
+                        </span>
+                      </div>
+
+                      {/* Options: Default vs Custom */}
+                      <div className="flex items-center gap-3 text-xs">
+                        <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700">
+                          <input
+                            type="radio"
+                            name={`comm-mode-${prod.productId}`}
+                            checked={!isCustom}
+                            onChange={() => {
+                              setProductConfigs(prev => ({
+                                ...prev,
+                                [prod.productId]: {
+                                  ...(prev[prod.productId] || {}),
+                                  isCustom: false,
+                                  customCommission: ''
+                                }
+                              }));
+                            }}
+                            className="accent-purple-600"
+                          />
+                          <span>Partner Default ({partner.commissionPercent || 15}%)</span>
+                        </label>
+
+                        <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700">
+                          <input
+                            type="radio"
+                            name={`comm-mode-${prod.productId}`}
+                            checked={isCustom}
+                            onChange={() => {
+                              setProductConfigs(prev => ({
+                                ...prev,
+                                [prod.productId]: {
+                                  ...(prev[prod.productId] || {}),
+                                  isCustom: true,
+                                  customCommission: prev[prod.productId]?.customCommission || prod.effectiveCommission || 20
+                                }
+                              }));
+                            }}
+                            className="accent-purple-600"
+                          />
+                          <span>Custom %</span>
+                        </label>
+                      </div>
+
+                      {/* Custom Percentage Input Field */}
+                      {isCustom && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <div className="relative flex-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              value={config.customCommission}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setProductConfigs(prev => ({
+                                  ...prev,
+                                  [prod.productId]: {
+                                    ...(prev[prod.productId] || {}),
+                                    isCustom: true,
+                                    customCommission: val
+                                  }
+                                }));
+                              }}
+                              placeholder="e.g. 20"
+                              className="w-full px-3 py-1.5 pr-8 rounded-lg bg-white border border-slate-200 text-xs font-black text-slate-900 focus:outline-none focus:border-purple-600"
+                            />
+                            <span className="absolute right-2.5 top-1.5 text-xs font-bold text-slate-400">%</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleSaveProductCommission(prod.productId)}
+                            disabled={isSavingThis}
+                            className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-all disabled:opacity-50"
+                          >
+                            {isSavingThis ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Save className="w-3.5 h-3.5" />
+                            )}
+                            <span>Save Rate</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {!isCustom && prod.customCommission !== null && prod.customCommission !== undefined && (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveProductCommission(prod.productId)}
+                            disabled={isSavingThis}
+                            className="text-[11px] font-bold text-purple-600 hover:text-purple-700 underline"
+                          >
+                            Save revert to default ({partner.commissionPercent || 15}%)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Row: Link Code info */}
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-100">
+                      <span>Status: <strong className={isVisible ? 'text-emerald-600' : 'text-slate-500'}>{isVisible ? 'Visible in partner portal' : 'Hidden from partner'}</strong></span>
+                      {prod.linkCode && (
+                        <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                          {prod.linkCode}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Referred Customer Orders Table */}

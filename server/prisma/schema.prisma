@@ -196,16 +196,18 @@ model Coupon {
 }
 
 model PartnerProductLink {
-  id          Int      @id @default(autoincrement())
-  adminId     Int
-  admin       User     @relation("PartnerLinks", fields: [adminId], references: [id])
-  productId   Int
-  product     Product  @relation(fields: [productId], references: [id])
-  linkCode    String   @unique  // unique short code e.g. "VEA-ACRYLIC-X7K2"
-  isActive    Boolean  @default(true)
-  clickCount  Int      @default(0)
-  orders      Order[]
-  createdAt   DateTime @default(now())
+  id                Int      @id @default(autoincrement())
+  adminId           Int
+  admin             User     @relation("PartnerLinks", fields: [adminId], references: [id])
+  productId         Int
+  product           Product  @relation(fields: [productId], references: [id])
+  linkCode          String   @unique  // unique short code e.g. "VEA-ACRYLIC-X7K2"
+  customCommission  Float?   // Dynamic product-specific commission % for this partner
+  isVisible         Boolean  @default(true) // Controls whether partner sees and can sell this product
+  isActive          Boolean  @default(true)
+  clickCount        Int      @default(0)
+  orders            Order[]
+  createdAt         DateTime @default(now())
 
   @@index([adminId])
   @@index([productId])

@@ -290,6 +290,20 @@ export const apiSlice = createApi({
       invalidatesTags: ['Payout', 'Superadmin', 'Admin'],
     }),
 
+    // Partner Product-wise Commission & Visibility
+    getPartnerProducts: builder.query({
+      query: (partnerId) => `/superadmin/partners/${partnerId}/products`,
+      providesTags: ['PartnerLink', 'Product', 'Admin'],
+    }),
+    updatePartnerProducts: builder.mutation({
+      query: ({ partnerId, ...body }) => ({
+        url: `/superadmin/partners/${partnerId}/products`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: ['PartnerLink', 'Product', 'Admin'],
+    }),
+
     // ---------------- PARTNER PRODUCT LINKS ----------------
     getMyProductLinks: builder.query({
       query: () => '/admin/product-links',
@@ -406,6 +420,8 @@ export const {
   useDeleteUserMutation,
   useGetAllPayoutsQuery,
   useUpdatePayoutStatusMutation,
+  useGetPartnerProductsQuery,
+  useUpdatePartnerProductsMutation,
 
   // Partner product link hooks
   useGetMyProductLinksQuery,

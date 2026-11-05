@@ -761,10 +761,13 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {paginatedProducts.map(({ product, link }) => {
+                    {paginatedProducts.map(({ product, link, commissionPercent: itemComm, isCustomCommission }) => {
                       const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://reviewxpress.veaglespace.com';
                       const linkUrl = link ? `${baseUrl}/buy/${link.linkCode}` : null;
-                      const commissionAmount = (((product.price || 0) * (stats?.partner?.commissionPercent || 15)) / 100).toFixed(0);
+                      const commPercent = itemComm !== undefined && itemComm !== null
+                        ? itemComm
+                        : (stats?.partner?.commissionPercent || 15);
+                      const commissionAmount = (((product.price || 0) * commPercent) / 100).toFixed(0);
 
                       return (
                       <div
@@ -786,11 +789,18 @@ export default function AdminDashboardPage() {
                               </div>
                             )}
 
-                            {product.badge && (
-                              <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider shadow-sm">
-                                {product.badge}
-                              </span>
-                            )}
+                            <div className="absolute top-3 left-3 flex flex-col gap-1 items-start">
+                              {product.badge && (
+                                <span className="px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-wider shadow-sm">
+                                  {product.badge}
+                                </span>
+                              )}
+                              {isCustomCommission && (
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
+                                  {commPercent}% Rate
+                                </span>
+                              )}
+                            </div>
 
                             {link && (
                               <span
@@ -826,7 +836,9 @@ export default function AdminDashboardPage() {
                               </div>
 
                               <div className="text-right">
-                                <span className="text-[10px] uppercase font-bold text-purple-600 block">You Earn</span>
+                                <span className="text-[10px] uppercase font-bold text-purple-600 block">
+                                  You Earn ({commPercent}%)
+                                </span>
                                 <span className="text-sm font-black text-purple-700">₹{commissionAmount}</span>
                               </div>
                             </div>
@@ -840,7 +852,7 @@ export default function AdminDashboardPage() {
 
                             {/* View Full Product Details Button */}
                             <button
-                              onClick={() => setViewingProduct({ product, link })}
+                              onClick={() => setViewingProduct({ product, link, commissionPercent: commPercent, isCustomCommission })}
                               className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-purple-50 text-slate-700 hover:text-purple-700 border border-slate-200 hover:border-purple-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -1681,10 +1693,10 @@ export default function AdminDashboardPage() {
 
                     <div className="border-l border-slate-200 pl-3">
                       <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider block">
-                        Your Commission ({stats?.partner?.commissionPercent || 15}%)
+                        Your Commission ({viewingProduct.commissionPercent || stats?.partner?.commissionPercent || 15}%)
                       </span>
                       <span className="text-lg font-black text-purple-700 mt-0.5 block">
-                        ₹{(((viewingProduct.product.price || 0) * (stats?.partner?.commissionPercent || 15)) / 100).toFixed(0)}
+                        ₹{(((viewingProduct.product.price || 0) * (viewingProduct.commissionPercent || stats?.partner?.commissionPercent || 15)) / 100).toFixed(0)}
                       </span>
                     </div>
                   </div>

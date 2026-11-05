@@ -116,7 +116,10 @@ exports.createOrder = asyncHandler(async (req, res) => {
       adminReferralId = pLink.adminId;
       partnerLinkId = pLink.id;
 
-      if (pLink.product && pLink.product.commissionPercent && pLink.product.commissionPercent > 0) {
+      // Priority: 1. Partner-specific product commission -> 2. Product base commission -> 3. Partner base commission -> 4. Platform default
+      if (pLink.customCommission !== null && pLink.customCommission !== undefined && pLink.customCommission >= 0) {
+        adminCommissionPercent = pLink.customCommission;
+      } else if (pLink.product && pLink.product.commissionPercent && pLink.product.commissionPercent > 0) {
         adminCommissionPercent = pLink.product.commissionPercent;
       } else if (pLink.admin && pLink.admin.commissionPercent && pLink.admin.commissionPercent > 0) {
         adminCommissionPercent = pLink.admin.commissionPercent;
@@ -141,20 +144,36 @@ exports.createOrder = asyncHandler(async (req, res) => {
       if (partner) {
         adminReferralId = partner.id;
 
-        // Check if ordered product has custom commission
+        // Check if partner has custom product-wise commission or product has custom rate
+        let partnerProductCustomComm = null;
         let productCommission = 0;
         const firstProductId = parsedItems[0]?.productId;
         if (firstProductId) {
-          const prod = await prisma.product.findUnique({
-            where: { id: parseInt(firstProductId) },
-            select: { commissionPercent: true }
-          });
+          const [prod, customLink] = await Promise.all([
+            prisma.product.findUnique({
+              where: { id: parseInt(firstProductId) },
+              select: { commissionPercent: true }
+            }),
+            prisma.partnerProductLink.findFirst({
+              where: {
+                adminId: partner.id,
+                productId: parseInt(firstProductId)
+              },
+              select: { customCommission: true }
+            })
+          ]);
+
+          if (customLink && customLink.customCommission !== null && customLink.customCommission !== undefined && customLink.customCommission >= 0) {
+            partnerProductCustomComm = customLink.customCommission;
+          }
           if (prod && prod.commissionPercent && prod.commissionPercent > 0) {
             productCommission = prod.commissionPercent;
           }
         }
 
-        if (productCommission > 0) {
+        if (partnerProductCustomComm !== null) {
+          adminCommissionPercent = partnerProductCustomComm;
+        } else if (productCommission > 0) {
           adminCommissionPercent = productCommission;
         } else if (partner.commissionPercent && partner.commissionPercent > 0) {
           adminCommissionPercent = partner.commissionPercent;
@@ -176,8 +195,11 @@ exports.createOrder = asyncHandler(async (req, res) => {
   const nextSeq = lastOrder ? lastOrder.id + 1 : 1;
   const orderNumber = `RX-${currentYear}-${String(nextSeq).padStart(4, '0')}`;
   const txnid = `TXN_${currentYear}_${String(nextSeq).padStart(4, '0')}_${Date.now().toString().slice(-4)}`;
-  const isCOD = req.body.paymentMethod === 'cod' || req.body.paymentMethod === 'Cash on Delivery';
-  const selectedPaymentMethod = isCOD ? 'Cash on Delivery (COD)' : 'PayU Gateway (UPI / Cards / NetBanking)';
+  if (req.body.paymentMethod === 'cod' || req.body.paymentMethod === 'Cash on Delivery') {
+    throw new ApiError(400, 'Cash on Delivery is currently disabled. Please proceed with Online Payment via PayU.');
+  }
+  const isCOD = false;
+  const selectedPaymentMethod = 'PayU Gateway (UPI / Cards / NetBanking)';
 
   // 3. Find or auto-create customer User record
   let customerUser = null;

@@ -8,13 +8,15 @@ const { authenticate, authorize } = require('../middleware/auth');
 router.use(authenticate);
 router.use(authorize('SUPERADMIN'));
 
-router.post('/test-email', settingController.testEmail);
-
 router.get('/analytics', superadminController.getAnalytics);
 router.get('/admins', superadminController.getAllAdmins);
 router.get('/admins/:id', superadminController.getAdminById);
 router.put('/admins/:id', superadminController.updateAdmin);
 router.delete('/admins/:id', superadminController.deleteAdmin);
+
+// Partner Product-wise Commission & Visibility
+router.get('/partners/:id/products', superadminController.getPartnerProducts);
+router.put('/partners/:id/products', superadminController.updatePartnerProducts);
 router.get('/users', superadminController.getAllUsers);
 router.get('/users/:id', superadminController.getUserById);
 router.put('/users/:id', superadminController.updateUser);

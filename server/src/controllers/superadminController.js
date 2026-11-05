@@ -492,3 +492,157 @@ exports.updatePayoutStatus = asyncHandler(async (req, res) => {
 
   return res.json({ success: true, payout: updated, message: `Payout marked as ${status}` });
 });
+
+// ─────────────────────────────────────────────────────────────
+// PARTNER PRODUCT-WISE COMMISSIONS & VISIBILITY
+// ─────────────────────────────────────────────────────────────
+
+// GET /api/superadmin/partners/:id/products
+exports.getPartnerProducts = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const adminId = parseInt(id, 10);
+
+  const partner = await prisma.user.findUnique({
+    where: { id: adminId },
+    select: { id: true, name: true, orgName: true, commissionPercent: true }
+  });
+
+  if (!partner) {
+    throw new ApiError(404, 'Partner not found');
+  }
+
+  const [products, links] = await Promise.all([
+    prisma.product.findMany({
+      orderBy: { displayOrder: 'asc' }
+    }),
+    prisma.partnerProductLink.findMany({
+      where: { adminId }
+    })
+  ]);
+
+  const linksMap = {};
+  links.forEach(l => { linksMap[l.productId] = l; });
+
+  const partnerBaseComm = partner.commissionPercent !== null ? partner.commissionPercent : 15.0;
+
+  const items = products.map(p => {
+    const link = linksMap[p.id] || null;
+    const hasCustomComm = link && link.customCommission !== null && link.customCommission !== undefined;
+    const customCommission = hasCustomComm ? link.customCommission : null;
+    const effectiveCommission = hasCustomComm
+      ? link.customCommission
+      : (p.commissionPercent && p.commissionPercent > 0 ? p.commissionPercent : partnerBaseComm);
+    const isVisible = link ? (link.isVisible !== false) : true;
+
+    return {
+      productId: p.id,
+      title: p.title,
+      slug: p.slug,
+      price: p.price,
+      originalPrice: p.originalPrice,
+      image: p.image,
+      badge: p.badge,
+      productCommission: p.commissionPercent || 0,
+      partnerBaseCommission: partnerBaseComm,
+      customCommission,
+      effectiveCommission,
+      isVisible,
+      linkCode: link ? link.linkCode : null,
+      isActive: link ? link.isActive : true
+    };
+  });
+
+  return res.json({
+    success: true,
+    partner: {
+      id: partner.id,
+      name: partner.name,
+      orgName: partner.orgName,
+      baseCommission: partnerBaseComm
+    },
+    items
+  });
+});
+
+// PUT /api/superadmin/partners/:id/products
+exports.updatePartnerProducts = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const adminId = parseInt(id, 10);
+
+  const partner = await prisma.user.findUnique({
+    where: { id: adminId },
+    select: { id: true, name: true, orgName: true }
+  });
+
+  if (!partner) {
+    throw new ApiError(404, 'Partner not found');
+  }
+
+  const { generateLinkCode } = require('./adminController');
+
+  // Accepts either an array of configs or a single item
+  const configs = Array.isArray(req.body.configs)
+    ? req.body.configs
+    : (req.body.productId ? [req.body] : []);
+
+  if (!configs.length) {
+    throw new ApiError(400, 'Please provide product configurations to update');
+  }
+
+  for (const item of configs) {
+    const productId = parseInt(item.productId, 10);
+    if (!productId) continue;
+
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) continue;
+
+    const existing = await prisma.partnerProductLink.findFirst({
+      where: { adminId, productId }
+    });
+
+    const isVisible = item.isVisible !== undefined ? Boolean(item.isVisible) : true;
+    let customComm = null;
+    if (item.customCommission !== undefined && item.customCommission !== null && item.customCommission !== '') {
+      const parsedComm = parseFloat(item.customCommission);
+      if (!isNaN(parsedComm) && parsedComm >= 0) {
+        customComm = parsedComm;
+      }
+    }
+
+    if (existing) {
+      await prisma.partnerProductLink.update({
+        where: { id: existing.id },
+        data: {
+          customCommission: customComm,
+          isVisible,
+          isActive: item.isActive !== undefined ? Boolean(item.isActive) : existing.isActive
+        }
+      });
+    } else {
+      let linkCode;
+      let attempts = 0;
+      do {
+        linkCode = generateLinkCode(partner.orgName || partner.name, product.slug);
+        const clash = await prisma.partnerProductLink.findUnique({ where: { linkCode } });
+        if (!clash) break;
+        attempts++;
+      } while (attempts < 5);
+
+      await prisma.partnerProductLink.create({
+        data: {
+          adminId,
+          productId,
+          linkCode,
+          customCommission: customComm,
+          isVisible,
+          isActive: true
+        }
+      });
+    }
+  }
+
+  return res.json({
+    success: true,
+    message: 'Partner product commissions and visibility updated successfully.'
+  });
+});

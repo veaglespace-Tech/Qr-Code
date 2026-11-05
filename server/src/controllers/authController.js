@@ -47,11 +47,16 @@ exports.sendPartnerOTP = asyncHandler(async (req, res) => {
   // 4. Send verification email via Nodemailer
   const sendRes = await sendVerificationEmail(cleanEmail, otpRes.otp, name || 'Partner', 'Partner');
 
+  if (!sendRes.delivered) {
+    throw new ApiError(
+      500,
+      `Email delivery failed (${sendRes.error || 'SMTP connection failed'}). Please verify that EMAIL and EMAIL_PASS are configured on server.`
+    );
+  }
+
   return res.json({
     success: true,
-    message: sendRes.delivered
-      ? `Verification OTP sent to ${cleanEmail}. Please check your inbox.`
-      : `Verification code generated for ${cleanEmail}.`
+    message: `Verification OTP sent to ${cleanEmail}. Please check your inbox.`
   });
 });
 
@@ -111,11 +116,16 @@ exports.sendSuperadminOTP = asyncHandler(async (req, res) => {
     'Superadmin Login'
   );
 
+  if (!sendRes.delivered) {
+    throw new ApiError(
+      500,
+      `Failed to deliver security OTP to ${cleanEmail} (${sendRes.error || 'SMTP delivery failed'}). Please verify server EMAIL and EMAIL_PASS.`
+    );
+  }
+
   return res.json({
     success: true,
-    message: sendRes.delivered
-      ? `A 6-digit security code has been sent to ${cleanEmail}.`
-      : `Security code generated for ${cleanEmail}.`
+    message: `A 6-digit security code has been sent to ${cleanEmail}.`
   });
 });
 
@@ -354,13 +364,18 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   const [uname, domain] = user.email.split('@');
   const maskedEmail = (uname.length > 2 ? uname.slice(0, 2) + '***' : uname + '***') + '@' + domain;
 
+  if (!sendRes.delivered) {
+    throw new ApiError(
+      500,
+      `Failed to deliver password reset email to ${maskedEmail} (${sendRes.error || 'SMTP delivery failed'}). Please verify server EMAIL and EMAIL_PASS.`
+    );
+  }
+
   return res.json({
     success: true,
     email: user.email,
     maskedEmail,
-    message: sendRes.delivered
-      ? `A 6-digit password reset code has been sent to ${maskedEmail}.`
-      : `Password reset code generated for ${maskedEmail}.`
+    message: `A 6-digit password reset code has been sent to ${maskedEmail}.`
   });
 });
 

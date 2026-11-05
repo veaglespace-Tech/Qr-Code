@@ -2,10 +2,13 @@ const express = require('express');
 const router = express.Router();
 const superadminController = require('../controllers/superadminController');
 const couponController = require('../controllers/couponController');
+const settingController = require('../controllers/settingController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 router.use(authenticate);
 router.use(authorize('SUPERADMIN'));
+
+router.post('/test-email', settingController.testEmail);
 
 router.get('/analytics', superadminController.getAnalytics);
 router.get('/admins', superadminController.getAllAdmins);

@@ -200,3 +200,4 @@ exports.deleteCoupon = asyncHandler(async (req, res) => {
     message: 'Coupon deleted successfully.'
   });
 });
+

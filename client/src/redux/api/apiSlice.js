@@ -289,6 +289,13 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Payout', 'Superadmin', 'Admin'],
     }),
+    sendTestEmail: builder.mutation({
+      query: (body) => ({
+        url: '/superadmin/test-email',
+        method: 'POST',
+        body,
+      }),
+    }),
 
     // ---------------- PARTNER PRODUCT LINKS ----------------
     getMyProductLinks: builder.query({
@@ -406,6 +413,7 @@ export const {
   useDeleteUserMutation,
   useGetAllPayoutsQuery,
   useUpdatePayoutStatusMutation,
+  useSendTestEmailMutation,
 
   // Partner product link hooks
   useGetMyProductLinksQuery,

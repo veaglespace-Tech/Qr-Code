@@ -28,7 +28,8 @@ import {
   useGetAllCouponsQuery,
   useCreateCouponMutation,
   useUpdateCouponMutation,
-  useDeleteCouponMutation
+  useDeleteCouponMutation,
+  useSendTestEmailMutation
 } from '@/redux/api/apiSlice';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatUserFriendlyError } from '@/context/ToastContext';
@@ -350,6 +351,9 @@ export default function SuperadminDashboardPage() {
     isActive: true
   });
 
+  const [sendTestEmail, { isLoading: isSendingTestEmail }] = useSendTestEmailMutation();
+  const [testEmailInput, setTestEmailInput] = useState('');
+
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [adminCommissionInput, setAdminCommissionInput] = useState(15);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -580,6 +584,25 @@ export default function SuperadminDashboardPage() {
       }
     } catch (err) {
       triggerNotice('Failed to update settings', true);
+    }
+  };
+
+  const handleSendTestEmail = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const emailToSend = (testEmailInput || siteSettings.supportEmail || user?.email || '').trim();
+    if (!emailToSend) {
+      triggerNotice('Please enter an email address to test', true);
+      return;
+    }
+    try {
+      const res = await sendTestEmail({ email: emailToSend }).unwrap();
+      if (res.success) {
+        triggerNotice(res.message || `Test email sent successfully to ${emailToSend}!`);
+      } else {
+        triggerNotice(res.message || 'Failed to send test email', true);
+      }
+    } catch (err) {
+      triggerNotice(formatUserFriendlyError(err) || 'Failed to send test email. Check server SMTP credentials.', true);
     }
   };
 
@@ -2400,6 +2423,62 @@ export default function SuperadminDashboardPage() {
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
                     />
                     <p className="text-[10px] text-slate-400 mt-1">Leave empty to completely hide the top pill from the homepage.</p>
+                  </div>
+                </div>
+
+                {/* SMTP Email Diagnostics */}
+                <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-800">Email Delivery Diagnostics (SMTP Test)</h4>
+                        <p className="text-xs text-slate-500">Test if your server can send OTP & notification emails via Gmail SMTP</p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full w-fit">
+                      Port 465 SSL / 587 STARTTLS
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      <div className="flex-1">
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">Send Diagnostic OTP Email To:</label>
+                        <input
+                          type="email"
+                          value={testEmailInput}
+                          onChange={(e) => setTestEmailInput(e.target.value)}
+                          placeholder={siteSettings.supportEmail || "Enter email to receive test OTP"}
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="sm:self-end">
+                        <button
+                          type="button"
+                          onClick={handleSendTestEmail}
+                          disabled={isSendingTestEmail}
+                          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                        >
+                          {isSendingTestEmail ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Sending Test Email...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="w-3.5 h-3.5" />
+                              <span>Send Test OTP Email</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-2">
+                      💡 Tip: If you get an SMTP error, verify that the 16-character Google App Password in server <code className="text-purple-600 font-mono">.env</code> is up to date and restart server with <code className="text-purple-600 font-mono">pm2 restart qr-code-server</code>.
+                    </p>
                   </div>
                 </div>
               </div>

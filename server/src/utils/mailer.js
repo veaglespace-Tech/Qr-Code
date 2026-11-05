@@ -6,30 +6,55 @@ const nodemailer = require('nodemailer');
 let transporter = null;
 
 function getTransporter() {
-  if (!transporter && process.env.EMAIL && process.env.EMAIL_PASS) {
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+  const user = (process.env.EMAIL || process.env.SMTP_USER || '').trim();
+  const pass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
+
+  if (!user || !pass) {
+    return null;
   }
+
+  // Reuse existing transporter if credentials haven't changed
+  if (transporter && transporter._user === user && transporter._pass === pass) {
+    return transporter;
+  }
+
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465', 10),
+    secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : true, // SSL
+    auth: {
+      user,
+      pass
+    },
+    tls: {
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
+  });
+
+  transporter._user = user;
+  transporter._pass = pass;
   return transporter;
 }
 
 /**
- * Helper to dispatch email safely
+ * Helper to dispatch email safely with automatic Port 465 -> Port 587 fallback
  */
 async function sendMailSafe({ to, subject, html, text }) {
-  const mailTransporter = getTransporter();
-  const fromAddress = `"ReviewXpress" <${process.env.EMAIL || 'noreply@reviewexpress.com'}>`;
+  const user = (process.env.EMAIL || process.env.SMTP_USER || '').trim();
+  const pass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
+  const fromAddress = `"ReviewXpress" <${user || 'info@veaglespace.com'}>`;
 
-  if (!mailTransporter) {
-    console.warn(`[MAIL FALLBACK - SMTP NOT CONFIGURED] Subject: "${subject}" to: ${to}`);
-    return { delivered: false, error: 'SMTP not configured in .env' };
+  if (!user || !pass) {
+    console.warn(`⚠️ [MAIL FALLBACK - SMTP NOT CONFIGURED] EMAIL or EMAIL_PASS missing in server/.env! Subject: "${subject}" to: ${to}`);
+    return { delivered: false, error: 'SMTP credentials (EMAIL / EMAIL_PASS) missing in server/.env' };
   }
 
+  const mailTransporter = getTransporter();
+
+  // Attempt 1: Port 465 SSL
   try {
     const info = await mailTransporter.sendMail({
       from: fromAddress,
@@ -38,11 +63,43 @@ async function sendMailSafe({ to, subject, html, text }) {
       html,
       text: text || ''
     });
-    console.log(`✅ [EMAIL SENT] to ${to} | Subject: "${subject}" | ID: ${info.messageId}`);
+    console.log(`✅ [EMAIL SENT SUCCESSFULLY] to ${to} | Subject: "${subject}" | ID: ${info.messageId}`);
     return { delivered: true, messageId: info.messageId };
   } catch (err) {
-    console.error(`❌ [EMAIL ERROR] Failed to send to ${to}: ${err.message}`);
-    return { delivered: false, error: err.message };
+    console.error(`❌ [EMAIL ATTEMPT 1 FAILED] to ${to}: ${err.message}. Retrying via port 587 STARTTLS...`);
+    transporter = null;
+
+    // Attempt 2: Port 587 STARTTLS fallback (in case port 465 is blocked by VPS host)
+    try {
+      const fallbackTransporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // STARTTLS
+        auth: {
+          user,
+          pass
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
+      });
+
+      const info2 = await fallbackTransporter.sendMail({
+        from: fromAddress,
+        to,
+        subject,
+        html,
+        text: text || ''
+      });
+      console.log(`✅ [EMAIL SENT ON FALLBACK PORT 587] to ${to} | Subject: "${subject}" | ID: ${info2.messageId}`);
+      return { delivered: true, messageId: info2.messageId };
+    } catch (err2) {
+      console.error(`❌ [EMAIL ATTEMPT 2 FAILED] to ${to}: ${err2.message}`);
+      return { delivered: false, error: err2.message || err.message };
+    }
   }
 }
 
@@ -153,6 +210,7 @@ async function sendVerificationEmail(toEmail, otp, name = 'Valued User', purpose
     </p>
   `;
 
+  console.log(`🔑 [SECURITY OTP GENERATED] For ${toEmail}: [${otp}] (Purpose: ${purpose})`);
   const html = wrapHtml(title, { text: badgeText, className: badgeClass }, content);
   return sendMailSafe({ to: toEmail, subject: emailSubject, html });
 }

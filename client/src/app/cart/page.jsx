@@ -32,10 +32,25 @@ export default function CartPage() {
   );
 
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const gstPercent = (settings && settings.gstEnabled) ? (settings.gstPercent || 18) : 0;
+  const gstPercent = (settings && settings.gstEnabled)
+    ? (settings.gstPercent !== undefined ? Number(settings.gstPercent) : 18)
+    : 0;
   const gstAmount = Number(((subtotal * gstPercent) / 100).toFixed(2));
-  const freeShippingAbove = settings?.freeShippingAbove || 999;
-  const shippingFee = subtotal >= freeShippingAbove || items.length === 0 ? 0 : (settings?.standardShippingFee || 60);
+
+  const standardShippingFee = (settings && settings.standardShippingFee !== undefined && settings.standardShippingFee !== null)
+    ? Number(settings.standardShippingFee)
+    : 60;
+  const freeShippingEnabled = settings?.freeShippingEnabled !== undefined ? Boolean(settings.freeShippingEnabled) : true;
+  const freeShippingAbove = (settings && settings.freeShippingAbove !== undefined && settings.freeShippingAbove !== null)
+    ? Number(settings.freeShippingAbove)
+    : 999;
+
+  let shippingFee = items.length === 0 ? 0 : standardShippingFee;
+  if (standardShippingFee === 0) {
+    shippingFee = 0;
+  } else if (freeShippingEnabled && freeShippingAbove > 0 && subtotal >= freeShippingAbove) {
+    shippingFee = 0;
+  }
 
   const hasReferral = Boolean((activeRefCode && activeRefCode.trim()) || partnerInfo?.linkCode);
   const discountAmount = 0;

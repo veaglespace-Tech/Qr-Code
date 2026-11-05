@@ -129,49 +129,54 @@ exports.deleteAdmin = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const adminIdInt = parseInt(id, 10);
 
-  // 1. Nullify references in orders where admin was the referrer
-  await prisma.order.updateMany({
-    where: { adminReferralId: adminIdInt },
-    data: { adminReferralId: null }
-  });
-
-  // 2. Handle partner product links: unlink orders first, then delete links
-  const partnerLinks = await prisma.partnerProductLink.findMany({
-    where: { adminId: adminIdInt },
-    select: { id: true }
-  });
-  if (partnerLinks.length > 0) {
-    const linkIds = partnerLinks.map(l => l.id);
+  try {
+    // 1. Nullify references in orders where admin was the referrer
     await prisma.order.updateMany({
-      where: { partnerLinkId: { in: linkIds } },
-      data: { partnerLinkId: null }
+      where: { adminReferralId: adminIdInt },
+      data: { adminReferralId: null }
     });
-    await prisma.partnerProductLink.deleteMany({
+
+    // 2. Handle partner product links: unlink orders first, then delete links
+    const partnerLinks = await prisma.partnerProductLink.findMany({
+      where: { adminId: adminIdInt },
+      select: { id: true }
+    });
+    if (partnerLinks.length > 0) {
+      const linkIds = partnerLinks.map(l => l.id);
+      await prisma.order.updateMany({
+        where: { partnerLinkId: { in: linkIds } },
+        data: { partnerLinkId: null }
+      });
+      await prisma.partnerProductLink.deleteMany({
+        where: { adminId: adminIdInt }
+      });
+    }
+
+    // 3. Delete all payouts associated with this partner
+    await prisma.payout.deleteMany({
       where: { adminId: adminIdInt }
     });
+
+    // 4. Nullify referral tree references for users referred by this partner
+    await prisma.user.updateMany({
+      where: { referredById: adminIdInt },
+      data: { referredById: null }
+    });
+
+    // 5. Unlink any personal orders placed by this user account
+    await prisma.order.updateMany({
+      where: { userId: adminIdInt },
+      data: { userId: null }
+    });
+
+    // 6. Delete the partner user account
+    await prisma.user.delete({ where: { id: adminIdInt } });
+
+    return res.json({ success: true, message: 'Partner account permanently deleted.' });
+  } catch (err) {
+    console.error('[Delete Partner Error]', err);
+    throw new ApiError(400, `Cannot delete partner: ${err.message || 'database constraint violation'}`);
   }
-
-  // 3. Delete all payouts associated with this partner
-  await prisma.payout.deleteMany({
-    where: { adminId: adminIdInt }
-  });
-
-  // 4. Nullify referral tree references for users referred by this partner
-  await prisma.user.updateMany({
-    where: { referredById: adminIdInt },
-    data: { referredById: null }
-  });
-
-  // 5. Unlink any personal orders placed by this user account
-  await prisma.order.updateMany({
-    where: { userId: adminIdInt },
-    data: { userId: null }
-  });
-
-  // 6. Delete the partner user account
-  await prisma.user.delete({ where: { id: adminIdInt } });
-
-  return res.json({ success: true, message: 'Partner account permanently deleted' });
 });
 
 exports.getAllAdmins = asyncHandler(async (req, res) => {

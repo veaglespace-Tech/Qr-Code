@@ -24,7 +24,11 @@ import {
   useUpdateAdminMutation,
   useDeleteAdminMutation,
   useUpdatePayoutStatusMutation,
-  useUpdateProfileMutation
+  useUpdateProfileMutation,
+  useGetAllCouponsQuery,
+  useCreateCouponMutation,
+  useUpdateCouponMutation,
+  useDeleteCouponMutation
 } from '@/redux/api/apiSlice';
 import { useDebounce } from '@/hooks/useDebounce';
 import { formatUserFriendlyError } from '@/context/ToastContext';
@@ -83,7 +87,12 @@ import {
   Pause,
   SlidersHorizontal,
   Layers,
-  Globe
+  Globe,
+  Tag,
+  Percent,
+  Calendar,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import Link from 'next/link';
 import ReviewXpressLogo from '@/components/ReviewXpressLogo';
@@ -136,6 +145,7 @@ export default function SuperadminDashboardPage() {
   const { data: admData, isLoading: admLoading, refetch: refetchAdm } = useGetAllAdminsQuery();
   const { data: usrData, isLoading: usrLoading, refetch: refetchUsr } = useGetAllUsersQuery();
   const { data: payData, isLoading: payLoading, refetch: refetchPay } = useGetAllPayoutsQuery();
+  const { data: coupData, isLoading: coupLoading, refetch: refetchCoup } = useGetAllCouponsQuery();
 
   const [updateSettings, { isLoading: isUpdatingSettings }] = useUpdateSettingsMutation();
   const [updateOrder, { isLoading: isUpdatingOrder }] = useUpdateOrderMutation();
@@ -148,6 +158,9 @@ export default function SuperadminDashboardPage() {
   const [deleteAdmin] = useDeleteAdminMutation();
   const [updatePayoutStatus] = useUpdatePayoutStatusMutation();
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+  const [createCoupon, { isLoading: isCreatingCoupon }] = useCreateCouponMutation();
+  const [updateCoupon, { isLoading: isUpdatingCoupon }] = useUpdateCouponMutation();
+  const [deleteCoupon, { isLoading: isDeletingCoupon }] = useDeleteCouponMutation();
 
   // Profile Form state
   const [profileForm, setProfileForm] = useState({
@@ -209,6 +222,7 @@ export default function SuperadminDashboardPage() {
   const admins = admData?.admins || [];
   const users = usrData?.users || [];
   const payouts = payData?.payouts || [];
+  const coupons = coupData?.coupons || [];
 
   // Guaranteed resilient analytics with instant fallback computation from loaded entities
   const analytics = useMemo(() => {
@@ -315,8 +329,25 @@ export default function SuperadminDashboardPage() {
     image: '',
     description: '',
     features: '',
+    specs: '',
+    commissionPercent: '',
     isActive: true,
     displayOrder: 1
+  });
+
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState(null);
+  const [couponSearch, setCouponSearch] = useState('');
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    description: '',
+    discountType: 'PERCENTAGE',
+    discountValue: '',
+    minOrderAmount: '',
+    maxDiscountAmount: '',
+    expiryDate: '',
+    usageLimit: '',
+    isActive: true
   });
 
   const [editingAdmin, setEditingAdmin] = useState(null);
@@ -533,13 +564,82 @@ export default function SuperadminDashboardPage() {
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
-      const res = await updateSettings(siteSettings).unwrap();
+      const payload = {
+        ...siteSettings,
+        gstPercent: siteSettings.gstPercent === '' ? 0 : parseFloat(siteSettings.gstPercent || 0),
+        freeShippingAbove: siteSettings.freeShippingAbove === '' ? 0 : parseFloat(siteSettings.freeShippingAbove || 0),
+        standardShippingFee: siteSettings.standardShippingFee === '' ? 0 : parseFloat(siteSettings.standardShippingFee || 0),
+        defaultCommissionPercent: siteSettings.defaultCommissionPercent === '' ? 15 : parseFloat(siteSettings.defaultCommissionPercent || 15),
+        freeShippingEnabled: Boolean(siteSettings.freeShippingEnabled !== false),
+        announcementBanner: siteSettings.announcementBanner !== undefined ? siteSettings.announcementBanner : ''
+      };
+      const res = await updateSettings(payload).unwrap();
       if (res.success) {
         triggerNotice('Platform & GST settings updated successfully!');
         dispatch(updateLocalSettings(res.settings));
       }
     } catch (err) {
       triggerNotice('Failed to update settings', true);
+    }
+  };
+
+  // Coupon handlers
+  const handleSaveCoupon = async (e) => {
+    e.preventDefault();
+    if (!couponForm.code.trim()) {
+      triggerNotice('Coupon code is required', true);
+      return;
+    }
+    if (!couponForm.discountValue || parseFloat(couponForm.discountValue) <= 0) {
+      triggerNotice('Please enter a valid discount value', true);
+      return;
+    }
+    try {
+      const payload = {
+        code: couponForm.code.trim().toUpperCase(),
+        description: couponForm.description,
+        discountType: couponForm.discountType,
+        discountValue: parseFloat(couponForm.discountValue),
+        minOrderAmount: couponForm.minOrderAmount ? parseFloat(couponForm.minOrderAmount) : 0,
+        maxDiscountAmount: couponForm.maxDiscountAmount ? parseFloat(couponForm.maxDiscountAmount) : null,
+        expiryDate: couponForm.expiryDate || null,
+        usageLimit: couponForm.usageLimit ? parseInt(couponForm.usageLimit, 10) : null,
+        isActive: Boolean(couponForm.isActive)
+      };
+
+      if (editingCoupon) {
+        await updateCoupon({ id: editingCoupon.id, ...payload }).unwrap();
+        triggerNotice(`Coupon "${payload.code}" updated successfully!`);
+      } else {
+        await createCoupon(payload).unwrap();
+        triggerNotice(`Coupon "${payload.code}" created successfully!`);
+      }
+      setCouponModalOpen(false);
+      setEditingCoupon(null);
+      refetchCoup();
+    } catch (err) {
+      triggerNotice(err?.data?.message || err?.message || 'Failed to save coupon', true);
+    }
+  };
+
+  const handleToggleCoupon = async (c) => {
+    try {
+      await updateCoupon({ id: c.id, isActive: !c.isActive }).unwrap();
+      triggerNotice(`Coupon "${c.code}" ${!c.isActive ? 'activated' : 'deactivated'}`);
+      refetchCoup();
+    } catch (err) {
+      triggerNotice('Failed to update coupon status', true);
+    }
+  };
+
+  const handleDeleteCoupon = async (id, code) => {
+    if (!window.confirm(`Are you sure you want to delete coupon "${code}"?`)) return;
+    try {
+      await deleteCoupon(id).unwrap();
+      triggerNotice(`Coupon "${code}" deleted successfully.`);
+      refetchCoup();
+    } catch (err) {
+      triggerNotice('Failed to delete coupon', true);
     }
   };
 
@@ -631,6 +731,7 @@ export default function SuperadminDashboardPage() {
     { id: 'analytics', label: 'Overview', icon: LayoutDashboard },
     { id: 'orders', label: 'Orders', icon: Package, badge: orders.length },
     { id: 'products', label: 'Products', icon: Sparkles, badge: products.length },
+    { id: 'coupons', label: 'Coupons & Promos', icon: Tag, badge: coupons.length || null },
     { id: 'admins', label: 'Partners', icon: Building, badge: admins.length },
     { id: 'users', label: 'Customers', icon: UserCheck, badge: users.length },
     { id: 'payouts', label: 'Payout Requests', icon: IndianRupee, badge: payouts.filter(p => p.status === 'pending').length || null, badgeColor: 'bg-amber-500' },
@@ -794,6 +895,7 @@ export default function SuperadminDashboardPage() {
                 {activeTab === 'analytics' && 'Overview & Analytics'}
                 {activeTab === 'orders' && 'Orders & Courier Tracking'}
                 {activeTab === 'products' && 'Product Catalog'}
+                {activeTab === 'coupons' && 'Discount Coupons & Promo Codes'}
                 {activeTab === 'admins' && 'Partners & Affiliates'}
                 {activeTab === 'users' && 'Customers Directory'}
                 {activeTab === 'payouts' && 'Partner Payout Requests'}
@@ -813,6 +915,7 @@ export default function SuperadminDashboardPage() {
                 refetchAdm();
                 refetchUsr();
                 refetchPay();
+                refetchCoup();
                 triggerNotice('Data refreshed successfully!');
               }}
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
@@ -844,6 +947,8 @@ export default function SuperadminDashboardPage() {
                     image: '',
                     description: '',
                     features: '',
+                    specs: '',
+                    commissionPercent: '',
                     isActive: true,
                     displayOrder: products.length + 1
                   });
@@ -853,6 +958,30 @@ export default function SuperadminDashboardPage() {
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Product</span>
+              </button>
+            )}
+
+            {activeTab === 'coupons' && (
+              <button
+                onClick={() => {
+                  setEditingCoupon(null);
+                  setCouponForm({
+                    code: '',
+                    description: '',
+                    discountType: 'PERCENTAGE',
+                    discountValue: '',
+                    minOrderAmount: '',
+                    maxDiscountAmount: '',
+                    expiryDate: '',
+                    usageLimit: '',
+                    isActive: true
+                  });
+                  setCouponModalOpen(true);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/25 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Create Coupon</span>
               </button>
             )}
           </div>
@@ -1233,6 +1362,8 @@ export default function SuperadminDashboardPage() {
                           image: '',
                           description: '',
                           features: '',
+                          specs: '',
+                          commissionPercent: '',
                           isActive: true,
                           displayOrder: products.length + 1
                         });
@@ -1463,7 +1594,11 @@ export default function SuperadminDashboardPage() {
                                   stock: prod.stock || 100,
                                   image: prod.image || '',
                                   description: prod.description || '',
-                                  features: prod.features || '',
+                                  features: Array.isArray(prod.features) ? prod.features.join('\n') : (prod.features || ''),
+                                  specs: prod.specs && typeof prod.specs === 'object'
+                                    ? Object.entries(prod.specs).map(([k, v]) => `${k}: ${v}`).join('\n')
+                                    : (prod.specs || ''),
+                                  commissionPercent: prod.commissionPercent !== undefined && prod.commissionPercent !== null ? prod.commissionPercent : '',
                                   isActive: prod.isActive !== false,
                                   displayOrder: prod.displayOrder || idx + 1
                                 });
@@ -1844,6 +1979,186 @@ export default function SuperadminDashboardPage() {
             </div>
           )}
 
+          {/* ================= TAB: COUPONS & DISCOUNTS ================= */}
+          {activeTab === 'coupons' && (
+            <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Active Coupons & Promo Codes</h3>
+                  <p className="text-xs text-slate-400">Create discount codes for customer checkout campaigns</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={couponSearch}
+                      onChange={(e) => setCouponSearch(e.target.value)}
+                      placeholder="Search coupons..."
+                      className="pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingCoupon(null);
+                      setCouponForm({
+                        code: '',
+                        description: '',
+                        discountType: 'PERCENTAGE',
+                        discountValue: '',
+                        minOrderAmount: '',
+                        maxDiscountAmount: '',
+                        expiryDate: '',
+                        usageLimit: '',
+                        isActive: true
+                      });
+                      setCouponModalOpen(true);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-purple-600/25 transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Create Coupon</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Coupons List Table */}
+              <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase border-b border-slate-100">
+                    <tr>
+                      <th className="py-3 px-4">Coupon Code</th>
+                      <th className="py-3 px-4">Discount</th>
+                      <th className="py-3 px-4">Min. Subtotal</th>
+                      <th className="py-3 px-4">Usage Count</th>
+                      <th className="py-3 px-4">Expiry Date</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {coupons.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-10 text-center text-slate-400">
+                          <Tag className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                          <p className="font-medium">No coupons created yet.</p>
+                          <p className="text-[11px] mt-0.5">Click "Create Coupon" to add your first promo code.</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      coupons
+                        .filter(c => !couponSearch || c.code.toLowerCase().includes(couponSearch.toLowerCase()) || (c.description && c.description.toLowerCase().includes(couponSearch.toLowerCase())))
+                        .map(c => {
+                          const isExpired = c.expiryDate && new Date() > new Date(c.expiryDate);
+                          return (
+                            <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                                    {c.code}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(c.code);
+                                      triggerNotice(`Copied "${c.code}"`);
+                                    }}
+                                    className="text-slate-400 hover:text-purple-600"
+                                    title="Copy Code"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                {c.description && (
+                                  <span className="text-[11px] text-slate-400 font-normal block mt-0.5">{c.description}</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 font-bold text-slate-900">
+                                {c.discountType === 'PERCENTAGE' ? (
+                                  <div>
+                                    <span className="text-emerald-700">{c.discountValue}% OFF</span>
+                                    {c.maxDiscountAmount && (
+                                      <span className="text-[10px] text-slate-400 block font-normal">Max ₹{c.maxDiscountAmount}</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-emerald-700">₹{c.discountValue} FLAT OFF</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-600 font-medium">
+                                {c.minOrderAmount > 0 ? `₹${c.minOrderAmount}` : 'No minimum'}
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-600">
+                                <span className="font-bold text-slate-900">{c.usedCount}</span>
+                                {c.usageLimit !== null && c.usageLimit !== undefined ? (
+                                  <span className="text-slate-400"> / {c.usageLimit}</span>
+                                ) : (
+                                  <span className="text-slate-400"> / Unlimited</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-600">
+                                {c.expiryDate ? (
+                                  <span className={isExpired ? 'text-rose-600 font-bold' : ''}>
+                                    {new Date(c.expiryDate).toLocaleDateString('en-IN')}
+                                    {isExpired && ' (Expired)'}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">Never</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <button
+                                  onClick={() => handleToggleCoupon(c)}
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase transition-colors ${
+                                    c.isActive && !isExpired
+                                      ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  {c.isActive && !isExpired ? 'Active' : 'Disabled'}
+                                </button>
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      setEditingCoupon(c);
+                                      setCouponForm({
+                                        code: c.code,
+                                        description: c.description || '',
+                                        discountType: c.discountType || 'PERCENTAGE',
+                                        discountValue: c.discountValue,
+                                        minOrderAmount: c.minOrderAmount || '',
+                                        maxDiscountAmount: c.maxDiscountAmount || '',
+                                        expiryDate: c.expiryDate ? new Date(c.expiryDate).toISOString().split('T')[0] : '',
+                                        usageLimit: c.usageLimit || '',
+                                        isActive: c.isActive !== false
+                                      });
+                                      setCouponModalOpen(true);
+                                    }}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                                    title="Edit Coupon"
+                                  >
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCoupon(c.id, c.code)}
+                                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-colors"
+                                    title="Delete Coupon"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* ================= TAB 7: SETTINGS ================= */}
           {activeTab === 'settings' && (
             <form onSubmit={handleSaveSettings} className="space-y-6">
@@ -1921,8 +2236,11 @@ export default function SuperadminDashboardPage() {
                       <label className="block text-xs font-bold text-slate-700 mb-1">GST Percentage (%)</label>
                       <input
                         type="number"
-                        value={siteSettings.gstPercent || 18}
-                        onChange={(e) => setSiteSettings({ ...siteSettings, gstPercent: parseFloat(e.target.value) })}
+                        step="0.01"
+                        min="0"
+                        value={siteSettings.gstPercent ?? ''}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, gstPercent: e.target.value === '' ? '' : e.target.value })}
+                        placeholder="18"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white"
                       />
                     </div>
@@ -1930,8 +2248,9 @@ export default function SuperadminDashboardPage() {
                       <label className="block text-xs font-bold text-slate-700 mb-1">HSN / SAC Code</label>
                       <input
                         type="text"
-                        value={siteSettings.hsnCode || '852352'}
+                        value={siteSettings.hsnCode ?? ''}
                         onChange={(e) => setSiteSettings({ ...siteSettings, hsnCode: e.target.value })}
+                        placeholder="852352"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
                       />
                     </div>
@@ -1954,9 +2273,22 @@ export default function SuperadminDashboardPage() {
                   <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                     <Truck className="w-5 h-5 text-emerald-600" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Shipping &amp; Delivery Charges</h4>
-                      <p className="text-[11px] text-slate-400">Free shipping rules and delivery charges</p>
+                      <h4 className="font-bold text-slate-900 text-sm">Shipping & Delivery Charges</h4>
+                      <p className="text-[11px] text-slate-400">Courier delivery rules and free shipping thresholds</p>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block">Enable Free Shipping Above Threshold</span>
+                      <span className="text-[11px] text-slate-500">Orders above threshold receive 100% free courier delivery</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(siteSettings.freeShippingEnabled !== false)}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, freeShippingEnabled: e.target.checked })}
+                      className="w-4 h-4 accent-emerald-600 cursor-pointer"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -1964,19 +2296,27 @@ export default function SuperadminDashboardPage() {
                       <label className="block text-xs font-bold text-slate-700 mb-1">Free Shipping Above (₹)</label>
                       <input
                         type="number"
-                        value={siteSettings.freeShippingAbove || 999}
-                        onChange={(e) => setSiteSettings({ ...siteSettings, freeShippingAbove: parseFloat(e.target.value) })}
+                        step="1"
+                        min="0"
+                        value={siteSettings.freeShippingAbove ?? ''}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, freeShippingAbove: e.target.value === '' ? '' : e.target.value })}
+                        placeholder="999"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white"
                       />
+                      <p className="text-[10px] text-slate-400 mt-1">Orders with subtotal at or above this amount get FREE delivery.</p>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">Standard Delivery Fee (₹)</label>
                       <input
                         type="number"
-                        value={siteSettings.standardShippingFee || 60}
-                        onChange={(e) => setSiteSettings({ ...siteSettings, standardShippingFee: parseFloat(e.target.value) })}
+                        step="1"
+                        min="0"
+                        value={siteSettings.standardShippingFee ?? ''}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, standardShippingFee: e.target.value === '' ? '' : e.target.value })}
+                        placeholder="60"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white"
                       />
+                      <p className="text-[10px] text-slate-400 mt-1">Charged when order is below threshold. Set to 0 for free delivery on all orders.</p>
                     </div>
                   </div>
                 </div>
@@ -1986,7 +2326,7 @@ export default function SuperadminDashboardPage() {
                   <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                     <Store className="w-5 h-5 text-amber-600" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">Company &amp; Contact Information</h4>
+                      <h4 className="font-bold text-slate-900 text-sm">Company & Contact Information</h4>
                       <p className="text-[11px] text-slate-400">Details shown on tax invoices, website footer, and contact page</p>
                     </div>
                   </div>
@@ -2006,8 +2346,10 @@ export default function SuperadminDashboardPage() {
                       <label className="block text-xs font-bold text-slate-700 mb-1">Default Partner Commission (%)</label>
                       <input
                         type="number"
-                        value={siteSettings.defaultCommissionPercent || 15}
-                        onChange={(e) => setSiteSettings({ ...siteSettings, defaultCommissionPercent: parseFloat(e.target.value) })}
+                        step="0.1"
+                        min="0"
+                        value={siteSettings.defaultCommissionPercent ?? ''}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, defaultCommissionPercent: e.target.value === '' ? '' : e.target.value })}
                         placeholder="15"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white"
                       />
@@ -2052,11 +2394,12 @@ export default function SuperadminDashboardPage() {
                     <label className="block text-xs font-bold text-slate-700 mb-1">Top Announcement Banner</label>
                     <input
                       type="text"
-                      value={siteSettings.announcementBanner || ''}
+                      value={siteSettings.announcementBanner ?? ''}
                       onChange={(e) => setSiteSettings({ ...siteSettings, announcementBanner: e.target.value })}
-                      placeholder="e.g. Simple • Fast • Convenient Google Review Hardware by Veagle Space Technology"
+                      placeholder="Leave completely blank to hide top announcement banner"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
                     />
+                    <p className="text-[10px] text-slate-400 mt-1">Leave empty to completely hide the top pill from the homepage.</p>
                   </div>
                 </div>
               </div>
@@ -2558,15 +2901,54 @@ export default function SuperadminDashboardPage() {
                     />
                   </div>
 
+                  {/* Custom Product Commission */}
+                  <div className="col-span-2 p-3.5 rounded-xl bg-purple-50/70 border border-purple-200">
+                    <label className="block text-xs font-bold text-purple-900 mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Percent className="w-3.5 h-3.5 text-purple-600" />
+                        Custom Partner Commission Rate (%)
+                      </span>
+                      <span className="text-[10px] text-purple-600 font-normal">Overrides default partner commission</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={productForm.commissionPercent}
+                      onChange={(e) => setProductForm({ ...productForm, commissionPercent: e.target.value })}
+                      placeholder="e.g. 20 (Leave blank or 0 to use partner default commission)"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-purple-200 text-slate-900 text-xs font-bold focus:border-purple-600 transition-colors"
+                    />
+                    <p className="text-[10px] text-purple-700/80 mt-1">
+                      If set, partners earn this percentage on sales of this specific product (Priority: Product Commission &gt; Partner Custom Commission &gt; Default 15%).
+                    </p>
+                  </div>
+
                   <div className="col-span-2">
                     <label className="block text-xs font-bold text-slate-700 mb-1">Key Features (One per line)</label>
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={productForm.features}
                       onChange={(e) => setProductForm({ ...productForm, features: e.target.value })}
-                      placeholder="Instant 1-Tap NFC&#10;Dynamic Laser QR Code"
+                      placeholder="Instant 1-Tap NFC&#10;Dynamic Laser QR Code&#10;Pre-applied 3M heavy duty desk adhesive"
                       className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono focus:bg-white focus:border-purple-500 transition-colors"
                     />
+                    <p className="text-[10px] text-slate-400 mt-1">Leave completely blank to remove product features.</p>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Technical Specifications (One per line as: Key: Value)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={productForm.specs}
+                      onChange={(e) => setProductForm({ ...productForm, specs: e.target.value })}
+                      placeholder="Material: Brushed Aluminium Composite + Acrylic Core&#10;Dimensions: 120mm x 80mm&#10;Mounting: Desktop Stand or 3M Wall Mount&#10;NFC Range: Up to 3.5 cm"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono focus:bg-white focus:border-purple-500 transition-colors"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Leave completely blank to hide technical specifications.</p>
                   </div>
                 </div>
               </div>
@@ -2674,6 +3056,173 @@ export default function SuperadminDashboardPage() {
                   className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs"
                 >
                   Update Rate
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: CREATE / EDIT COUPON ================= */}
+      {couponModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Tag className="w-5 h-5 text-purple-600" />
+                <h3 className="font-bold text-slate-900 text-sm">
+                  {editingCoupon ? `Edit Coupon: ${editingCoupon.code}` : 'Create New Discount Coupon'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setCouponModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCoupon} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Coupon Code *</label>
+                  <input
+                    type="text"
+                    required
+                    disabled={Boolean(editingCoupon)}
+                    value={couponForm.code}
+                    onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase().replace(/\s+/g, '') })}
+                    placeholder="e.g. SAVE10"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono font-bold uppercase text-slate-900 focus:bg-white focus:border-purple-600 disabled:opacity-60"
+                  />
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Discount Type *</label>
+                  <select
+                    value={couponForm.discountType}
+                    onChange={(e) => setCouponForm({ ...couponForm, discountType: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:bg-white focus:border-purple-600"
+                  >
+                    <option value="PERCENTAGE">Percentage (% Off)</option>
+                    <option value="FLAT">Flat Amount (₹ Off)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {couponForm.discountType === 'PERCENTAGE' ? 'Discount (%) *' : 'Discount (₹) *'}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    max={couponForm.discountType === 'PERCENTAGE' ? 100 : 100000}
+                    required
+                    value={couponForm.discountValue}
+                    onChange={(e) => setCouponForm({ ...couponForm, discountValue: e.target.value })}
+                    placeholder={couponForm.discountType === 'PERCENTAGE' ? '10' : '150'}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:bg-white focus:border-purple-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Min Order Subtotal (₹)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={couponForm.minOrderAmount}
+                    onChange={(e) => setCouponForm({ ...couponForm, minOrderAmount: e.target.value })}
+                    placeholder="0"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:border-purple-600"
+                  />
+                </div>
+
+                {couponForm.discountType === 'PERCENTAGE' && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Max Cap Amount (₹)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={couponForm.maxDiscountAmount}
+                      onChange={(e) => setCouponForm({ ...couponForm, maxDiscountAmount: e.target.value })}
+                      placeholder="Optional cap (e.g. 500)"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:border-purple-600"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Max Total Uses</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    value={couponForm.usageLimit}
+                    onChange={(e) => setCouponForm({ ...couponForm, usageLimit: e.target.value })}
+                    placeholder="Leave blank for unlimited"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:border-purple-600"
+                  />
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Expiry Date</label>
+                  <input
+                    type="date"
+                    value={couponForm.expiryDate}
+                    onChange={(e) => setCouponForm({ ...couponForm, expiryDate: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:border-purple-600"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Description / Campaign Name</label>
+                  <input
+                    type="text"
+                    value={couponForm.description}
+                    onChange={(e) => setCouponForm({ ...couponForm, description: e.target.value })}
+                    placeholder="e.g. Festive promotion for new store opening"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white focus:border-purple-600"
+                  />
+                </div>
+
+                <div className="col-span-2 flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-xs font-bold text-slate-800">Coupon Status</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(couponForm.isActive)}
+                      onChange={(e) => setCouponForm({ ...couponForm, isActive: e.target.checked })}
+                      className="w-4 h-4 accent-purple-600"
+                    />
+                    <span className="text-xs font-semibold text-slate-700">Active</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setCouponModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingCoupon || isUpdatingCoupon}
+                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs shadow-sm shadow-purple-600/25 transition-all flex items-center gap-1.5"
+                >
+                  {isCreatingCoupon || isUpdatingCoupon ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>{editingCoupon ? 'Update Coupon' : 'Create Coupon'}</span>
+                  )}
                 </button>
               </div>
             </form>

@@ -125,16 +125,18 @@ exports.updateSettings = asyncHandler(async (req, res) => {
       }
     });
   } else {
+    const cleanData = { ...updates };
+    if (updates.gstPercent !== undefined) cleanData.gstPercent = (updates.gstPercent === '' || isNaN(updates.gstPercent)) ? 0.0 : parseFloat(updates.gstPercent);
+    if (updates.defaultCommissionPercent !== undefined) cleanData.defaultCommissionPercent = (updates.defaultCommissionPercent === '' || isNaN(updates.defaultCommissionPercent)) ? 15.0 : parseFloat(updates.defaultCommissionPercent);
+    if (updates.minPayoutAmount !== undefined) cleanData.minPayoutAmount = (updates.minPayoutAmount === '' || isNaN(updates.minPayoutAmount)) ? 500.0 : parseFloat(updates.minPayoutAmount);
+    if (updates.freeShippingAbove !== undefined) cleanData.freeShippingAbove = (updates.freeShippingAbove === '' || isNaN(updates.freeShippingAbove)) ? 0.0 : parseFloat(updates.freeShippingAbove);
+    if (updates.standardShippingFee !== undefined) cleanData.standardShippingFee = (updates.standardShippingFee === '' || isNaN(updates.standardShippingFee)) ? 0.0 : parseFloat(updates.standardShippingFee);
+    if (updates.freeShippingEnabled !== undefined) cleanData.freeShippingEnabled = Boolean(updates.freeShippingEnabled);
+    if (updates.announcementBanner !== undefined) cleanData.announcementBanner = typeof updates.announcementBanner === 'string' ? updates.announcementBanner.trim() : '';
+
     settings = await prisma.setting.update({
       where: { id: settings.id },
-      data: {
-        ...updates,
-        gstPercent: updates.gstPercent !== undefined ? parseFloat(updates.gstPercent) : settings.gstPercent,
-        defaultCommissionPercent: updates.defaultCommissionPercent !== undefined ? parseFloat(updates.defaultCommissionPercent) : settings.defaultCommissionPercent,
-        minPayoutAmount: updates.minPayoutAmount !== undefined ? parseFloat(updates.minPayoutAmount) : settings.minPayoutAmount,
-        freeShippingAbove: updates.freeShippingAbove !== undefined ? parseFloat(updates.freeShippingAbove) : settings.freeShippingAbove,
-        standardShippingFee: updates.standardShippingFee !== undefined ? parseFloat(updates.standardShippingFee) : settings.standardShippingFee
-      }
+      data: cleanData
     });
   }
 

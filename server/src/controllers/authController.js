@@ -51,9 +51,7 @@ exports.sendPartnerOTP = asyncHandler(async (req, res) => {
     success: true,
     message: sendRes.delivered
       ? `Verification OTP sent to ${cleanEmail}. Please check your inbox.`
-      : `Verification code generated for ${cleanEmail}.`,
-    // For development convenience if SMTP credentials fail
-    devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
+      : `Verification code generated for ${cleanEmail}.`
   });
 });
 
@@ -117,8 +115,7 @@ exports.sendSuperadminOTP = asyncHandler(async (req, res) => {
     success: true,
     message: sendRes.delivered
       ? `A 6-digit security code has been sent to ${cleanEmail}.`
-      : `Security code generated for ${cleanEmail}.`,
-    devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
+      : `Security code generated for ${cleanEmail}.`
   });
 });
 
@@ -363,8 +360,7 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
     maskedEmail,
     message: sendRes.delivered
       ? `A 6-digit password reset code has been sent to ${maskedEmail}.`
-      : `Password reset code generated for ${maskedEmail}.`,
-    devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
+      : `Password reset code generated for ${maskedEmail}.`
   });
 });
 
@@ -491,8 +487,7 @@ exports.login = asyncHandler(async (req, res) => {
       email: user.email,
       message: sendRes.delivered
         ? `Security OTP sent to ${user.email}. Please enter the 6-digit code to access Superadmin Console.`
-        : `Security code generated for ${user.email}.`,
-      devOtp: process.env.NODE_ENV !== 'production' ? otpRes.otp : undefined
+        : `Security code generated for ${user.email}.`
     });
   }
 

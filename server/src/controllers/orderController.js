@@ -16,9 +16,12 @@ exports.createOrder = asyncHandler(async (req, res) => {
   }
 
   const settings = await prisma.setting.findFirst();
-  const gstPercent = (settings && settings.gstEnabled) ? settings.gstPercent : 0.0;
-  const freeShippingAbove = settings ? settings.freeShippingAbove : 999.0;
-  const standardShippingFee = settings ? settings.standardShippingFee : 60.0;
+  const gstPercent = (settings && settings.gstEnabled)
+    ? (settings.gstPercent !== undefined ? settings.gstPercent : 18.0)
+    : 0.0;
+  const freeShippingEnabled = settings?.freeShippingEnabled !== undefined ? Boolean(settings.freeShippingEnabled) : true;
+  const freeShippingAbove = (settings && settings.freeShippingAbove !== undefined) ? settings.freeShippingAbove : 999.0;
+  const standardShippingFee = (settings && settings.standardShippingFee !== undefined) ? settings.standardShippingFee : 60.0;
 
   // Calculate subtotal
   let subtotal = 0.0;
@@ -38,14 +41,61 @@ exports.createOrder = asyncHandler(async (req, res) => {
     };
   });
 
-  const gstAmount = parseFloat(((subtotal * gstPercent) / 100).toFixed(2));
-  const shippingFee = subtotal >= freeShippingAbove ? 0.0 : standardShippingFee;
+  // Courier shipping calculation
+  let shippingFee = standardShippingFee;
+  if (standardShippingFee === 0) {
+    shippingFee = 0.0;
+  } else if (freeShippingEnabled && freeShippingAbove > 0 && subtotal >= freeShippingAbove) {
+    shippingFee = 0.0;
+  }
 
-  // Check referral — PRIORITY: partnerLinkCode > referralCode
+  // Coupon validation & discount calculation
+  let couponDiscount = 0.0;
+  let appliedCouponCode = null;
+  const rawCouponCode = req.body.couponCode;
+
+  if (rawCouponCode && String(rawCouponCode).trim()) {
+    const codeToVerify = String(rawCouponCode).trim().toUpperCase();
+    const coupon = await prisma.coupon.findUnique({
+      where: { code: codeToVerify }
+    });
+
+    if (coupon && coupon.isActive) {
+      const isExpired = coupon.expiryDate && new Date() > new Date(coupon.expiryDate);
+      const limitReached = coupon.usageLimit !== null && coupon.usageLimit !== undefined && coupon.usedCount >= coupon.usageLimit;
+      const minOrderMet = !coupon.minOrderAmount || subtotal >= coupon.minOrderAmount;
+
+      if (!isExpired && !limitReached && minOrderMet) {
+        if (coupon.discountType === 'PERCENTAGE') {
+          couponDiscount = (subtotal * coupon.discountValue) / 100;
+          if (coupon.maxDiscountAmount && couponDiscount > coupon.maxDiscountAmount) {
+            couponDiscount = coupon.maxDiscountAmount;
+          }
+        } else {
+          couponDiscount = Math.min(coupon.discountValue, subtotal);
+        }
+        couponDiscount = parseFloat(couponDiscount.toFixed(2));
+        appliedCouponCode = coupon.code;
+
+        // Increment coupon used count safely
+        prisma.coupon.update({
+          where: { id: coupon.id },
+          data: { usedCount: { increment: 1 } }
+        }).catch(err => console.error('[Coupon usedCount error]', err));
+      }
+    }
+  }
+
+  // Taxable subtotal after coupon discount
+  const taxableSubtotal = Math.max(0, subtotal - couponDiscount);
+  const gstAmount = parseFloat(((taxableSubtotal * gstPercent) / 100).toFixed(2));
+  const finalAmount = parseFloat((taxableSubtotal + gstAmount + shippingFee).toFixed(2));
+
+  // Check referral - PRIORITY: partnerLinkCode > referralCode
+  // Commission priority: Product specific > Partner specific > Default platform
   let adminReferralId = null;
   let adminCommissionPercent = 0.0;
   let adminCommissionAmount = 0.0;
-  let discountAmount = 0.0;
   let partnerLinkId = null;
 
   // 1. Try partner product link (new flow)
@@ -60,15 +110,21 @@ exports.createOrder = asyncHandler(async (req, res) => {
           { linkCode: normalizedLinkCode.toUpperCase() }
         ]
       },
-      include: { admin: true }
+      include: { admin: true, product: true }
     });
     if (pLink && pLink.isActive) {
       adminReferralId = pLink.adminId;
       partnerLinkId = pLink.id;
-      adminCommissionPercent = pLink.admin.commissionPercent || (settings ? settings.defaultCommissionPercent : 15.0);
+
+      if (pLink.product && pLink.product.commissionPercent && pLink.product.commissionPercent > 0) {
+        adminCommissionPercent = pLink.product.commissionPercent;
+      } else if (pLink.admin && pLink.admin.commissionPercent && pLink.admin.commissionPercent > 0) {
+        adminCommissionPercent = pLink.admin.commissionPercent;
+      } else {
+        adminCommissionPercent = settings ? settings.defaultCommissionPercent : 15.0;
+      }
+
       adminCommissionAmount = parseFloat(((subtotal * adminCommissionPercent) / 100).toFixed(2));
-      // No partner discount for customers; customer pays full price, partner earns full commission
-      discountAmount = 0.0;
     }
   }
 
@@ -84,14 +140,32 @@ exports.createOrder = asyncHandler(async (req, res) => {
       });
       if (partner) {
         adminReferralId = partner.id;
-        adminCommissionPercent = partner.commissionPercent || (settings ? settings.defaultCommissionPercent : 15.0);
+
+        // Check if ordered product has custom commission
+        let productCommission = 0;
+        const firstProductId = parsedItems[0]?.productId;
+        if (firstProductId) {
+          const prod = await prisma.product.findUnique({
+            where: { id: parseInt(firstProductId) },
+            select: { commissionPercent: true }
+          });
+          if (prod && prod.commissionPercent && prod.commissionPercent > 0) {
+            productCommission = prod.commissionPercent;
+          }
+        }
+
+        if (productCommission > 0) {
+          adminCommissionPercent = productCommission;
+        } else if (partner.commissionPercent && partner.commissionPercent > 0) {
+          adminCommissionPercent = partner.commissionPercent;
+        } else {
+          adminCommissionPercent = settings ? settings.defaultCommissionPercent : 15.0;
+        }
+
         adminCommissionAmount = parseFloat(((subtotal * adminCommissionPercent) / 100).toFixed(2));
-        discountAmount = 0.0;
       }
     }
   }
-
-  const finalAmount = parseFloat((subtotal + gstAmount + shippingFee - discountAmount).toFixed(2));
 
   // Generate clean sequential order & invoice number (e.g. RX-2026-0001, RX-2026-0002)
   const currentYear = new Date().getFullYear();
@@ -177,7 +251,8 @@ exports.createOrder = asyncHandler(async (req, res) => {
       gstPercent,
       gstAmount,
       shippingFee,
-      discountAmount,
+      discountAmount: couponDiscount,
+      couponCode: appliedCouponCode,
       finalAmount,
       adminReferralId,
       adminCommissionPercent,

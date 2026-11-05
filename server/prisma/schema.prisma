@@ -66,6 +66,7 @@ model Product {
   description   String   @db.Text
   features      String   @db.Text
   specs         String   @db.Text
+  commissionPercent Float? @default(0.0)
   displayOrder  Int      @default(0)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -155,6 +156,7 @@ model Setting {
   announcementBanner       String   @db.Text
   heroHeading              String   @db.Text
   heroSubheading           String   @db.Text
+  freeShippingEnabled      Boolean  @default(true)
   freeShippingAbove        Float    @default(999.0)
   standardShippingFee      Float    @default(60.0)
   updatedAt                DateTime @updatedAt

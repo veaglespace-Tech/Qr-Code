@@ -85,17 +85,19 @@ export default function HomePage() {
         <div className="absolute top-20 right-1/4 w-[500px] h-[500px] aura-glow-green pointer-events-none -z-10" />
 
         <div className="text-center max-w-4xl mx-auto space-y-7">
-          {/* Top Floating Pill */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 border border-slate-200/90 text-slate-800 text-xs sm:text-sm font-extrabold shadow-sm hover:border-rxgreen-400 transition-colors">
-            <span className="flex h-2.5 w-2.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rxgreen-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rxgreen-500" />
-            </span>
-            <span className="font-heading tracking-wide uppercase text-[11px] sm:text-xs">
-              {settings?.announcementBanner || `Offered by ${settings?.siteName || 'Veagle Space Technology Pvt. Ltd.'} • Simple • Fast • Convenient`}
-            </span>
-            <Zap className="w-3.5 h-3.5 text-rxgreen-600 fill-rxgreen-500" />
-          </div>
+          {/* Top Floating Pill - Only rendered if announcement banner is configured and not blank */}
+          {Boolean(settings?.announcementBanner && settings.announcementBanner.trim()) && (
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 border border-slate-200/90 text-slate-800 text-xs sm:text-sm font-extrabold shadow-sm hover:border-rxgreen-400 transition-colors">
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rxgreen-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rxgreen-500" />
+              </span>
+              <span className="font-heading tracking-wide uppercase text-[11px] sm:text-xs">
+                {settings.announcementBanner.trim()}
+              </span>
+              <Zap className="w-3.5 h-3.5 text-rxgreen-600 fill-rxgreen-500" />
+            </div>
+          )}
 
           {/* Main Power Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-[1.1] font-heading">

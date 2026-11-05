@@ -16,6 +16,57 @@ function clearProductsCache() {
 }
 exports.clearProductsCache = clearProductsCache;
 
+function safeJsonParse(str, fallback) {
+  if (!str) return fallback;
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function formatFeatures(features) {
+  if (!features) return [];
+  if (Array.isArray(features)) {
+    return features.map(f => String(f).trim()).filter(Boolean);
+  }
+  if (typeof features === 'string') {
+    return features
+      .split('\n')
+      .map(f => f.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function formatSpecs(specs) {
+  if (!specs) return {};
+  if (typeof specs === 'string') {
+    const trimmed = specs.trim();
+    if (trimmed.startsWith('{')) {
+      try {
+        return JSON.parse(trimmed);
+      } catch (e) {
+        return {};
+      }
+    }
+    const result = {};
+    trimmed.split('\n').forEach(line => {
+      const idx = line.indexOf(':');
+      if (idx > 0) {
+        const key = line.substring(0, idx).trim();
+        const val = line.substring(idx + 1).trim();
+        if (key) result[key] = val;
+      }
+    });
+    return result;
+  }
+  if (typeof specs === 'object' && !Array.isArray(specs)) {
+    return specs;
+  }
+  return {};
+}
+
 exports.getProducts = asyncHandler(async (req, res) => {
   const now = Date.now();
   if (cachedProducts && (now - lastProductsFetch < PRODUCTS_CACHE_TTL)) {
@@ -31,8 +82,8 @@ exports.getProducts = asyncHandler(async (req, res) => {
 
   const parsed = products.map(p => ({
     ...p,
-    features: p.features ? JSON.parse(p.features) : [],
-    specs: p.specs ? JSON.parse(p.specs) : {}
+    features: safeJsonParse(p.features, []),
+    specs: safeJsonParse(p.specs, {})
   }));
 
   cachedProducts = parsed;
@@ -60,14 +111,28 @@ exports.getProductBySlug = asyncHandler(async (req, res) => {
     success: true,
     product: {
       ...product,
-      features: product.features ? JSON.parse(product.features) : [],
-      specs: product.specs ? JSON.parse(product.specs) : {}
+      features: safeJsonParse(product.features, []),
+      specs: safeJsonParse(product.specs, {})
     }
   });
 });
 
 exports.createProduct = asyncHandler(async (req, res) => {
-  const { title, subtitle, price, originalPrice, description, image, features, specs, badge, stock, displayOrder, isActive } = req.body;
+  const {
+    title,
+    subtitle,
+    price,
+    originalPrice,
+    description,
+    image,
+    features,
+    specs,
+    badge,
+    stock,
+    displayOrder,
+    isActive,
+    commissionPercent
+  } = req.body;
 
   if (!title || !price) {
     throw new ApiError(400, 'Title and price are required');
@@ -88,8 +153,11 @@ exports.createProduct = asyncHandler(async (req, res) => {
       isActive: isActive !== undefined ? Boolean(isActive) : true,
       image: image || 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?auto=format&fit=crop&w=800&q=80',
       description: description || '',
-      features: JSON.stringify(Array.isArray(features) ? features : (features ? features.split('\n').filter(Boolean) : [])),
-      specs: JSON.stringify(typeof specs === 'object' ? specs : {})
+      features: JSON.stringify(formatFeatures(features)),
+      specs: JSON.stringify(formatSpecs(specs)),
+      commissionPercent: commissionPercent !== undefined && commissionPercent !== '' && !isNaN(commissionPercent)
+        ? parseFloat(commissionPercent)
+        : 0.0
     }
   });
 
@@ -98,8 +166,8 @@ exports.createProduct = asyncHandler(async (req, res) => {
     success: true,
     product: {
       ...product,
-      features: JSON.parse(product.features),
-      specs: JSON.parse(product.specs)
+      features: safeJsonParse(product.features, []),
+      specs: safeJsonParse(product.specs, {})
     },
     message: 'Product added successfully!'
   });
@@ -107,7 +175,21 @@ exports.createProduct = asyncHandler(async (req, res) => {
 
 exports.updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title, subtitle, price, originalPrice, description, image, features, specs, badge, stock, displayOrder, isActive } = req.body;
+  const {
+    title,
+    subtitle,
+    price,
+    originalPrice,
+    description,
+    image,
+    features,
+    specs,
+    badge,
+    stock,
+    displayOrder,
+    isActive,
+    commissionPercent
+  } = req.body;
 
   const existing = await prisma.product.findUnique({
     where: { id: parseInt(id) }
@@ -117,22 +199,34 @@ exports.updateProduct = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Product not found');
   }
 
+  const updateData = {
+    title: title || existing.title,
+    subtitle: subtitle !== undefined ? subtitle : existing.subtitle,
+    price: price ? parseFloat(price) : existing.price,
+    originalPrice: originalPrice ? parseFloat(originalPrice) : existing.originalPrice,
+    badge: badge !== undefined ? badge : existing.badge,
+    stock: stock !== undefined ? parseInt(stock) : existing.stock,
+    displayOrder: displayOrder !== undefined ? parseInt(displayOrder) : existing.displayOrder,
+    isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
+    image: image || existing.image,
+    description: description !== undefined ? description : existing.description
+  };
+
+  if (features !== undefined) {
+    updateData.features = JSON.stringify(formatFeatures(features));
+  }
+  if (specs !== undefined) {
+    updateData.specs = JSON.stringify(formatSpecs(specs));
+  }
+  if (commissionPercent !== undefined) {
+    updateData.commissionPercent = (commissionPercent === '' || isNaN(commissionPercent))
+      ? 0.0
+      : parseFloat(commissionPercent);
+  }
+
   const updated = await prisma.product.update({
     where: { id: parseInt(id) },
-    data: {
-      title: title || existing.title,
-      subtitle: subtitle !== undefined ? subtitle : existing.subtitle,
-      price: price ? parseFloat(price) : existing.price,
-      originalPrice: originalPrice ? parseFloat(originalPrice) : existing.originalPrice,
-      badge: badge !== undefined ? badge : existing.badge,
-      stock: stock !== undefined ? parseInt(stock) : existing.stock,
-      displayOrder: displayOrder !== undefined ? parseInt(displayOrder) : existing.displayOrder,
-      isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
-      image: image || existing.image,
-      description: description !== undefined ? description : existing.description,
-      features: features ? JSON.stringify(Array.isArray(features) ? features : features.split('\n').filter(Boolean)) : existing.features,
-      specs: specs ? JSON.stringify(typeof specs === 'object' ? specs : {}) : existing.specs
-    }
+    data: updateData
   });
 
   clearProductsCache();
@@ -140,8 +234,8 @@ exports.updateProduct = asyncHandler(async (req, res) => {
     success: true,
     product: {
       ...updated,
-      features: JSON.parse(updated.features),
-      specs: JSON.parse(updated.specs)
+      features: safeJsonParse(updated.features, []),
+      specs: safeJsonParse(updated.specs, {})
     },
     message: 'Product updated successfully'
   });

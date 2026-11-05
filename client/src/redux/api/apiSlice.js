@@ -10,7 +10,7 @@ export const apiSlice = createApi({
     baseUrl: API_BASE,
     credentials: 'include',
   }),
-  tagTypes: ['Auth', 'Product', 'Order', 'Setting', 'Admin', 'Superadmin', 'Payout', 'User', 'PartnerLink'],
+  tagTypes: ['Auth', 'Product', 'Order', 'Setting', 'Admin', 'Superadmin', 'Payout', 'User', 'PartnerLink', 'Coupon'],
   endpoints: (builder) => ({
     // ---------------- AUTH ENDPOINTS ----------------
     getMe: builder.query({
@@ -312,6 +312,42 @@ export const apiSlice = createApi({
       invalidatesTags: ['PartnerLink'],
     }),
 
+    // ---------------- COUPON & PROMO CODE ENDPOINTS ----------------
+    applyCoupon: builder.mutation({
+      query: (data) => ({
+        url: '/orders/apply-coupon',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    getAllCoupons: builder.query({
+      query: () => '/superadmin/coupons',
+      providesTags: ['Coupon'],
+    }),
+    createCoupon: builder.mutation({
+      query: (data) => ({
+        url: '/superadmin/coupons',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Coupon'],
+    }),
+    updateCoupon: builder.mutation({
+      query: ({ id, ...patch }) => ({
+        url: `/superadmin/coupons/${id}`,
+        method: 'PUT',
+        body: patch,
+      }),
+      invalidatesTags: ['Coupon'],
+    }),
+    deleteCoupon: builder.mutation({
+      query: (id) => ({
+        url: `/superadmin/coupons/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Coupon'],
+    }),
+
     // ---------------- PUBLIC LINK RESOLUTION ----------------
     resolveProductLink: builder.query({
       query: (linkCode) => `/buy/${linkCode}`,
@@ -376,4 +412,11 @@ export const {
   useGenerateProductLinkMutation,
   useToggleProductLinkMutation,
   useResolveProductLinkQuery,
+
+  // Coupon hooks
+  useApplyCouponMutation,
+  useGetAllCouponsQuery,
+  useCreateCouponMutation,
+  useUpdateCouponMutation,
+  useDeleteCouponMutation,
 } = apiSlice;

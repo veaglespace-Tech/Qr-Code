@@ -143,9 +143,7 @@ export default function PartnerRegisterPage() {
           isError: false
         });
         toast.success(msg);
-        if (res.devOtp) {
-          setOtpCode(res.devOtp); // Auto-fill for convenience in test environment
-        }
+        setOtpCode(''); // Always keep verification code input empty so user enters it from email
       }
     } catch (apiErr) {
       const friendly = formatUserFriendlyError(apiErr);

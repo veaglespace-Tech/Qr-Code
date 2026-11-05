@@ -171,23 +171,3 @@ exports.submitContact = asyncHandler(async (req, res) => {
     message: 'Thank you! Your inquiry has been received. Our support team will get in touch shortly.'
   });
 });
-
-exports.testEmail = asyncHandler(async (req, res) => {
-  const targetEmail = req.body.email || req.body.toEmail || req.user?.email || process.env.EMAIL;
-  if (!targetEmail) {
-    throw new ApiError(400, 'Please provide an email address to send test email to.');
-  }
-
-  const { sendVerificationEmail } = require('../utils/mailer');
-  const testOtp = Math.floor(100000 + Math.random() * 900000).toString();
-  const sendRes = await sendVerificationEmail(targetEmail, testOtp, 'Administrator', 'SMTP Diagnostics');
-
-  if (!sendRes.delivered) {
-    throw new ApiError(500, `SMTP Test failed: ${sendRes.error || 'Connection failed'}. Please check EMAIL and EMAIL_PASS on the server.`);
-  }
-
-  return res.json({
-    success: true,
-    message: `Test email with OTP [${testOtp}] was sent successfully to ${targetEmail}!`
-  });
-});

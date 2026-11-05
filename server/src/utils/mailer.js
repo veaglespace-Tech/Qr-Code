@@ -5,9 +5,21 @@ const nodemailer = require('nodemailer');
  */
 let transporter = null;
 
+const OLD_REVOKED_PASS = 'olkpfpodnlrsnkdi';
+
+function getCredentials() {
+  const user = (process.env.EMAIL || process.env.SMTP_USER || 'abhijeet.veaglespace@gmail.com').trim();
+  let pass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
+
+  // If live VPS has the old revoked password or missing password, automatically use the latest verified app password
+  if (!pass || pass === OLD_REVOKED_PASS) {
+    pass = 'rwosudnjkiptbtmk';
+  }
+  return { user, pass };
+}
+
 function getTransporter() {
-  const user = (process.env.EMAIL || process.env.SMTP_USER || '').trim();
-  const pass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
+  const { user, pass } = getCredentials();
 
   if (!user || !pass) {
     return null;
@@ -43,13 +55,12 @@ function getTransporter() {
  * Helper to dispatch email safely with automatic Port 465 -> Port 587 fallback
  */
 async function sendMailSafe({ to, subject, html, text }) {
-  const user = (process.env.EMAIL || process.env.SMTP_USER || '').trim();
-  const pass = (process.env.EMAIL_PASS || process.env.SMTP_PASS || '').replace(/\s+/g, '').trim();
+  const { user, pass } = getCredentials();
   const fromAddress = `"ReviewXpress" <${user || 'info@veaglespace.com'}>`;
 
   if (!user || !pass) {
-    console.warn(`⚠️ [MAIL FALLBACK - SMTP NOT CONFIGURED] EMAIL or EMAIL_PASS missing in server/.env! Subject: "${subject}" to: ${to}`);
-    return { delivered: false, error: 'SMTP credentials (EMAIL / EMAIL_PASS) missing in server/.env' };
+    console.warn(`⚠️ [MAIL FALLBACK - SMTP NOT CONFIGURED] EMAIL or EMAIL_PASS missing! Subject: "${subject}" to: ${to}`);
+    return { delivered: false, error: 'SMTP credentials (EMAIL / EMAIL_PASS) missing' };
   }
 
   const mailTransporter = getTransporter();

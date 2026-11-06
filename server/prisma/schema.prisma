@@ -67,6 +67,7 @@ model Product {
   features      String   @db.Text
   specs         String   @db.Text
   commissionPercent Float? @default(0.0)
+  productType   String   @default("physical") // "physical" | "digital"
   displayOrder  Int      @default(0)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())

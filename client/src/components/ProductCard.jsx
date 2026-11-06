@@ -34,6 +34,13 @@ export default function ProductCard({ product }) {
         </div>
       )}
 
+      {/* Digital Product Badge */}
+      {product.productType === 'digital' && (
+        <div className="absolute top-3.5 right-3.5 z-10 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide bg-cyan-600 text-white shadow-md backdrop-blur-xs">
+          <span>💻 Digital</span>
+        </div>
+      )}
+
       {/* Image or PDF container */}
       <Link href={`/product/${product.slug}`} className="relative h-60 overflow-hidden bg-slate-50 block border-b border-slate-100">
         {product.image && (product.image.toLowerCase().endsWith('.pdf') || product.image.includes('.pdf')) ? (

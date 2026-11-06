@@ -18,7 +18,8 @@ import {
   Tag,
   CheckCircle2,
   Percent,
-  X
+  X,
+  Laptop
 } from 'lucide-react';
 
 export default function CheckoutPage() {
@@ -98,11 +99,17 @@ export default function CheckoutPage() {
     ? Number(settings.freeShippingAbove)
     : 999;
 
-  let shippingFee = items.length === 0 ? 0 : standardShippingFee;
-  if (standardShippingFee === 0) {
-    shippingFee = 0;
-  } else if (freeShippingEnabled && freeShippingAbove > 0 && subtotal >= freeShippingAbove) {
-    shippingFee = 0;
+  // Check if any item is a physical product (requires shipping)
+  const hasPhysicalProduct = items.some(item => item.productType !== 'digital');
+
+  let shippingFee = 0;
+  if (hasPhysicalProduct) {
+    shippingFee = items.length === 0 ? 0 : standardShippingFee;
+    if (standardShippingFee === 0) {
+      shippingFee = 0;
+    } else if (freeShippingEnabled && freeShippingAbove > 0 && subtotal >= freeShippingAbove) {
+      shippingFee = 0;
+    }
   }
 
   const activeRefCode = referralCode || partnerInfo?.referralCode || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('re_referral_code') : '') || '';
@@ -189,21 +196,23 @@ export default function CheckoutPage() {
       newErrors.email = 'Please enter a valid email address for your official tax invoice.';
     }
 
-    if (!formData.address.trim() || formData.address.trim().length < 6) {
-      newErrors.address = 'Please enter your complete street address / shop location.';
-    }
+    if (hasPhysicalProduct) {
+      if (!formData.address.trim() || formData.address.trim().length < 6) {
+        newErrors.address = 'Please enter your complete street address / shop location.';
+      }
 
-    if (!formData.city.trim()) {
-      newErrors.city = 'Please enter your city.';
-    }
+      if (!formData.city.trim()) {
+        newErrors.city = 'Please enter your city.';
+      }
 
-    if (!formData.state.trim()) {
-      newErrors.state = 'Please enter your state.';
-    }
+      if (!formData.state.trim()) {
+        newErrors.state = 'Please enter your state.';
+      }
 
-    const pin = formData.pincode.replace(/\D/g, '');
-    if (!/^[1-9][0-9]{5}$/.test(pin)) {
-      newErrors.pincode = 'Please enter a valid 6-digit Indian PIN code.';
+      const pin = formData.pincode.replace(/\D/g, '');
+      if (!/^[1-9][0-9]{5}$/.test(pin)) {
+        newErrors.pincode = 'Please enter a valid 6-digit Indian PIN code.';
+      }
     }
 
     if (formData.googleReviewLink && formData.googleReviewLink.trim()) {
@@ -237,6 +246,10 @@ export default function CheckoutPage() {
         items,
         customerDetails: {
           ...formData,
+          address: hasPhysicalProduct ? formData.address : (formData.address || 'Digital Delivery'),
+          city: hasPhysicalProduct ? formData.city : (formData.city || 'Online'),
+          state: hasPhysicalProduct ? formData.state : (formData.state || 'N/A'),
+          pincode: hasPhysicalProduct ? formData.pincode : (formData.pincode || '000000'),
           phone: cleanPhone
         },
         referralCode: activeRefCode,
@@ -474,82 +487,93 @@ export default function CheckoutPage() {
           </div>
 
           {/* Shipping Address Card */}
-          <div className="glass-panel bg-white rounded-2xl p-6 border border-slate-200 space-y-4 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Truck className="w-4 h-4 text-emerald-600" /> 3. Shipping Delivery Address
-            </h3>
+          {hasPhysicalProduct ? (
+            <div className="glass-panel bg-white rounded-2xl p-6 border border-slate-200 space-y-4 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Truck className="w-4 h-4 text-emerald-600" /> 3. Shipping Delivery Address
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Street Address / Shop Location *</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="Shop No. 12, Ground Floor, Near Main Market"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-slate-900 text-xs focus:outline-none transition-colors ${
-                    errors.address
-                      ? 'bg-red-50/40 border-red-400 focus:border-red-500'
-                      : 'bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white'
-                  }`}
-                />
-                {errors.address && <p className="text-[11px] text-red-600 mt-1">{errors.address}</p>}
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Street Address / Shop Location *</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Shop No. 12, Ground Floor, Near Main Market"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-slate-900 text-xs focus:outline-none transition-colors ${
+                      errors.address
+                        ? 'bg-red-50/40 border-red-400 focus:border-red-500'
+                        : 'bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white'
+                    }`}
+                  />
+                  {errors.address && <p className="text-[11px] text-red-600 mt-1">{errors.address}</p>}
+                </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">City *</label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  placeholder="City"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-slate-900 text-xs focus:outline-none transition-colors ${
-                    errors.city
-                      ? 'bg-red-50/40 border-red-400 focus:border-red-500'
-                      : 'bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white'
-                  }`}
-                />
-                {errors.city && <p className="text-[11px] text-red-600 mt-1">{errors.city}</p>}
-              </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">City *</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder="City"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-slate-900 text-xs focus:outline-none transition-colors ${
+                      errors.city
+                        ? 'bg-red-50/40 border-red-400 focus:border-red-500'
+                        : 'bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white'
+                    }`}
+                  />
+                  {errors.city && <p className="text-[11px] text-red-600 mt-1">{errors.city}</p>}
+                </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">State *</label>
-                <input
-                  type="text"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                  placeholder="State"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-slate-900 text-xs focus:outline-none transition-colors ${
-                    errors.state
-                      ? 'bg-red-50/40 border-red-400 focus:border-red-500'
-                      : 'bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white'
-                  }`}
-                />
-                {errors.state && <p className="text-[11px] text-red-600 mt-1">{errors.state}</p>}
-              </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">State *</label>
+                  <input
+                    type="text"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    placeholder="State"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-slate-900 text-xs focus:outline-none transition-colors ${
+                      errors.state
+                        ? 'bg-red-50/40 border-red-400 focus:border-red-500'
+                        : 'bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white'
+                    }`}
+                  />
+                  {errors.state && <p className="text-[11px] text-red-600 mt-1">{errors.state}</p>}
+                </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">PIN Code (6 Digits) *</label>
-                <input
-                  type="text"
-                  name="pincode"
-                  maxLength={6}
-                  value={formData.pincode}
-                  onChange={handleChange}
-                  placeholder="411004"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-slate-900 text-xs focus:outline-none transition-colors ${
-                    errors.pincode
-                      ? 'bg-red-50/40 border-red-400 focus:border-red-500'
-                      : 'bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white'
-                  }`}
-                />
-                {errors.pincode && <p className="text-[11px] text-red-600 mt-1">{errors.pincode}</p>}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">PIN Code (6 Digits) *</label>
+                  <input
+                    type="text"
+                    name="pincode"
+                    maxLength={6}
+                    value={formData.pincode}
+                    onChange={handleChange}
+                    placeholder="411004"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-slate-900 text-xs focus:outline-none transition-colors ${
+                      errors.pincode
+                        ? 'bg-red-50/40 border-red-400 focus:border-red-500'
+                        : 'bg-slate-50 border-slate-200 focus:border-brand-500 focus:bg-white'
+                    }`}
+                  />
+                  {errors.pincode && <p className="text-[11px] text-red-600 mt-1">{errors.pincode}</p>}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="glass-panel bg-white rounded-2xl p-6 border border-emerald-200 bg-emerald-50/20 space-y-3 shadow-sm">
+              <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                <Laptop className="w-4 h-4 text-emerald-600" /> 3. Digital Delivery (No Courier Shipping)
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                This order contains digital product(s). No physical courier shipping address is required. All digital assets and tax invoice will be delivered directly to your email (<strong>{formData.email || 'your email'}</strong>).
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Payment & Summary */}
@@ -692,9 +716,9 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex justify-between text-slate-600">
-                <span>Express Courier Shipping:</span>
+                <span>{hasPhysicalProduct ? 'Express Courier Shipping:' : 'Courier / Delivery Fee:'}</span>
                 <span className="font-bold text-emerald-700">
-                  {shippingFee === 0 ? 'FREE' : `₹${shippingFee}`}
+                  {!hasPhysicalProduct ? 'FREE (Digital Delivery)' : (shippingFee === 0 ? 'FREE' : `₹${shippingFee}`)}
                 </span>
               </div>
 

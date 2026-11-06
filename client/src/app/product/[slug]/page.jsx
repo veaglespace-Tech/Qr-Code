@@ -168,7 +168,7 @@ export default function ProductDetailPage() {
         <div className="lg:col-span-6 space-y-6">
           {/* Header */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <div className="flex text-amber-500">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-amber-400" />
@@ -176,6 +176,13 @@ export default function ProductDetailPage() {
               </div>
               <span className="text-xs font-bold text-slate-800">{product.rating}</span>
               <span className="text-xs text-slate-500">({product.reviewsCount} verified reviews)</span>
+              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                product.productType === 'digital'
+                  ? 'bg-cyan-100 text-cyan-800 border border-cyan-200'
+                  : 'bg-slate-100 text-slate-700 border border-slate-200'
+              }`}>
+                {product.productType === 'digital' ? '💻 Digital Delivery' : '📦 Physical Product'}
+              </span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -348,14 +355,24 @@ export default function ProductDetailPage() {
           {/* Shipping highlight */}
           <div className="grid grid-cols-3 gap-3 pt-2 text-center text-[11px] text-slate-600">
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-              <Truck className="w-4 h-4 text-emerald-600 mx-auto" />
-              <p className="font-bold text-slate-900">Dispatched in 24h</p>
-              <p>Blue Dart / Delhivery</p>
+              {product.productType === 'digital' ? (
+                <>
+                  <Sparkles className="w-4 h-4 text-emerald-600 mx-auto" />
+                  <p className="font-bold text-slate-900">Instant Delivery</p>
+                  <p>Email & Online</p>
+                </>
+              ) : (
+                <>
+                  <Truck className="w-4 h-4 text-emerald-600 mx-auto" />
+                  <p className="font-bold text-slate-900">Dispatched in 24h</p>
+                  <p>Blue Dart / Delhivery</p>
+                </>
+              )}
             </div>
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
               <ShieldCheck className="w-4 h-4 text-emerald-600 mx-auto" />
-              <p className="font-bold text-slate-900">1 Year Warranty</p>
-              <p>Chip replacement</p>
+              <p className="font-bold text-slate-900">{product.productType === 'digital' ? 'Verified License' : '1 Year Warranty'}</p>
+              <p>{product.productType === 'digital' ? 'Instant Activation' : 'Chip replacement'}</p>
             </div>
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
               <RotateCcw className="w-4 h-4 text-emerald-600 mx-auto" />

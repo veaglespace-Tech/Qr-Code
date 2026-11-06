@@ -19,7 +19,8 @@ import {
   ArrowRight,
   Zap,
   Award,
-  Package
+  Package,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -211,7 +212,7 @@ export default function BuyPage(props) {
             <div className="grid grid-cols-3 gap-3">
               {[
                 { icon: Shield, label: 'Secure Payment', color: 'text-blue-500' },
-                { icon: Truck, label: 'Fast Delivery', color: 'text-green-500' },
+                { icon: product.productType === 'digital' ? Sparkles : Truck, label: product.productType === 'digital' ? 'Instant Delivery' : 'Fast Delivery', color: 'text-green-500' },
                 { icon: Award, label: 'Premium Quality', color: 'text-purple-500' }
               ].map(({ icon: Icon, label, color }) => (
                 <div key={label} className="bg-white rounded-xl border border-slate-200 p-3 flex flex-col items-center gap-1.5 text-center">
@@ -224,13 +225,22 @@ export default function BuyPage(props) {
 
           {/* RIGHT: Product details */}
           <div className="space-y-5">
-            {/* Badge */}
-            {product.badge && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-purple-100 text-purple-700">
-                <Zap className="w-3 h-3" />
-                {product.badge}
+            {/* Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {product.badge && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-purple-100 text-purple-700">
+                  <Zap className="w-3 h-3" />
+                  {product.badge}
+                </span>
+              )}
+              <span className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full ${
+                product.productType === 'digital'
+                  ? 'bg-cyan-100 text-cyan-800 border border-cyan-200'
+                  : 'bg-slate-100 text-slate-700 border border-slate-200'
+              }`}>
+                {product.productType === 'digital' ? '💻 Digital Product' : '📦 Physical Product'}
               </span>
-            )}
+            </div>
 
             {/* Title */}
             <div>
@@ -318,8 +328,17 @@ export default function BuyPage(props) {
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-blue-600" />
-                  Free Express Delivery
+                  {product.productType === 'digital' ? (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+                      Instant Digital Delivery
+                    </>
+                  ) : (
+                    <>
+                      <Truck className="w-3.5 h-3.5 text-blue-600" />
+                      Free Express Delivery
+                    </>
+                  )}
                 </span>
                 <span>•</span>
                 <span className="text-purple-600 font-bold">

@@ -131,7 +131,8 @@ exports.createProduct = asyncHandler(async (req, res) => {
     stock,
     displayOrder,
     isActive,
-    commissionPercent
+    commissionPercent,
+    productType
   } = req.body;
 
   if (!title || !price) {
@@ -157,7 +158,8 @@ exports.createProduct = asyncHandler(async (req, res) => {
       specs: JSON.stringify(formatSpecs(specs)),
       commissionPercent: commissionPercent !== undefined && commissionPercent !== '' && !isNaN(commissionPercent)
         ? parseFloat(commissionPercent)
-        : 0.0
+        : 0.0,
+      productType: productType === 'digital' ? 'digital' : 'physical'
     }
   });
 
@@ -188,7 +190,8 @@ exports.updateProduct = asyncHandler(async (req, res) => {
     stock,
     displayOrder,
     isActive,
-    commissionPercent
+    commissionPercent,
+    productType
   } = req.body;
 
   const existing = await prisma.product.findUnique({
@@ -209,7 +212,8 @@ exports.updateProduct = asyncHandler(async (req, res) => {
     displayOrder: displayOrder !== undefined ? parseInt(displayOrder) : existing.displayOrder,
     isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
     image: image || existing.image,
-    description: description !== undefined ? description : existing.description
+    description: description !== undefined ? description : existing.description,
+    productType: productType === 'digital' ? 'digital' : productType === 'physical' ? 'physical' : existing.productType
   };
 
   if (features !== undefined) {

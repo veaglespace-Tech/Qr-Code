@@ -67,6 +67,7 @@ const cartSlice = createSlice({
           originalPrice: product.originalPrice,
           image: product.image,
           quantity,
+          productType: product.productType || 'physical',
           businessName: customization.businessName || '',
           googleReviewLink: customization.googleReviewLink || ''
         });

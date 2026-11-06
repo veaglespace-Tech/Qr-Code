@@ -51,6 +51,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Math calculation captcha state
   const [captcha, setCaptcha] = useState({ num1: 4, num2: 3 });
@@ -79,7 +80,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     generateCaptcha();
-  }, []);
+    try {
+      router.prefetch('/admin/dashboard');
+      router.prefetch('/superadmin/dashboard');
+      router.prefetch('/user/dashboard');
+    } catch {}
+  }, [router]);
 
   // Countdown timer for OTP resend
   useEffect(() => {
@@ -100,6 +106,7 @@ export default function LoginPage() {
   }, [superadminCooldown]);
 
   const handleRedirect = (user) => {
+    setIsRedirecting(true);
     if (user.role === 'SUPERADMIN') {
       router.push('/superadmin/dashboard');
     } else if (user.role === 'ADMIN') {
@@ -128,8 +135,10 @@ export default function LoginPage() {
     try {
       const res = await verifySuperadminOtp({ email: cleanEmail, otp: cleanOtp }).unwrap();
       toast.success(`Welcome back, Master Superadmin ${res.user?.name || ''}!`);
+      setIsRedirecting(true);
       router.push('/superadmin/dashboard');
     } catch (err) {
+      setIsRedirecting(false);
       const friendly = formatUserFriendlyError(err);
       setFormError(friendly);
       toast.error(friendly);
@@ -198,6 +207,7 @@ export default function LoginPage() {
       toast.success(`Welcome back, ${res.user?.name || 'User'}!`);
       handleRedirect(res.user);
     } catch (err) {
+      setIsRedirecting(false);
       const friendly = formatUserFriendlyError(err);
       setFormError(friendly);
       toast.error(friendly);
@@ -408,10 +418,20 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || isRedirecting}
           className="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50 cursor-pointer"
         >
-          {loading ? <span>Signing In...</span> : (
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Verifying Credentials...</span>
+            </>
+          ) : isRedirecting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Redirecting to Dashboard...</span>
+            </>
+          ) : (
             <>
               <span>Sign In</span>
               <ArrowRight className="w-4 h-4" />
@@ -496,13 +516,18 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={verifyingSuperOtp || superadminOtp.length !== 6}
+              disabled={verifyingSuperOtp || isRedirecting || superadminOtp.length !== 6}
               className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50 cursor-pointer"
             >
               {verifyingSuperOtp ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Verifying & Entering Console...</span>
+                </>
+              ) : isRedirecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Redirecting to Console...</span>
                 </>
               ) : (
                 <>

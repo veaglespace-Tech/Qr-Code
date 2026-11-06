@@ -37,16 +37,23 @@ exports.createOrder = asyncHandler(async (req, res) => {
       price,
       quantity,
       total,
-      image: item.image
+      image: item.image,
+      productType: item.productType || 'physical'
     };
   });
 
-  // Courier shipping calculation
-  let shippingFee = standardShippingFee;
-  if (standardShippingFee === 0) {
-    shippingFee = 0.0;
-  } else if (freeShippingEnabled && freeShippingAbove > 0 && subtotal >= freeShippingAbove) {
-    shippingFee = 0.0;
+  // Check if any item is a physical product (requires shipping)
+  const hasPhysicalProduct = parsedItems.some(item => item.productType !== 'digital');
+
+  // Courier shipping calculation — only for physical products
+  let shippingFee = 0.0;
+  if (hasPhysicalProduct) {
+    shippingFee = standardShippingFee;
+    if (standardShippingFee === 0) {
+      shippingFee = 0.0;
+    } else if (freeShippingEnabled && freeShippingAbove > 0 && subtotal >= freeShippingAbove) {
+      shippingFee = 0.0;
+    }
   }
 
   // Coupon validation & discount calculation

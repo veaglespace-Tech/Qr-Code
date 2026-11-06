@@ -1008,6 +1008,15 @@ export default function AdminDashboardPage() {
                                 {link.isActive ? 'Active Link' : 'Paused'}
                               </span>
                             )}
+
+                            {/* Product Type (Digital / Physical) */}
+                            <span className={`absolute bottom-3 right-3 px-2 py-0.5 rounded-lg text-[10px] font-bold backdrop-blur-md shadow-xs ${
+                              product.productType === 'digital'
+                                ? 'bg-cyan-600/90 text-white'
+                                : 'bg-slate-900/80 text-slate-200'
+                            }`}>
+                              {product.productType === 'digital' ? '💻 Digital' : '📦 Physical'}
+                            </span>
                           </div>
 
                           {/* Body Content */}

@@ -326,6 +326,7 @@ export default function SuperadminDashboardPage() {
     originalPrice: '',
     badge: 'Trending',
     stock: 100,
+    productType: 'physical',
     image: '',
     description: '',
     features: '',
@@ -392,6 +393,10 @@ export default function SuperadminDashboardPage() {
       list = list.filter(p => p.isActive === false);
     } else if (productStatusFilter === 'low_stock') {
       list = list.filter(p => (p.stock || 0) < 20);
+    } else if (productStatusFilter === 'physical') {
+      list = list.filter(p => p.productType !== 'digital');
+    } else if (productStatusFilter === 'digital') {
+      list = list.filter(p => p.productType === 'digital');
     }
 
     // Sorting
@@ -944,6 +949,7 @@ export default function SuperadminDashboardPage() {
                     originalPrice: '',
                     badge: 'Trending',
                     stock: 100,
+                    productType: 'physical',
                     image: '',
                     description: '',
                     features: '',
@@ -1359,6 +1365,7 @@ export default function SuperadminDashboardPage() {
                           originalPrice: '',
                           badge: 'Trending',
                           stock: 100,
+                          productType: 'physical',
                           image: '',
                           description: '',
                           features: '',
@@ -1382,8 +1389,10 @@ export default function SuperadminDashboardPage() {
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Status:</span>
                   {[
                     { id: 'all', label: 'All Products', count: products.length },
-                    { id: 'active', label: 'Active in Store', count: products.filter(p => p.isActive !== false).length },
-                    { id: 'paused', label: 'Paused / Hidden', count: products.filter(p => p.isActive === false).length },
+                    { id: 'physical', label: '📦 Physical', count: products.filter(p => p.productType !== 'digital').length },
+                    { id: 'digital', label: '💻 Digital', count: products.filter(p => p.productType === 'digital').length },
+                    { id: 'active', label: 'Active', count: products.filter(p => p.isActive !== false).length },
+                    { id: 'paused', label: 'Paused', count: products.filter(p => p.isActive === false).length },
                     { id: 'low_stock', label: 'Low Stock (<20)', count: products.filter(p => (p.stock || 0) < 20).length },
                   ].map(filter => {
                     const isSelected = productStatusFilter === filter.id;
@@ -1484,6 +1493,15 @@ export default function SuperadminDashboardPage() {
                                 {prod.badge}
                               </span>
                             )}
+
+                            {/* Product Type Badge (Physical / Digital) */}
+                            <span className={`absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold shadow-xs backdrop-blur-xs ${
+                              prod.productType === 'digital'
+                                ? 'bg-cyan-600/95 text-white'
+                                : 'bg-slate-900/85 text-slate-200'
+                            }`}>
+                              {prod.productType === 'digital' ? '💻 Digital' : '📦 Physical'}
+                            </span>
                           </div>
 
                           {/* Details */}
@@ -1592,6 +1610,7 @@ export default function SuperadminDashboardPage() {
                                   originalPrice: prod.originalPrice || '',
                                   badge: prod.badge || '',
                                   stock: prod.stock || 100,
+                                  productType: prod.productType || 'physical',
                                   image: prod.image || '',
                                   description: prod.description || '',
                                   features: Array.isArray(prod.features) ? prod.features.join('\n') : (prod.features || ''),
@@ -2876,6 +2895,21 @@ export default function SuperadminDashboardPage() {
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-black focus:bg-white focus:border-purple-500 transition-colors"
                     />
                     <p className="text-[10px] text-slate-400 mt-1">Specify display ranking on public store catalog (e.g. 1, 2, 3...)</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Product Type</label>
+                    <select
+                      value={productForm.productType || 'physical'}
+                      onChange={(e) => setProductForm({ ...productForm, productType: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white focus:border-purple-500 transition-colors"
+                    >
+                      <option value="physical">📦 Physical (Courier Shipping)</option>
+                      <option value="digital">💻 Digital (No Courier Shipping)</option>
+                    </select>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {productForm.productType === 'digital' ? '₹0 courier fee at checkout' : 'Regular courier fee applies'}
+                    </p>
                   </div>
 
                   <div>

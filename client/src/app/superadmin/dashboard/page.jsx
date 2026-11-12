@@ -2393,7 +2393,7 @@ export default function SuperadminDashboardPage() {
                         type="text"
                         value={siteSettings.supportPhone || ''}
                         onChange={(e) => setSiteSettings({ ...siteSettings, supportPhone: e.target.value })}
-                        placeholder="+91 8237999101"
+                        placeholder="+91 92252 41608"
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:bg-white"
                       />
                     </div>

@@ -29,8 +29,8 @@ exports.getSettings = asyncHandler(async (req, res) => {
 
   const accurateAddress = "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra 411041";
   const accurateEmail = "info@veaglespace.com";
-  const accuratePhone = "+91 8237999101";
-  const accurateWhatsapp = "918237999101";
+  const accuratePhone = "+91 92252 41608";
+  const accurateWhatsapp = "919225241608";
 
   if (!settings) {
     settings = await prisma.setting.create({
@@ -50,8 +50,8 @@ exports.getSettings = asyncHandler(async (req, res) => {
     // Auto-migrate old dummy or placeholder data stored in live database
     const isDummyAddress = !settings.address || settings.address.includes('Tech Hub') || settings.address.includes('411045') || settings.address.trim() === 'Pune, Maharashtra';
     const isDummyEmail = !settings.supportEmail || settings.supportEmail === 'support@reviewexpress.in' || settings.supportEmail.includes('example.com');
-    const isDummyPhone = !settings.supportPhone || settings.supportPhone.includes('98765 43210') || settings.supportPhone.includes('9876543210');
-    const isDummyWhatsapp = !settings.whatsappNumber || settings.whatsappNumber === '919876543210';
+    const isDummyPhone = !settings.supportPhone || settings.supportPhone.includes('98765 43210') || settings.supportPhone.includes('9876543210') || settings.supportPhone.includes('8237999101');
+    const isDummyWhatsapp = !settings.whatsappNumber || settings.whatsappNumber === '919876543210' || settings.whatsappNumber === '918237999101';
     const isOldSiteName = settings.siteName === 'Review Express';
 
     if (isDummyAddress || isDummyEmail || isDummyPhone || isDummyWhatsapp || isOldSiteName) {

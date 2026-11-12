@@ -9,11 +9,11 @@ export default function TaxInvoiceModal({ order, settings, onClose }) {
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   const isDummyAddress = !settings?.address || settings.address.includes('Tech Hub') || settings.address.includes('411045') || settings.address.trim() === 'Pune, Maharashtra';
-  const isDummyPhone = !settings?.supportPhone || settings.supportPhone.includes('98765 43210') || settings.supportPhone.includes('9876543210');
+  const isDummyPhone = !settings?.supportPhone || settings.supportPhone.includes('98765 43210') || settings.supportPhone.includes('9876543210') || settings.supportPhone.includes('8237999101');
   const isDummyEmail = !settings?.supportEmail || settings.supportEmail === 'support@reviewexpress.in' || settings.supportEmail.includes('example.com');
 
   const invoiceAddress = !isDummyAddress ? settings.address : "'Kudale Patil Tower', Office No. 207, 2nd Floor, Jadhav Nagar, Near Shiv Temple, Vadgaon Budruk, Pune, Maharashtra - 411041";
-  const invoicePhone = !isDummyPhone ? settings.supportPhone : '+91 8237999101';
+  const invoicePhone = !isDummyPhone ? settings.supportPhone : '+91 92252 41608';
   const invoiceEmail = !isDummyEmail ? settings.supportEmail : 'info@veaglespace.com';
 
   if (!order) return null;

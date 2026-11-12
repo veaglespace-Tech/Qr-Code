@@ -575,7 +575,7 @@ async function sendContactInquiryEmails({ name, email, phone, subject, message }
         </p>
       </div>
       <p style="font-size: 13px; color: #64748b;">
-        If your request is urgent, you can also reach us directly on WhatsApp or phone at <strong style="color: #7c3aed;">+91 8237999101</strong>.
+        If your request is urgent, you can also reach us directly on WhatsApp or phone at <strong style="color: #7c3aed;">+91 92252 41608</strong>.
       </p>
     `;
     const userHtml = wrapHtml('We Received Your Message!', { text: 'SUPPORT ACKNOWLEDGEMENT', className: 'badge-emerald' }, userContent);

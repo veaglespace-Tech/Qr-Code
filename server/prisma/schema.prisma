@@ -142,8 +142,8 @@ model Setting {
   siteName                 String   @default("ReviewXpress")
   tagline                  String   @default("India's #1 Smart NFC & QR Google Review Hardware Platform")
   supportEmail             String   @default("info@veaglespace.com")
-  supportPhone             String   @default("+91 8237999101")
-  whatsappNumber           String   @default("918237999101")
+  supportPhone             String   @default("+91 92252 41608")
+  whatsappNumber           String   @default("919225241608")
   address                  String   @db.Text
   gstEnabled               Boolean  @default(true)
   gstPercent               Float    @default(18.0)

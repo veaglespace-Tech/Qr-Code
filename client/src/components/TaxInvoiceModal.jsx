@@ -214,7 +214,7 @@ export default function TaxInvoiceModal({ order, settings, onClose }) {
             <div className="text-right">
               <p className="text-[10px] font-bold text-gray-500 uppercase">PAYMENT &amp; SHIPPING:</p>
               <p className="text-gray-700 mt-0.5">Mode: <span className="font-semibold">{order.paymentMethod}</span></p>
-              <p className="text-gray-700">Txn Ref: <span className="font-mono">{order.payuTxnId || 'N/A'}</span></p>
+              <p className="text-gray-700">Txn Ref: <span className="font-mono">{order.razorpayPaymentId || order.razorpayOrderId || 'N/A'}</span></p>
               <p className="text-gray-700">Courier: <span className="font-semibold">{order.courierName || 'Delhivery Express'}</span></p>
               {order.trackingId && (
                 <p className="text-gray-700 font-mono">AWB: {order.trackingId}</p>

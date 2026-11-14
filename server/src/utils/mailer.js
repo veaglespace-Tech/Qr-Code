@@ -234,7 +234,7 @@ async function sendOrderConfirmationEmail(order, items = []) {
 
   const parsedItems = items.length ? items : (order.items ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items) : []);
   const isCOD = (order.paymentMethod || '').toLowerCase().includes('cod');
-  const paymentBadge = isCOD ? 'Cash on Delivery (COD)' : 'Paid Online (PayU)';
+  const paymentBadge = isCOD ? 'Cash on Delivery (COD)' : 'Paid Online (Razorpay)';
 
   const itemsRows = parsedItems.map(item => `
     <tr>
@@ -325,7 +325,7 @@ async function sendNewOrderAdminAlert(orderOrOptions, items = []) {
       <p style="margin: 4px 0;"><strong>Email:</strong> ${order.customerEmail}</p>
       <p style="margin: 4px 0;"><strong>Business to Print:</strong> <strong style="color: #7c3aed;">${order.businessName || 'N/A'}</strong></p>
       <p style="margin: 4px 0;"><strong>Google Review Link:</strong> ${order.googleReviewLink ? `<a href="${order.googleReviewLink}">${order.googleReviewLink}</a>` : 'N/A'}</p>
-      <p style="margin: 4px 0;"><strong>Payment Method:</strong> ${isCOD ? 'Cash on Delivery (Pending)' : 'Paid Online (PayU)'}</p>
+      <p style="margin: 4px 0;"><strong>Payment Method:</strong> ${isCOD ? 'Cash on Delivery (Pending)' : 'Paid Online (Razorpay)'}</p>
       <p style="margin: 4px 0;"><strong>Shipping Destination:</strong> ${order.address}, ${order.city} - ${order.pincode}</p>
       ${order.adminReferralId ? `<p style="margin: 4px 0; color: #9333ea;"><strong>Partner Referral:</strong> Linked to Partner ID #${order.adminReferralId}</p>` : ''}
     </div>

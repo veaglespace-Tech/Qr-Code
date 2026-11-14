@@ -611,7 +611,7 @@ export default function UserDashboardPage() {
                                   : 'bg-amber-100 text-amber-800 border border-amber-200'
                               }`}
                             >
-                              {order.paymentStatus === 'paid' ? 'Paid via PayU' : 'Payment Pending'}
+                              {order.paymentStatus === 'paid' ? 'Paid via Razorpay' : 'Payment Pending'}
                             </span>
                             <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 uppercase">
                               {order.orderStatus}

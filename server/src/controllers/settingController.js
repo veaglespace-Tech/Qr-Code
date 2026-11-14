@@ -20,7 +20,7 @@ exports.getSettings = asyncHandler(async (req, res) => {
   if (cachedSettings && (now - lastSettingsFetch < SETTINGS_CACHE_TTL)) {
     const safeSettings = { ...cachedSettings };
     if (!req.user || req.user.role !== 'SUPERADMIN') {
-      delete safeSettings.payuMerchantSalt;
+      delete safeSettings.razorpayKeySecret;
     }
     return res.json({ success: true, settings: safeSettings });
   }
@@ -42,8 +42,8 @@ exports.getSettings = asyncHandler(async (req, res) => {
         supportPhone: accuratePhone,
         whatsappNumber: accurateWhatsapp,
         address: accurateAddress,
-        payuMerchantKey: process.env.PAYU_MERCHANT_KEY || "sV29rC",
-        payuMerchantSalt: process.env.PAYU_MERCHANT_SALT || "tkhRPTPLZtQRHlnuruaKzB9OSbvdS2sA"
+        razorpayKeyId: process.env.RAZORPAY_KEY_ID || "",
+        razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || ""
       }
     });
   } else {
@@ -72,16 +72,13 @@ exports.getSettings = asyncHandler(async (req, res) => {
   cachedSettings = { ...settings };
   lastSettingsFetch = Date.now();
 
-  // Mask secret salt unless superadmin
+  // Mask secret keys unless superadmin
   const safeSettings = { ...settings };
-  if (process.env.PAYU_MERCHANT_KEY) {
-    safeSettings.payuMerchantKey = process.env.PAYU_MERCHANT_KEY;
-  }
-  if (process.env.PAYU_BASE_URL) {
-    safeSettings.payuMode = process.env.PAYU_BASE_URL.includes('test') ? 'test' : 'live';
+  if (process.env.RAZORPAY_KEY_ID) {
+    safeSettings.razorpayKeyId = process.env.RAZORPAY_KEY_ID;
   }
   if (!req.user || req.user.role !== 'SUPERADMIN') {
-    delete safeSettings.payuMerchantSalt;
+    delete safeSettings.razorpayKeySecret;
   }
 
   return res.json({ success: true, settings: safeSettings });
@@ -90,26 +87,24 @@ exports.getSettings = asyncHandler(async (req, res) => {
 exports.updateSettings = asyncHandler(async (req, res) => {
   const updates = { ...req.body };
 
-  // Never overwrite salt if it's empty, whitespace, masked bullets, or dummy
+  // Never overwrite Razorpay Key Secret if it's empty, masked bullets, or dummy
   if (
-    !updates.payuMerchantSalt ||
-    typeof updates.payuMerchantSalt !== 'string' ||
-    updates.payuMerchantSalt.trim() === '' ||
-    updates.payuMerchantSalt.includes('••••') ||
-    updates.payuMerchantSalt.toUpperCase().includes('DEMO')
+    !updates.razorpayKeySecret ||
+    typeof updates.razorpayKeySecret !== 'string' ||
+    updates.razorpayKeySecret.trim() === '' ||
+    updates.razorpayKeySecret.includes('••••')
   ) {
-    delete updates.payuMerchantSalt;
+    delete updates.razorpayKeySecret;
   } else {
-    updates.payuMerchantSalt = updates.payuMerchantSalt.trim();
+    updates.razorpayKeySecret = updates.razorpayKeySecret.trim();
   }
 
-  // Never overwrite key if it's empty, dummy, or invalid
-  if (updates.payuMerchantKey !== undefined) {
-    const k = typeof updates.payuMerchantKey === 'string' ? updates.payuMerchantKey.trim() : '';
-    if (k === '' || k.toUpperCase().includes('DEMO') || k.length < 4) {
-      delete updates.payuMerchantKey;
+  if (updates.razorpayKeyId !== undefined) {
+    const k = typeof updates.razorpayKeyId === 'string' ? updates.razorpayKeyId.trim() : '';
+    if (k === '') {
+      delete updates.razorpayKeyId;
     } else {
-      updates.payuMerchantKey = k;
+      updates.razorpayKeyId = k;
     }
   }
 
@@ -119,8 +114,8 @@ exports.updateSettings = asyncHandler(async (req, res) => {
     settings = await prisma.setting.create({
       data: {
         id: 1,
-        payuMerchantKey: process.env.PAYU_MERCHANT_KEY || 'sV29rC',
-        payuMerchantSalt: process.env.PAYU_MERCHANT_SALT || 'tkhRPTPLZtQRHlnuruaKzB9OSbvdS2sA',
+        razorpayKeyId: process.env.RAZORPAY_KEY_ID || '',
+        razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || '',
         ...updates
       }
     });

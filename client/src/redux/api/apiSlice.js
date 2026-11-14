@@ -203,6 +203,14 @@ export const apiSlice = createApi({
         'Superadmin',
       ],
     }),
+    verifyRazorpayPayment: builder.mutation({
+      query: (data) => ({
+        url: '/razorpay/verify',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Order', 'Admin', 'Superadmin'],
+    }),
 
     // ---------------- ADMIN / PARTNER ENDPOINTS ----------------
     getAdminStats: builder.query({
@@ -402,6 +410,7 @@ export const {
   useGetOrderByIdQuery,
   useCreateOrderMutation,
   useUpdateOrderMutation,
+  useVerifyRazorpayPaymentMutation,
 
   // Admin hooks
   useGetAdminStatsQuery,

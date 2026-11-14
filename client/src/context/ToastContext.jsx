@@ -127,7 +127,12 @@ export function ToastProvider({ children }) {
     error: (message, title) => addToast({ type: 'error', message, title: title || 'Error' }),
     success: (message, title) => addToast({ type: 'success', message, title: title || 'Success' }),
     info: (message, title) => addToast({ type: 'info', message, title: title || 'Info' }),
-    warning: (message, title) => addToast({ type: 'warning', message, title: title || 'Warning' })
+    warning: (message, title) => addToast({ type: 'warning', message, title: title || 'Warning' }),
+    loading: (message, title) => addToast({ type: 'info', message, title: title || 'Please wait...', duration: 5000 }),
+    dismiss: (id) => {
+      if (id) removeToast(id);
+      else setToasts([]);
+    }
   };
 
   useEffect(() => {
@@ -142,7 +147,8 @@ export function ToastProvider({ children }) {
       {/* Toast Notification Container */}
       <div
         aria-live="assertive"
-        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[99999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-2 sm:px-0"
+        style={{ zIndex: 999999 }}
+        className="fixed top-24 right-4 sm:top-24 sm:right-6 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-2 sm:px-0"
       >
         {toasts.map((t) => {
           const isError = t.type === 'error';
@@ -210,7 +216,9 @@ export function useToast() {
         error: (msg) => console.error('[Toast Error]', msg),
         success: (msg) => console.log('[Toast Success]', msg),
         info: (msg) => console.info('[Toast Info]', msg),
-        warning: (msg) => console.warn('[Toast Warning]', msg)
+        warning: (msg) => console.warn('[Toast Warning]', msg),
+        loading: (msg) => console.log('[Toast Loading]', msg),
+        dismiss: () => {}
       }
     };
   }

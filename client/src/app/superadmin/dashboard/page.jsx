@@ -2182,48 +2182,38 @@ export default function SuperadminDashboardPage() {
           {activeTab === 'settings' && (
             <form onSubmit={handleSaveSettings} className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* PayU Gateway Settings */}
+                {/* Razorpay Gateway Settings */}
                 <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
                   <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                     <CreditCard className="w-5 h-5 text-purple-600" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">PayU Payment Gateway</h4>
-                      <p className="text-[11px] text-slate-400">API credentials for PayU online payments</p>
+                      <h4 className="font-bold text-slate-900 text-sm">Razorpay Payment Gateway</h4>
+                      <p className="text-[11px] text-slate-400">API credentials for Razorpay online payments</p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">PayU Environment Mode</label>
-                    <select
-                      value={siteSettings.payuMode || 'test'}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, payuMode: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold focus:bg-white"
-                    >
-                      <option value="test">Test Mode (test.payu.in)</option>
-                      <option value="live">Live Mode (secure.payu.in)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Merchant Key</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Razorpay Key ID</label>
                     <input
                       type="text"
-                      value={siteSettings.payuMerchantKey || ''}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, payuMerchantKey: e.target.value })}
-                      placeholder="e.g. sV29rC"
+                      value={siteSettings.razorpayKeyId || ''}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, razorpayKeyId: e.target.value })}
+                      placeholder="e.g. rzp_test_... or rzp_live_..."
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono focus:bg-white"
                     />
+                    <p className="text-[10px] text-slate-400 mt-1">Available under Razorpay Dashboard &rarr; Settings &rarr; API Keys</p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Merchant Salt</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Razorpay Key Secret</label>
                     <input
                       type="password"
-                      value={siteSettings.payuMerchantSalt || ''}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, payuMerchantSalt: e.target.value })}
+                      value={siteSettings.razorpayKeySecret || ''}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, razorpayKeySecret: e.target.value })}
                       placeholder="••••••••••••••••"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-mono focus:bg-white"
                     />
+                    <p className="text-[10px] text-slate-400 mt-1">Leave blank to keep current configured key secret</p>
                   </div>
                 </div>
 

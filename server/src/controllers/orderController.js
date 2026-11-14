@@ -1,5 +1,5 @@
 const prisma = require('../lib/prisma');
-const { generatePayUHash } = require('../lib/payu');
+const { getRazorpayInstance, getRazorpayCredentials } = require('../lib/razorpay');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const {
@@ -203,10 +203,10 @@ exports.createOrder = asyncHandler(async (req, res) => {
   const orderNumber = `RX-${currentYear}-${String(nextSeq).padStart(4, '0')}`;
   const txnid = `TXN_${currentYear}_${String(nextSeq).padStart(4, '0')}_${Date.now().toString().slice(-4)}`;
   if (req.body.paymentMethod === 'cod' || req.body.paymentMethod === 'Cash on Delivery') {
-    throw new ApiError(400, 'Cash on Delivery is currently disabled. Please proceed with Online Payment via PayU.');
+    throw new ApiError(400, 'Cash on Delivery is currently disabled. Please proceed with Online Payment via Razorpay.');
   }
   const isCOD = false;
-  const selectedPaymentMethod = 'PayU Gateway (UPI / Cards / NetBanking)';
+  const selectedPaymentMethod = 'Razorpay Gateway (UPI / Cards / NetBanking / Wallets)';
 
   // 3. Find or auto-create customer User record
   let customerUser = null;
@@ -262,6 +262,30 @@ exports.createOrder = asyncHandler(async (req, res) => {
     });
   }
 
+  // 4. Create Razorpay order if Razorpay is configured
+  const { keyId } = await getRazorpayCredentials();
+  const razorpay = await getRazorpayInstance();
+  let razorpayOrder = null;
+
+  if (razorpay) {
+    try {
+      razorpayOrder = await razorpay.orders.create({
+        amount: Math.round(finalAmount * 100), // in paise
+        currency: 'INR',
+        receipt: orderNumber,
+        notes: {
+          orderNumber,
+          customerName: customerDetails.name,
+          customerEmail: customerDetails.email || '',
+          customerPhone: customerDetails.phone || ''
+        }
+      });
+      console.log(`[Razorpay Order Created] Order #${orderNumber}, Razorpay Order ID: ${razorpayOrder.id}`);
+    } catch (rzpErr) {
+      console.error('[Razorpay Order Creation Error]', rzpErr?.error || rzpErr?.message || rzpErr);
+    }
+  }
+
   const newOrder = await prisma.order.create({
     data: {
       orderNumber,
@@ -290,14 +314,14 @@ exports.createOrder = asyncHandler(async (req, res) => {
       partnerLinkId: partnerLinkId || null,
       paymentStatus: 'pending',
       paymentMethod: selectedPaymentMethod,
-      payuTxnId: txnid,
+      razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
       orderStatus: 'placed',
       courierName: 'Delhivery Express',
       trackingId: null,
       trackingUrl: null,
       trackingHistory: JSON.stringify([
         { status: 'Order Placed & Registered', date: new Date().toLocaleString('en-IN'), completed: true },
-        { status: isCOD ? 'Cash on Delivery Verification' : 'Payment Verification (PayU)', date: 'In Progress', completed: false },
+        { status: isCOD ? 'Cash on Delivery Verification' : 'Payment Verification (Razorpay)', date: 'In Progress', completed: false },
         { status: 'NFC Chip Programming & Custom QR Laser Print', date: 'Upcoming', completed: false },
         { status: 'Dispatched with Courier', date: 'Upcoming', completed: false },
         { status: 'Delivered', date: 'Upcoming', completed: false }
@@ -316,43 +340,6 @@ exports.createOrder = asyncHandler(async (req, res) => {
     }
   }
 
-  // PayU Gateway credentials directly from env, with fallback to settings
-  const payuKey = (
-    process.env.PAYU_MERCHANT_KEY ||
-    process.env.PAYU_KEY ||
-    settings?.payuMerchantKey ||
-    'sV29rC'
-  ).trim();
-
-  const payuSalt = (
-    process.env.PAYU_MERCHANT_SALT ||
-    process.env.PAYU_SALT ||
-    settings?.payuMerchantSalt ||
-    'tkhRPTPLZtQRHlnuruaKzB9OSbvdS2sA'
-  ).trim();
-
-  const payuActionUrl = (
-    process.env.PAYU_BASE_URL ||
-    'https://secure.payu.in/_payment'
-  ).trim();
-
-  console.log(`[PayU Checkout] Action URL: ${payuActionUrl}, Key: ${payuKey.slice(0, 4)}***`);
-
-  const payuHash = generatePayUHash({
-    key: payuKey,
-    txnid,
-    amount: finalAmount.toFixed(2),
-    productinfo: `Order ${orderNumber}`,
-    firstname: customerDetails.name.trim().split(/\s+/)[0] || 'Customer',
-    email: customerDetails.email || 'customer@example.com',
-    udf1: newOrder.id.toString(),
-    udf2: '',
-    udf3: '',
-    udf4: '',
-    udf5: '',
-    salt: payuSalt
-  });
-
   return res.status(201).json({
     success: true,
     isCOD,
@@ -361,23 +348,18 @@ exports.createOrder = asyncHandler(async (req, res) => {
       items: JSON.parse(newOrder.items),
       trackingHistory: JSON.parse(newOrder.trackingHistory || '[]')
     },
-    payuPayload: isCOD ? null : {
-      actionUrl: payuActionUrl,
-      key: payuKey,
-      txnid,
-      amount: finalAmount.toFixed(2),
-      productinfo: `Order ${orderNumber}`,
-      firstname: customerDetails.name.trim().split(/\s+/)[0] || 'Customer',
-      email: customerDetails.email || 'customer@example.com',
-      phone: customerDetails.phone,
-      hash: payuHash,
-      surl: `${process.env.SERVER_BASE_URL || 'http://localhost:5000'}/api/payu/response`,
-      furl: `${process.env.SERVER_BASE_URL || 'http://localhost:5000'}/api/payu/response`,
-      udf1: newOrder.id.toString(),
-      udf2: '',
-      udf3: '',
-      udf4: '',
-      udf5: ''
+    razorpayPayload: isCOD ? null : {
+      key: keyId,
+      orderId: razorpayOrder ? razorpayOrder.id : null,
+      amount: Math.round(finalAmount * 100),
+      currency: 'INR',
+      name: 'ReviewXpress',
+      description: `Order ${orderNumber}`,
+      prefill: {
+        name: customerDetails.name,
+        email: customerDetails.email || '',
+        contact: customerDetails.phone || ''
+      }
     }
   });
 });

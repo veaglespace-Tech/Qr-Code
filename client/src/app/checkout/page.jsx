@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import { useSelector, useDispatch } from 'react-redux';
 import { clearCart } from '@/redux/slice/cartSlice';
-import { useCreateOrderMutation, useApplyCouponMutation } from '@/redux/api/apiSlice';
+import { useCreateOrderMutation, useApplyCouponMutation, useVerifyRazorpayPaymentMutation } from '@/redux/api/apiSlice';
 import { useToast, formatUserFriendlyError } from '@/context/ToastContext';
 import {
   CreditCard,
@@ -32,6 +33,7 @@ export default function CheckoutPage() {
   const { user } = useSelector(state => state.auth);
   const { data: settings } = useSelector(state => state.settings);
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+  const [verifyRazorpayPayment, { isLoading: isVerifyingPayment }] = useVerifyRazorpayPaymentMutation();
 
   // Form states
   const [formData, setFormData] = useState({
@@ -61,7 +63,7 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
-  const [paymentMode, setPaymentMode] = useState('payu');
+  const [paymentMode, setPaymentMode] = useState('razorpay');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -256,7 +258,7 @@ export default function CheckoutPage() {
         partnerLinkCode: activePartnerLink,
         couponCode: appliedCoupon ? appliedCoupon.code : null,
         discountAmount: discountAmount,
-        paymentMethod: 'payu'
+        paymentMethod: 'razorpay'
       };
 
       const res = await createOrder(payload).unwrap();
@@ -266,34 +268,86 @@ export default function CheckoutPage() {
         try {
           sessionStorage.removeItem('re_applied_coupon');
         } catch (e) {}
-        toast.success('Order placed successfully! Redirecting...');
 
-        if (isCOD) {
+        const rzpData = res.razorpayPayload;
+        const keyToUse = rzpData?.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TzzM4GlVTuysWB';
+        // If razorpay key is not configured or in COD mode, directly navigate to success
+        if (!keyToUse) {
+          toast.success('Order placed successfully! Redirecting...');
           router.push(`/checkout/success?orderId=${res.order.id}`);
-        } else {
-          const payu = res.payuPayload;
-          if (!payu || !payu.actionUrl) {
-            router.push(`/checkout/success?orderId=${res.order.id}`);
-            return;
-          }
+          return;
+        }
 
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = payu.actionUrl;
+        // Dynamically ensure Razorpay SDK script is loaded
+        if (typeof window.Razorpay === 'undefined') {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.async = true;
+          document.body.appendChild(script);
+          await new Promise((resolve) => {
+            script.onload = resolve;
+            script.onerror = resolve;
+          });
+        }
 
-          for (const key in payu) {
-            if (key !== 'actionUrl' && payu[key] !== undefined && payu[key] !== null) {
-              const hiddenField = document.createElement('input');
-              hiddenField.type = 'hidden';
-              hiddenField.name = key;
-              hiddenField.value = payu[key];
-              form.appendChild(hiddenField);
+        if (typeof window.Razorpay === 'undefined') {
+          toast.error('Unable to initialize Razorpay payment gateway. Please check your internet connection.');
+          setLoading(false);
+          return;
+        }
+
+        const options = {
+          key: keyToUse,
+          amount: rzpData?.amount || Math.round(finalAmount * 100),
+          currency: rzpData?.currency || 'INR',
+          name: 'ReviewXpress',
+          description: rzpData?.description || `Order #${res.order.orderNumber}`,
+          order_id: rzpData?.orderId,
+          prefill: {
+            name: rzpData.prefill?.name || formData.name,
+            email: rzpData.prefill?.email || formData.email,
+            contact: rzpData.prefill?.contact || cleanPhone
+          },
+          theme: {
+            color: '#7c3aed'
+          },
+          modal: {
+            ondismiss: function () {
+              setLoading(false);
+              toast.info('Payment window was closed. Your order is registered and pending payment.');
+            }
+          },
+          handler: async function (response) {
+            try {
+              toast.info('Verifying payment securely with Razorpay...');
+              const verifyRes = await verifyRazorpayPayment({
+                orderId: res.order.id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              }).unwrap();
+
+              if (verifyRes.success) {
+                toast.success('Payment verified successfully! Redirecting...');
+                router.push(`/checkout/success?orderId=${res.order.id}`);
+              } else {
+                toast.error('Payment verification failed.');
+                router.push(`/checkout/success?orderId=${res.order.id}`);
+              }
+            } catch (vErr) {
+              const friendly = formatUserFriendlyError(vErr);
+              toast.error(friendly || 'Verification failed. Please contact support.');
+              router.push(`/checkout/success?orderId=${res.order.id}`);
             }
           }
+        };
 
-          document.body.appendChild(form);
-          form.submit();
-        }
+        const razorpayInstance = new window.Razorpay(options);
+        razorpayInstance.on('payment.failed', function (resp) {
+          setLoading(false);
+          toast.error(resp.error?.description || 'Payment failed. Please try again.');
+        });
+        razorpayInstance.open();
       }
     } catch (err) {
       const friendly = formatUserFriendlyError(err);
@@ -588,7 +642,7 @@ export default function CheckoutPage() {
               <div className="w-4 h-4 rounded-full border-4 border-emerald-600 bg-white mt-1 shrink-0" />
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900">Online Payment via PayU</span>
+                  <span className="text-xs font-bold text-slate-900">Online Payment via Razorpay</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
                     Instant &amp; 100% Secure
                   </span>
@@ -750,6 +804,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </form>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
     </div>
   );
 }

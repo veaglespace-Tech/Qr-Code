@@ -41,7 +41,7 @@ function CheckoutSuccessContent() {
           <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
           {order?.paymentMethod?.includes('Cash') || order?.paymentMethod?.includes('COD')
             ? 'Cash on Delivery (COD) Registered'
-            : 'Payment Confirmed via PayU'}
+            : 'Payment Confirmed via Razorpay'}
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
           Congratulations! Your Review Express Order is Confirmed

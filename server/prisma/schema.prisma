@@ -112,7 +112,10 @@ model Order {
 
   // Payment info
   paymentStatus          String   @default("pending") // "pending" | "paid" | "failed"
-  paymentMethod          String   @default("PayU Gateway")
+  paymentMethod          String   @default("Razorpay Gateway")
+  razorpayOrderId        String?
+  razorpayPaymentId      String?
+  razorpaySignature      String?
   payuTxnId              String?
   payuMihPayId           String?
 
@@ -151,6 +154,8 @@ model Setting {
   hsnCode                  String   @default("852352")
   defaultCommissionPercent Float    @default(15.0)
   minPayoutAmount          Float    @default(500.0)
+  razorpayKeyId            String   @default("")
+  razorpayKeySecret        String   @default("")
   payuMode                 String   @default("live") // "test" | "live"
   payuMerchantKey          String   @default("sV29rC")
   payuMerchantSalt         String   @default("tkhRPTPLZtQRHlnuruaKzB9OSbvdS2sA")

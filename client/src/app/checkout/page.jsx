@@ -270,11 +270,11 @@ export default function CheckoutPage() {
         } catch (e) {}
 
         const rzpData = res.razorpayPayload;
-        const keyToUse = rzpData?.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TzzM4GlVTuysWB';
-        // If razorpay key is not configured or in COD mode, directly navigate to success
+        const keyToUse = rzpData?.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+        // Razorpay key must come from the server response or the public environment.
         if (!keyToUse) {
-          toast.success('Order placed successfully! Redirecting...');
-          router.push(`/checkout/success?orderId=${res.order.id}`);
+          toast.error('Payment gateway is not configured. Please contact support.');
+          setLoading(false);
           return;
         }
 
